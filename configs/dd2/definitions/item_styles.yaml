@@ -13,6 +13,7 @@ entities:
             nested: false
 
 classes:
+  # TODO support class field config inheritance
   app.PartSwapMeshHolder:
     fields:
       Enabled: { default: true }
@@ -32,6 +33,21 @@ classes:
     fields:
       Enabled: { default: true }
   app.PartSwapTextureHolder:
+    fields:
+      Enabled: { default: true }
+  app.PartSwapSimpleTextureHolder:
+    fields:
+      Enabled: { default: true }
+  app.PartSwapDynamicTextureHolder:
+    fields:
+      Enabled: { default: true }
+  app.PartSwapDynamicMultiTextureHolder:
+    fields:
+      Enabled: { default: true }
+  app.PartSwapRenderTargetTextureHolder:
+    fields:
+      Enabled: { default: true }
+  app.GUITextureHolder:
     fields:
       Enabled: { default: true }
   app.PartSwapCatalog.Item:

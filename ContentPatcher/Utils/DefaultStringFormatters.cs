@@ -1,7 +1,9 @@
 using System.Collections;
 using System.Globalization;
+using System.Text.RegularExpressions;
 using ContentEditor.Editor;
 using ReeLib;
+using ReeLib.Common;
 using ReeLib.Il2cpp;
 using SmartFormat;
 using SmartFormat.Core.Extensions;
@@ -60,7 +62,14 @@ public static class FormatterSettings
     private static SmartFormatter ApplyDefaultFormatters(SmartFormatter formatter)
     {
         formatter.AddExtensions(new RszFieldArrayStringFormatterSource());
-        formatter.AddExtensions(new DefaultFormatter(), new NullFormatter(), LowerCaseFormatter.Instance, UpperCaseFormatter.Instance, new PathFormatter());
+        formatter.AddExtensions(new DefaultFormatter(), new NullFormatter());
+        formatter.AddExtensions(
+            PathFormatter.Instance,
+            LowerCaseFormatter.Instance,
+            UpperCaseFormatter.Instance,
+            RegexPatternFormatter.Instance,
+            StringHashFormatter.Instance
+        );
         // @: used for RszFieldStringFormatterSource classname filtering
         formatter.Settings.Parser.AddCustomSelectorChars(['@']);
         return formatter;
@@ -78,6 +87,18 @@ public static class FormatterSettings
         formatter.AddExtensions(new TranslateGuidFormatter(workspace.Messages), new EnumLabelFormatter(workspace.Env), new EnumNameFormatter(workspace.Env), new TranslateFormattedString(workspace.Messages), new EntityLabelFormatter(workspace));
         formatter.AddExtensions(new EntityReverseLookupFormatter(workspace));
         return formatter;
+    }
+}
+
+static class FormatterExtension
+{
+    internal static void WriteOrFormat(this IFormattingInfo formattingInfo, object? value)
+    {
+        if (formattingInfo.Format != null && formattingInfo.Format.HasNested) {
+            formattingInfo.FormatAsChild(formattingInfo.Format, value);
+        } else {
+            formattingInfo.Write(value?.ToString() ?? "");
+        }
     }
 }
 
@@ -255,6 +276,7 @@ public class PathFormatter : IFormatter
 {
     public string Name { get; set; } = "path";
     public bool CanAutoDetect { get; set; } = false;
+    public static readonly PathFormatter Instance = new();
 
     public bool TryEvaluateFormat(IFormattingInfo formattingInfo)
     {
@@ -343,7 +365,8 @@ public class EnumNameFormatter(Workspace env) : IFormatter
 
         // should probably also handle enumDesc.IsFlags somehow
         var label = enumDesc.GetLabel(Convert.ChangeType(formattingInfo.CurrentValue, enumDesc.BackingType));
-        formattingInfo.Write(label ?? formattingInfo.CurrentValue.ToString() ?? string.Empty);
+        var nextValue = label ?? formattingInfo.CurrentValue.ToString() ?? string.Empty;
+        formattingInfo.WriteOrFormat(nextValue);
         return true;
     }
 }
@@ -378,9 +401,9 @@ public class EnumLabelFormatter(Workspace env) : IFormatter
             ? enumDesc.GetLabel(Convert.ChangeType(formattingInfo.CurrentValue, enumDesc.BackingType))
             : enumDesc.GetDisplayLabel(Convert.ChangeType(formattingInfo.CurrentValue, enumDesc.BackingType));
         if (!string.IsNullOrEmpty(label)) {
-            formattingInfo.Write(label);
+            formattingInfo.WriteOrFormat(label);
         } else {
-            formattingInfo.Write(formattingInfo.CurrentValue.ToString() ?? string.Empty);
+            formattingInfo.WriteOrFormat(formattingInfo.CurrentValue.ToString() ?? string.Empty);
         }
         return true;
     }
@@ -432,6 +455,44 @@ public class UpperCaseFormatter : IFormatter
     public bool TryEvaluateFormat(IFormattingInfo formattingInfo)
     {
         formattingInfo.Write(formattingInfo.CurrentValue?.ToString()?.ToUpperInvariant() ?? string.Empty);
+        return true;
+    }
+}
+
+public class RegexPatternFormatter : IFormatter
+{
+    public string Name { get; set; } = "parse";
+    public bool CanAutoDetect { get; set; } = false;
+    public static readonly RegexPatternFormatter Instance = new();
+
+    private readonly Dictionary<string, Regex> _regexes = new();
+
+    public bool TryEvaluateFormat(IFormattingInfo formattingInfo)
+    {
+        var regex = _regexes.GetValueOrDefault(formattingInfo.FormatterOptions)
+            ?? (_regexes[formattingInfo.FormatterOptions] = new Regex(formattingInfo.FormatterOptions));
+        var str = formattingInfo.CurrentValue?.ToString() ?? string.Empty;
+        var match = regex.Match(str);
+        if (match.Success) {
+            formattingInfo.WriteOrFormat(match.Value);
+            return true;
+        } else {
+            formattingInfo.WriteOrFormat(str);
+            return true;
+        }
+    }
+}
+
+public class StringHashFormatter : IFormatter
+{
+    public string Name { get; set; } = "hash";
+    public bool CanAutoDetect { get; set; } = false;
+    public static readonly StringHashFormatter Instance = new();
+
+    public bool TryEvaluateFormat(IFormattingInfo formattingInfo)
+    {
+        var str = formattingInfo.CurrentValue?.ToString() ?? string.Empty;
+        formattingInfo.Write(MurMur3HashUtils.GetHash(str).ToString(CultureInfo.InvariantCulture));
         return true;
     }
 }

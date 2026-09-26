@@ -3,6 +3,7 @@ namespace ContentEditor.Core;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using ReeLib;
 
 public class BundleManager
@@ -209,6 +210,47 @@ public class BundleManager
                 Logger.Info($"Auto-migrated bundle \"{bundle.Name}\" runtime entity \"{runtimeEntity}\" to desktop entity");
             } else {
                 Logger.Warn($"Failed to migrate bundle \"{bundle.Name}\" runtime entity \"{runtimeEntity}\" to desktop entity \"{desktopEntity}\"");
+            }
+        }
+    }
+
+    public void MapToRuntimeBundle(Bundle bundle)
+    {
+        if (Mapping == null) return;
+
+        if (bundle.RuntimeBundle == null) {
+            // verify if any entities require runtime data
+            var entities = bundle.Entities.Select(e => e.Type).Distinct();
+            if (!entities.Any(e => Mapping.IsRuntimeRequiredDesktopEntity(e))) {
+                return;
+            }
+            bundle.RuntimeBundle = new RuntimeBundle() { StoragePath = Path.Combine(RuntimeBundlePath, bundle.Name + ".json").NormalizeFilepath() };
+        }
+
+        var runtimeEntites = bundle.RuntimeBundle.RuntimeEntities
+            ?.Select(rr => (data: rr, entity: rr.Deserialize<MinimalEntity>(JsonConfig.luaJsonOptions)!))
+            .GroupBy(e => e.entity?.Type ?? "")
+            .ToDictionary(kv => kv.Key) ?? [];
+
+        foreach (var entity in bundle.Entities) {
+            if (!Mapping.HasDesktopMapping(entity.Type, out var runtimeType)) {
+                continue;
+            }
+
+            var runtimeList = runtimeEntites.GetValueOrDefault(runtimeType);
+
+            var runtimeEntity = runtimeList?.FirstOrDefault(r => r.entity.Id == entity.Id) ?? default;
+            if (runtimeEntity.data == null) {
+                runtimeEntity.data = (JsonObject)JsonSerializer.SerializeToNode(new MinimalEntity() {
+                    Id = entity.Id,
+                    Type = runtimeType,
+                    Label = entity.Label
+                }, JsonConfig.luaJsonOptions)!;
+                bundle.RuntimeBundle.RuntimeEntities ??= new();
+                bundle.RuntimeBundle.RuntimeEntities.Add(runtimeEntity.data);
+            }
+            if (!Mapping.MapToRuntime(entity.Type, entity, runtimeEntity.data)) {
+                Logger.Error($"Failed to map entity {entity} to runtime type {runtimeType}");
             }
         }
     }

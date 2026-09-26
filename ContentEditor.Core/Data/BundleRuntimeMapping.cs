@@ -1,6 +1,7 @@
 namespace ContentEditor.Core;
 
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 public class BundleRuntimeMapping
@@ -12,6 +13,7 @@ public class BundleRuntimeMapping
 
     private class RuntimeMappingEntry
     {
+        internal bool requireRuntimeData;
         public Dictionary<(string field, string path), string> editorToRuntime = new();
         public Dictionary<string, (string field, string path)> runtimeToEditor = new();
     }
@@ -21,9 +23,10 @@ public class BundleRuntimeMapping
         string runtimeType,
         Dictionary<string, string> toRuntime,
         Dictionary<string, string> toDesktop,
-        Dictionary<string, string> toBoth)
+        Dictionary<string, string> toBoth,
+        bool requireRuntimeData)
     {
-        var entry = new RuntimeMappingEntry();
+        var entry = new RuntimeMappingEntry() { requireRuntimeData = requireRuntimeData };
         editorEntries[editorEntityType] = entry;
         runtimeEntries[runtimeType] = entry;
 
@@ -91,6 +94,15 @@ public class BundleRuntimeMapping
         return runtimeToEditorName.TryGetValue(runtimeType, out editorType);
     }
 
+    public bool IsRuntimeRequiredDesktopEntity(string editorType)
+    {
+        if (!editorEntries.TryGetValue(editorType, out var data)) {
+            return false;
+        }
+
+        return data.requireRuntimeData;
+    }
+
     public bool HasDesktopMapping(string editorType, [MaybeNullWhen(false)] out string runtimeType)
     {
         if (!editorEntries.TryGetValue(editorType, out var mapping)) {
@@ -120,7 +132,7 @@ public class BundleRuntimeMapping
                 editorEntity.Data[editorField] = editorData = new JsonObject();
             }
 
-            SetNodeByPath(editorData, editorPath, sourceData);
+            SetNodeByPath(editorData, editorPath, sourceData, false);
         }
         return true;
     }
@@ -137,7 +149,7 @@ public class BundleRuntimeMapping
             var (editorField, editorPath) = desktop;
             if (!editorEntity.Data.TryGetValue(editorField, out var sourceData) || sourceData == null) {
                 if (editorField == "null") {
-                    SetNodeByPath(runtimeData, runtimePath, new JsonObject());
+                    SetNodeByPath(runtimeData, runtimePath, new JsonObject(), true);
                 }
                 continue;
             }
@@ -145,7 +157,7 @@ public class BundleRuntimeMapping
             if (!string.IsNullOrEmpty(editorPath)) {
                 sourceData = GetNodeByPath(sourceData, editorPath)?.DeepClone();
             }
-            SetNodeByPath(runtimeData, runtimePath, sourceData);
+            SetNodeByPath(runtimeData, runtimePath, sourceData, true);
         }
         return true;
     }
@@ -176,7 +188,7 @@ public class BundleRuntimeMapping
         return null;
     }
 
-    private static void SetNodeByPath(JsonNode node, string path, JsonNode? value)
+    private static void SetNodeByPath(JsonNode node, string path, JsonNode? value, bool isRuntime)
     {
         if (node is not JsonObject obj) {
             Logger.Error("Only object paths are currently supported");
@@ -184,12 +196,20 @@ public class BundleRuntimeMapping
         }
         var sep = path.IndexOf('.');
         if (sep == -1) {
-            if (value?.GetValueKind() == System.Text.Json.JsonValueKind.String) {
-                // engine doesn't enforce front slashes for paths so runtime bundles might end up with backslashes
-                // we don't want them here, make them gone
-                obj[path] = value.GetValue<string>().Replace('\\', '/');
-            } else {
+            if (isRuntime) {
                 obj[path] = value;
+                // TODO ensure uint64s become int64 because ref-lua can't read those properly
+                if (value is JsonObject leafObj) {
+                    CleanJsonValuesForRuntime(leafObj);
+                }
+            } else {
+                if (value?.GetValueKind() == System.Text.Json.JsonValueKind.String) {
+                    // engine doesn't enforce front slashes for paths so runtime bundles might end up with backslashes
+                    // we don't want them here, make them gone
+                    obj[path] = value.GetValue<string>().Replace('\\', '/');
+                } else {
+                    obj[path] = value;
+                }
             }
             return;
         }
@@ -199,6 +219,33 @@ public class BundleRuntimeMapping
             obj[field] = next = new JsonObject();
         }
 
-        SetNodeByPath(next, path.Substring(sep + 1), value);
+        SetNodeByPath(next, path.Substring(sep + 1), value, isRuntime);
+    }
+
+    private static void CleanJsonValuesForRuntime(JsonObject obj)
+    {
+        foreach (var (key, val) in obj) {
+            if (val == null) continue;
+            var kind = val.GetValueKind();
+            if (kind == System.Text.Json.JsonValueKind.Number) {
+                if (val.AsValue().TryGetValue<ulong>(out var ul) && !val.AsValue().TryGetValue<long>(out _)) {
+                    obj[key] = (long)ul;
+                }
+            } else if (kind == System.Text.Json.JsonValueKind.Object) {
+                CleanJsonValuesForRuntime(val.AsObject());
+            } else if (kind == System.Text.Json.JsonValueKind.Array) {
+                foreach (var sub in val.AsArray()) {
+                    if (sub == null) continue;
+
+                    if (sub.GetValueKind() == System.Text.Json.JsonValueKind.Object) {
+                        CleanJsonValuesForRuntime(sub.AsObject());
+                    } else if (sub.GetValueKind() == System.Text.Json.JsonValueKind.Number) {
+                        if (val.AsValue().TryGetValue<ulong>(out var ul) && !val.AsValue().TryGetValue<long>(out _)) {
+                            obj[key] = (long)ul;
+                        }
+                    }
+                }
+            }
+        }
     }
 }

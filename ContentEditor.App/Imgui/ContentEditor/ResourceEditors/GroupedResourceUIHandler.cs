@@ -23,7 +23,7 @@ public class GroupedResourceUIHandler : IObjectUIHandler
         foreach (var (type, res) in group.Resources) {
             ImGui.PushID(type);
             var subres = group.Get(type);
-            if (subres == null) {
+            if (subres == null || subres is NulledResource) {
                 ImGui.Text(type.PrettyPrint());
                 ImGui.SameLine();
                 ImGui.TextColored(Colors.Faded, Lang.General.ObjectIsNull);
@@ -40,7 +40,7 @@ public class GroupedResourceUIHandler : IObjectUIHandler
 
                     var subresourceType = field.Config.Subtypes![type];
                     var resource = workspace.ResourceManager.CreateSubResource(entity, field, ResourceState.Active, subresourceType);
-                    UndoRedo.RecordCallbackSetter(context, group, null, resource, (g, v) => g.Set(type, v));
+                    UndoRedo.RecordCallbackSetter(context, group, subres, resource, (g, v) => g.Set(type, v));
                     UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context);
                 }
                 ImGui.PopID();

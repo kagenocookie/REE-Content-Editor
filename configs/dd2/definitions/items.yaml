@@ -133,13 +133,18 @@ entities:
           nested: true
     runtime_mapping:
       runtime_type: item_data
+      require_runtime_data: true
       to_both:
         data: data
-        name: name
-        description: description
         enhanceData: enhance
         icon.icon_rect: icon_rect
         icon.icon_path: icon_path
+      to_desktop:
+        name: name
+        description: description
+      to_runtime:
+        name.Messages.English: name
+        description.Messages.English: description
 
   items.Weapon:
     enums:

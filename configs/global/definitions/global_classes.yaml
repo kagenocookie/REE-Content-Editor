@@ -5,3 +5,8 @@ classes:
     to_string: "Group ({Transform.Count}) - {Mesh}"
   via.dynamics.CompositeRigidBodyMeshSet.MeshInfo:
     to_string: "RB MeshSet - {Position} {Resource}"
+  via.GameObject:
+    fields:
+      Draw: { default: true }
+      Update: { default: true }
+      TimeScale: { default: -1.0 }

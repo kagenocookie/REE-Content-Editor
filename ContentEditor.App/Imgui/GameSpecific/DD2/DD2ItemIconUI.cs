@@ -103,10 +103,10 @@ public sealed class DD2ItemIconUI : IObjectUIHandler
             var v1 = new Vector2(instance.data.IconRect.w, instance.data.IconRect.h);
             var v1_2 = v1;
             if (ImGui.DragFloat2("Margin Left/Top", ref v0_2, 0.15f, 0, texture.Width)) {
-                UndoRedo.RecordCallbackSetter(context, instance.data, v0, v0_2, (d, v) => {d.IconRect.x = v.X; d.IconRect.y = v.Y; }, $"{context.GetHashCode()}_icon1");
+                UndoRedo.RecordCallbackSetter(context, instance.data, v0, v0_2, (d, v) => {d.IconRect.x = (int)Math.Round(v.X); d.IconRect.y = (int)Math.Round(v.Y); }, $"{context.GetHashCode()}_icon1");
             }
             if (ImGui.DragFloat2("Width/Height", ref v1_2, 0.15f, 0, texture.Height)) {
-                UndoRedo.RecordCallbackSetter(context, instance.data, v1, v1_2, (d, v) => {d.IconRect.w = v.X; d.IconRect.h = v.Y; }, $"{context.GetHashCode()}_icon2");
+                UndoRedo.RecordCallbackSetter(context, instance.data, v1, v1_2, (d, v) => {d.IconRect.w = (int)Math.Round(v.X); d.IconRect.h = (int)Math.Round(v.Y); }, $"{context.GetHashCode()}_icon2");
             }
 
             var wh = new Vector2(texture.Width, texture.Height);

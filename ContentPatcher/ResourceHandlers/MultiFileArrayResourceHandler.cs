@@ -46,8 +46,7 @@ public class MultiFileArrayResourceHandler : ResourceHandler, IResourceHandlerSt
         }
 
         var idField = idgen.Fields[0].Field;
-        var fieldType = RszInstance.RszFieldTypeToCSharpType(idField.type);
-        var castId = Convert.ChangeType(id, fieldType);
+        var castId = id.SafeBoxedID(idField.type);
 
         foreach (var item in list.Instances) {
             idgen.Fields[0].Set(item, castId);

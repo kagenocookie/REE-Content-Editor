@@ -95,6 +95,18 @@ public class Bundle : BaseBundle
         return EntityRecordUpdateType.Added;
     }
 
+    public bool RemoveEntity(string type, long id)
+    {
+        for (int i = 0; i < Entities.Count; i++) {
+            var other = Entities[i];
+            if (other.Type == type && other.Id == id) {
+                Entities.RemoveAt(i);
+                return true;
+            }
+        }
+        return false;
+    }
+
     public Dictionary<string, JsonElement> AddEnumData(string enumClassname)
     {
         Enums ??= new();
@@ -253,7 +265,6 @@ public class Bundle : BaseBundle
 
     public void Save()
     {
-        Touch();
         var outfilepath = Path.Combine(StoragePath, "bundle.json");
         if (!Directory.Exists(StoragePath)) {
             if (RuntimeBundle != null && File.Exists(RuntimeBundle.StoragePath)) {
@@ -262,12 +273,14 @@ public class Bundle : BaseBundle
 
             Directory.CreateDirectory(Path.GetDirectoryName(outfilepath)!);
         }
-        using var fs = File.Create(outfilepath);
-        JsonSerializer.Serialize(fs, this, jsonOptions);
+        // save runtime bundle first to ensure it has update timestamp <= desktop bundle
         if (RuntimeBundle != null) {
             RuntimeBundle.CopyFrom(this);
             RuntimeBundle.Save();
         }
+        Touch();
+        using var fs = File.Create(outfilepath);
+        JsonSerializer.Serialize(fs, this, jsonOptions);
     }
 
     public void Init(BundleManager bundleManager)

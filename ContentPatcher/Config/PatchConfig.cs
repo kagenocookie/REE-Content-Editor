@@ -174,7 +174,8 @@ public class PatchConfig(string filepath)
                     entity.RuntimeMapping.runtimeType,
                     entity.RuntimeMapping.ToRuntime,
                     entity.RuntimeMapping.ToDesktop,
-                    entity.RuntimeMapping.ToBoth
+                    entity.RuntimeMapping.ToBoth,
+                    entity.RuntimeMapping.requireRuntimeData
                 );
             }
         }
@@ -370,6 +371,15 @@ public class PatchConfig(string filepath)
         foreach (var field in config.Fields) {
             if (field.config.fieldId != null) {
                 field.IdField = field.config.fieldId;
+                if (field.IdField.field == "id") {
+                    // OK
+                } else if (config.GetField(field.IdField.field) == null) {
+                    Logger.Warn($"Unknown field {field.IdField.field} for entity {config.Name}");
+                }
+
+                if (field.IdField.path.StartsWith('{')) {
+                    field.IdField.formatter = new StringFormatter(field.IdField.path, FormatterSettings.CreateFullEntityFormatter(config, workspace));
+                }
                 field.IdField.Workspace = workspace;
             }
         }
@@ -381,6 +391,7 @@ public class PatchConfig(string filepath)
         config.IDField ??= config.PrimaryField;
         config.AllowCreateEmpty = entity.AllowCreateEmpty ?? (config.IDField.Config.CustomIDRange != null);
         config.AllowTemplates = entity.AllowTemplates ?? config.AllowCreateEmpty;
+        config.RequireRuntimeBundle = entity.RequireRuntimeBundle;
         config.PrimaryField.IsRequired = true;
         config.IDField.IsRequired = true;
         return config;

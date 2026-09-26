@@ -82,18 +82,28 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
             return;
         }
 
-        if (resource.CatalogEntry == null) {
-            resource.CatalogEntry = list.FirstOrDefault(item => idgen.GetID((RszInstance)item) == id) as RszInstance;
-        } else if (list.Contains(resource.CatalogEntry)) {
+        var existingCatalogEntry = list.FirstOrDefault(item => idgen.GetID((RszInstance)item) == id) as RszInstance;
+        if (resource.CatalogEntry != null && existingCatalogEntry != null && existingCatalogEntry != resource.CatalogEntry) {
+            list.Remove(existingCatalogEntry);
             catFile.Modified = true;
         }
-
         if (resource.CatalogEntry == null) {
-            if (catalogEntryClass == null) {
-                Logger.Error("Unknown catalog class for resource " + Config);
-                return;
+            resource.CatalogEntry = existingCatalogEntry;
+            if (resource.CatalogEntry == null) {
+                if (catalogEntryClass == null) {
+                    Logger.Error("Unknown catalog class for resource " + Config);
+                    return;
+                }
+                resource.CatalogEntry = workspace.CreateRszInstance(catalogEntryClass);
+                list.Add(resource.CatalogEntry);
+                catFile.Modified = true;
+                var idGenerator = (Config.IDGenerator ??= IDGenerator.GetGenerator(catalogEntryClass));
+                idGenerator.Fields[0].Set(resource.CatalogEntry, id.SafeBoxedID(idGenerator.Fields[0].Field.type));
             }
-            resource.CatalogEntry = workspace.CreateRszInstance(catalogEntryClass);
+        }
+
+        if (!list.Contains(resource.CatalogEntry)) {
+            list.Add(resource.CatalogEntry);
             catFile.Modified = true;
         }
 
@@ -101,13 +111,11 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
             PrefabLinkField.Set(resource.CatalogEntry, viaPrefab = workspace.CreateRszInstance(workspace.Env.Classes.Prefab));
             catFile.Modified = true;
         }
+        var name = $"{resource.ResourceType.Type}_{id}";
         var prefabPath = viaPrefab.Get(RszFieldCache.Prefab.Path);
         if (string.IsNullOrEmpty(prefabPath)) {
-            RszFieldCache.Prefab.Path.Set(viaPrefab, prefabPath = string.Concat(
-                PathUtils.GetFilepathWithoutExtensionOrVersion(resource.FileResourcePath),
-                "_",
-                PathUtils.GetExtensionWithoutPeriod(resource.FileResourcePath),
-                ".pfb"));
+            prefabPath = $"CustomCatalogs/{resource.ResourceType.Type}/{name}.pfb";
+            RszFieldCache.Prefab.Path.Set(viaPrefab, prefabPath);
             catFile.Modified = true;
         }
 
@@ -119,6 +127,7 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
         var go = pfb.GameObjects.FirstOrDefault();
         if (go == null) {
             go = new ReeLib.Pfb.PfbGameObject() { Instance = workspace.CreateRszInstance(workspace.Env.Classes.GameObject) };
+            RszFieldCache.GameObject.Name.Set(go.Instance, name);
             go.Components.Add(workspace.CreateRszInstance(workspace.Env.Classes.Transform));
             pfb.GameObjects.Add(go);
             catFile.Modified = true;
@@ -220,8 +229,7 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
         var catalogInstance = workspace.CreateRszInstance(catalogEntryClass);
         if (idgen.Fields.Length == 1) {
             var idField = idgen.Fields[0].Field;
-            var fieldType = RszInstance.RszFieldTypeToCSharpType(idField.type);
-            idgen.Fields[0].Set(catalogInstance, Convert.ChangeType(id, fieldType));
+            idgen.Fields[0].Set(catalogInstance, id.SafeBoxedID(idField.type));
         } else {
             throw new NotImplementedException("Unsupported rsz object id combination");
         }
@@ -235,8 +243,8 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
 
     public override void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources)
     {
-        Debug.Assert(componentClass != null);
-        var idgen = Config.IDGeneratorRequired;
+        Debug.Assert(catalogEntryClass != null);
+        var idgen = Config.IDGenerator ??= IDGenerator.GetGenerator(catalogEntryClass);
         foreach (var (id, resource) in resources) {
             UpdateCatalogEntry(resource, id, workspace);
         }

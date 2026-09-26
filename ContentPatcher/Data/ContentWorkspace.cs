@@ -244,6 +244,7 @@ public sealed class ContentWorkspace : IDisposable
             bundle.Enums = null;
         }
 
+        BundleManager.MapToRuntimeBundle(bundle);
         bundle.Save();
     }
 

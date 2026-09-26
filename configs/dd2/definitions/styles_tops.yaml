@@ -130,12 +130,16 @@ entities:
           skipFields: 1
     runtime_mapping:
       runtime_type: TopsBd
-      to_both:
-        mesh: Mesh
-        chain: Chain
-        cloth: Gpuc
-        clsp: Clsp
-        sfur: Sfur
+      to_desktop:
+        Mesh: mesh
+        Chain: chain
+        Gpuc: cloth
+        Clsp: clsp
+      to_runtime:
+        null.1: Mesh
+        null.2: Chain
+        null.3: Gpuc
+        null.4: Clsp
 
   items.styles.tops.TopsBdSkin:
     to_string: "TopsBdSkin {id:enum(app.CharacterEditDefine.TopsBdSkinID)} | {skin._Material}"
@@ -159,8 +163,10 @@ entities:
           skipFields: 1
     runtime_mapping:
       runtime_type: TopsBdSkin
-      to_both:
-        skin: Skin
+      to_desktop:
+        Skin: skin
+      to_runtime:
+        null.s: Skin
 
   items.styles.tops.TopsWbMesh:
     to_string: "TopsWbMesh {id:enum(app.CharacterEditDefine.TopsWbMeshID)} | {mesh._Mesh}"
@@ -211,12 +217,16 @@ entities:
           skipFields: 1
     runtime_mapping:
       runtime_type: TopsWb
-      to_both:
-        mesh: Mesh
-        chain: Chain
-        cloth: Gpuc
-        clsp: Clsp
-        sfur: Sfur
+      to_desktop:
+        Mesh: mesh
+        Chain: chain
+        Gpuc: cloth
+        Clsp: clsp
+      to_runtime:
+        null.1: Mesh
+        null.2: Chain
+        null.3: Gpuc
+        null.4: Clsp
 
   items.styles.tops.TopsWbSkin:
     to_string: "TopsWbSkin {id:enum(app.CharacterEditDefine.TopsWbSkinID)} | {skin._Material}"
@@ -240,8 +250,10 @@ entities:
           skipFields: 1
     runtime_mapping:
       runtime_type: TopsWbSkin
-      to_both:
-        skin: Skin
+      to_desktop:
+        Skin: skin
+      to_runtime:
+        null.s: Skin
 
   items.styles.tops.TopsAmMesh:
     to_string: "TopsAmMesh {id:enum(app.CharacterEditDefine.TopsAmMeshID)} | {mesh._Mesh}"
@@ -285,11 +297,16 @@ entities:
           skipFields: 1
     runtime_mapping:
       runtime_type: TopsAm
-      to_both:
-        mesh: Mesh
-        chain: Chain
-        cloth: Gpuc
-        clsp: Clsp
+      to_desktop:
+        Mesh: mesh
+        Chain: chain
+        Gpuc: cloth
+        Clsp: clsp
+      to_runtime:
+        null.1: Mesh
+        null.2: Chain
+        null.3: Gpuc
+        null.4: Clsp
 
   items.styles.tops.TopsAmSkin:
     to_string: "TopsAmSkin {id:enum(app.CharacterEditDefine.TopsAmSkinID)} | {skin._Material}"
@@ -313,8 +330,10 @@ entities:
           skipFields: 1
     runtime_mapping:
       runtime_type: TopsAmSkin
-      to_both:
-        skin: Skin
+      to_desktop:
+        Skin: skin
+      to_runtime:
+        null.s: Skin
 
   items.styles.tops.TopsBtMesh:
     to_string: "TopsBtMesh {id:enum(app.CharacterEditDefine.TopsBtMeshID)} | {mesh._Mesh}"
@@ -351,10 +370,14 @@ entities:
           skipFields: 1
     runtime_mapping:
       runtime_type: TopsBt
-      to_both:
-        mesh: Mesh
-        chain: Chain
-        clsp: Clsp
+      to_desktop:
+        Mesh: mesh
+        Chain: chain
+        Clsp: clsp
+      to_runtime:
+        null.1: Mesh
+        null.2: Chain
+        null.3: Clsp
 
   items.styles.tops.TopsBtSkin:
     to_string: "TopsBtSkin {id:enum(app.CharacterEditDefine.TopsBtSkinID)} | {skin._Material}"
@@ -378,8 +401,10 @@ entities:
           skipFields: 1
     runtime_mapping:
       runtime_type: TopsBtSkin
-      to_both:
-        skin: Skin
+      to_desktop:
+        Skin: skin
+      to_runtime:
+        null.s: Skin
 
 classes:
   app.TopsSwapItem:

@@ -90,39 +90,39 @@ public class MsgFileResourceHandler : ResourceHandler, IResourceHandlerStatic
             }
 
             foreach (var (hash, entry) in resources) {
-                var msgEntry = msgFile.FindEntryByKeyHash((uint)hash);
+                var storedEntry = msgFile.FindEntryByKeyHash((uint)hash);
                 if (entry is NulledResource) {
-                    if (msgEntry != null) {
-                        msgFile.Entries.Remove(msgEntry);
+                    if (storedEntry != null) {
+                        msgFile.Entries.Remove(storedEntry);
                     }
                     continue;
                 }
 
                 var data = ((MessageData)entry);
-                if (msgEntry == null) {
+                if (storedEntry == null) {
                     if (!string.IsNullOrEmpty(data.FileResourcePath) && !data.FileResourcePath.Equals(file, StringComparison.OrdinalIgnoreCase)) {
                         continue;
                     }
 
                     data.FileResourcePath = file;
-                    msgEntry = msgFile.AddNewEntry(data.MessageKey);
+                    storedEntry = msgFile.AddNewEntry(data.MessageKey);
                 }
 
                 foreach (var (lang, text) in data.Messages) {
                     var langIndex = (int)Enum.Parse<Language>(lang);
-                    msgEntry.Strings[langIndex] = text;
+                    storedEntry.Strings[langIndex] = text;
                 }
 
                 foreach (var (attr, value) in data.Attributes) {
-                    msgEntry.SetAttribute(attr, value);
+                    storedEntry.SetAttribute(attr, value);
                 }
 
                 if (data.SoundID != 0) {
-                    msgEntry.Header.soundId = data.SoundID;
+                    storedEntry.Header.soundId = data.SoundID;
                 }
                 if (data.Guid == Guid.Empty) {
                     if (data.Guid == Guid.Empty) data.Guid = Guid.NewGuid();
-                    msgEntry.Header.guid = data.Guid;
+                    storedEntry.Header.guid = data.Guid;
                 }
             }
         }

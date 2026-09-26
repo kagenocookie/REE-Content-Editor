@@ -70,6 +70,10 @@
               "runtime_type": {
                 "type": "string"
               },
+              "require_runtime_data": {
+                "description": "Whether this entity type requires runtime bundle data to function properly.",
+                "type": "boolean"
+              },
               "to_runtime": {
                 "type": "object",
                 "description": "Mapping of full JSON path strings where key = desktop bundle path, value = runtime bundle path.",
@@ -92,7 +96,8 @@
                 }
               }
             },
-            "required": ["runtime_type"]
+            "required": ["runtime_type"],
+            "additionalProperties": false
           }
         },
         "required": ["fields"],

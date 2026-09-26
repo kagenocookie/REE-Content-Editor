@@ -143,27 +143,31 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
 
         var entityTypes = bundle.Entities.Select(e => e.Type).Distinct().ToList();
         foreach (var type in entityTypes) {
-            var data = entities[type];
+            if (!entities.TryGetValue(type, out var data)) {
+                continue;
+            }
             LoadBundleEntitiesAsBase(bundle, type, data);
         }
 
         var modifiedResources = new HashSet<string>();
         foreach (var e in bundle.Entities) {
             if (e.Data == null) continue;
-            var config = entities[e.Type];
+            if (!entities.TryGetValue(e.Type, out var config)) {
+                continue;
+            }
             var resourceEntity = (config.instances!)[e.Id];
 
             foreach (var (f, data) in e.Data) {
                 var realData = resourceEntity.Get(f);
                 var field = config.config.GetField(f);
                 if (field != null && realData != null) {
-                    modifiedResources.Add(realData.ResourceType.Type);
+                    modifiedResources.Add(field.Config.Type);
                 }
             }
         }
 
         foreach (var type in modifiedResources) {
-            if (!this.resources.TryGetValue(type, out var resourceData)) {
+            if (!resources.TryGetValue(type, out var resourceData)) {
                 // non-patchable resources (e.g. custom fields like new item icons)
                 // should get transferred via the bundle's file copy mechanism
                 continue;
@@ -694,6 +698,9 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             entity = new ResourceEntity(primaryId, type, data.config);
             entity.Set(primaryField.name, primaryResource);
         }
+        // update the enums now in case any of the other fields depend on it
+        // it also means that primary enums must rely only on id/primary fields
+        data.config.PrimaryEnum?.UpdateEnum(workspace, entity);
 
         foreach (var field in data.config.Fields) {
             if (field == primaryField || field == idField) {
@@ -705,7 +712,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             }
 
             IContentResource? fieldResource = null;
-            if (initialData != null && initialData.TryGetValue(field.name, out var src) && !src.IsNulled()) {
+            if (initialData != null && initialData.TryGetValue(field.name, out var src) && src != null && !src.IsNulled()) {
                 fieldResource = CreateEntityFieldInternal(entity, field, ResourceState.Active, field.Config, src);
             } else if (field.IsRequired) {
                 var resource = CreateEntityFieldInternal(entity, field, ResourceState.Active, field.Config, null);
@@ -1096,19 +1103,26 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             return null;
         }
 
-        string filename = $"{format}_{Random.Shared.Next().ToString("X")}.{ext}";
         if (workspace.Env.TryGetFileExtensionVersion(ext, out var version)) {
+            if (filepath != null && !filepath.EndsWith(version.ToString())) {
+                if (filepath.EndsWith(ext)) {
+                    filepath = $"{filepath}.{version}";
+                } else {
+                    filepath = $"{filepath}.{ext}.{version}";
+                }
+            }
             ext += "." + version;
         }
+        filepath ??= $"{format}_{Random.Shared.Next().ToString("X")}.{ext}";
         var fmt = new REFileFormat(format, version);
 
-        var loader = GetLoaderForFile(filename, fmt);
+        var loader = GetLoaderForFile(filepath, fmt);
         if (loader == null) {
             Logger.Error($"No loader available for {format} file .{ext}");
             return null;
         }
 
-        return CreateNewFile(loader, filepath ?? format.ToString(), ext);
+        return CreateNewFile(loader, filepath, ext);
     }
 
     public FileHandle? CreateNewFile(IFileLoader loader, string baseName, string extension)
@@ -1415,6 +1429,18 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
                 resource = new NulledResource(field.Config, prevValue.FileResourcePath);
                 resourceData.activeInstances[fieldId] = resource;
                 entity.Set(fieldName, resource);
+            } else if (prevResource is GroupedResource grp) {
+                if (grp.Resources.Any(r => !string.IsNullOrEmpty(r.Value?.FileResourcePath))) {
+                    var nullGroup = new GroupedResource(prevResource.ResourceType, grp.Resources.Keys);
+                    foreach (var (k, v) in grp.Resources) {
+                        nullGroup.Set(k, string.IsNullOrEmpty(v?.FileResourcePath) ? null : new NulledResource(v.ResourceType, v.FileResourcePath));
+                    }
+                    resource = nullGroup;
+                    resourceData.activeInstances[fieldId] = resource;
+                    entity.Set(fieldName, resource);
+                } else {
+                    entity.Set(fieldName, null);
+                }
             } else {
                 entity.Set(fieldName, null);
             }

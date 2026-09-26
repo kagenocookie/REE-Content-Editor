@@ -27,7 +27,15 @@ public class GroupResourceHandler : ResourceHandler, IResourceHandlerStatic
         foreach (var (type, subconfig) in Config.Subtypes!) {
             var subdata = data?[type];
             var subvalue = group.Get(type);
-            subvalue = subconfig.resource.Resource.ApplyResourceData(workspace, subvalue, subdata, entity);
+            if (subdata.IsNulled()) {
+                if (string.IsNullOrEmpty(subvalue?.FileResourcePath)) {
+                    subvalue = null;
+                } else if (subvalue is not NulledResource) {
+                    subvalue = new NulledResource(subconfig, subvalue.FileResourcePath);
+                }
+            } else {
+                subvalue = subconfig.resource.Resource.ApplyResourceData(workspace, subvalue, subdata, entity);
+            }
             group.Set(type, subvalue);
         }
 

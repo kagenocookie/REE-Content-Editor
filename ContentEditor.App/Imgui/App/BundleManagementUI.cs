@@ -365,12 +365,12 @@ public class BundleManagementUI : IWindowHandler
 
                         ImGui.Text(typeStr);
                         ImGui.SameLine();
-                        var label = e.TryGetPropertyValue("label", out var labelNode) ? labelNode!.GetValue<string>() : null;
+                        var label = e.TryGetPropertyValue("label", out var labelNode) ? labelNode?.GetValue<string>() : null;
                         if (label == null) {
-                            label = e.TryGetPropertyValue("id", out var idNode) ? idNode!.GetValue<string>() : null;
+                            label = e.TryGetPropertyValue("id", out var idNode) ? idNode?.GetValue<string>() : null;
                         }
                         if (label == null) {
-                            ImGui.Text(Lang.Bundles.UnknownLegacyEntityType);
+                            ImGui.Text(Lang.Bundles.UnknownEntityType.Format(typeStr));
                         } else {
                             ImGui.Text(label);
                         }
@@ -385,7 +385,23 @@ public class BundleManagementUI : IWindowHandler
                 var entityFilter = selectedEntityType > 0 && selectedEntityType < types.Length ? types[selectedEntityType] : null;
                 foreach (var e in bundle.Entities) {
                     if (entityFilter != null && e.Type != entityFilter) continue;
-                    ImGui.Text($"{e.Type} {e.Id} : {e.Label}");
+                    ImGui.PushID(e.GetHashCode());
+                    var cfg = workspace?.ResourceManager.GetEntityConfig(e.Type);
+                    if (ImGui.Button($"{AppIcons.SI_GenericDelete}")) {
+                        bundle.RemoveEntity(e.Type, e.Id);
+                        ImGui.PopID();
+                        break;
+                    }
+                    ImguiHelpers.Tooltip(Lang.Buttons.Delete);
+                    ImGui.SameLine();
+                    if (cfg == null) {
+                        ImGui.Text($"{e.Type} {e.Id} : {e.Label}");
+                        ImGui.SameLine();
+                        ImGui.TextColored(Colors.Warning, Lang.Bundles.UnknownEntityType.Format(e.Type));
+                    } else {
+                        ImGui.Text($"{e.Type} {e.Id} : {e.Label}");
+                    }
+                    ImGui.PopID();
                 }
                 ImGui.TreePop();
             }

@@ -23,6 +23,7 @@ public class EntityConfig(string name)
 
     public bool AllowCreateEmpty { get; set; }
     public bool AllowTemplates { get; set; }
+    public bool RequireRuntimeBundle { get; set; }
 
     public bool HasField(string name) => GetField(name) != null;
     public EntityField? GetField(string name) => Fields.FirstOrDefault(f => f.name == name);
@@ -48,6 +49,7 @@ public partial class EntityConfigSerialized
 
     public bool? AllowCreateEmpty { get; set; }
     public bool? AllowTemplates { get; set; }
+    public bool RequireRuntimeBundle { get; set; }
 
     public RuntimeMappingConfig? RuntimeMapping { get; set; }
 }
@@ -56,6 +58,7 @@ public partial class EntityConfigSerialized
 public partial class RuntimeMappingConfig
 {
     public string runtimeType = "";
+    public bool requireRuntimeData = false;
     public Dictionary<string, string> ToRuntime { get; set; } = new();
     public Dictionary<string, string> ToDesktop { get; set; } = new();
     public Dictionary<string, string> ToBoth { get; set; } = new();
@@ -134,6 +137,11 @@ public partial class EntityEnumInfo
         // May cause issues if the user swaps bundles or if we ever support changing IDs in runtime.
 
         var desc = workspace.Env.TypeCache.GetEnumDescriptor(name);
-        desc.AddValue(entity.Id, formatter?.GetString(entity) ?? NonAlphanumericRegex().Replace(entity.Label, ""), entity.Label);
+        var curLabel = desc.GetLabel(Convert.ChangeType(entity.Id, desc.BackingType));
+        if (string.IsNullOrEmpty(curLabel)) {
+            desc.AddValue(entity.Id, formatter?.GetString(entity) ?? NonAlphanumericRegex().Replace(entity.Label, ""), entity.Label);
+        } else {
+            desc.SetDisplayLabel(curLabel, entity.Label);
+        }
     }
 }

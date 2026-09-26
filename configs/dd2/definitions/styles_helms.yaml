@@ -118,6 +118,37 @@ entities:
         type: resource_proxy_pfb
         params:
           skipFields: 1
+    # wrap deformer ID is not a dedicated enum but instead the hash of a trimmed string (helm_001 instead of helm_001_m)
+    # see app.CharacterEditManager:setupHelmWrapDeformerHash()
+    - name: wrap
+      field_id:
+        field: id
+        path: "{:enum_name(app.CharacterEditDefine.HelmMeshID):{:parse(^helm_\\\\d+):{:hash()}}}"
+      resource:
+        type: group
+        id: [_Hash]
+        classname: app.PartSwapCatalog.Item
+        subtypes:
+          humanMale:
+            file: AppSystem/CharaEdit/ch000/Catalog/HelmWrapDeformerCatalog_HM_Default.user
+            type: resource_proxy_pfb
+            params:
+              skipFields: 1
+          humanFemale:
+            file: AppSystem/CharaEdit/ch000/Catalog/HelmWrapDeformerCatalog_HF_Default.user
+            type: resource_proxy_pfb
+            params:
+              skipFields: 1
+          beastMale:
+            file: AppSystem/CharaEdit/ch000/Catalog/HelmWrapDeformerCatalog_BM_Default.user
+            type: resource_proxy_pfb
+            params:
+              skipFields: 1
+          beastFemale:
+            file: AppSystem/CharaEdit/ch000/Catalog/HelmWrapDeformerCatalog_BF_Default.user
+            type: resource_proxy_pfb
+            params:
+              skipFields: 1
     - name: sfur
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/HelmShellFurCatalog_Default.user
@@ -126,13 +157,29 @@ entities:
         params:
           skipFields: 1
           catalogClassname: app.PartSwapCatalog.Item
-    # runtime_mapping:
-    #   runtime_type: HelmMesh
-    #   to_both:
-    #     humanMesh: HumanMesh
-    #     beastMesh: BeastMesh
-    #     chain: Chain
-    #     clsp: Clsp
+    runtime_mapping:
+      runtime_type: Helm
+      to_desktop:
+        Mesh: humanMesh
+        Chain_Human: humanChain
+        Chain_Beastren: beastChain
+        Gpuc_Human: humanGpuCloth
+        Gpuc_Beastren: beastGpuCloth
+        WrapDeformer_Human_Male: wrap.humanMale
+        WrapDeformer_Human_Female: wrap.humanFemale
+        WrapDeformer_Beastren_Male: wrap.beastMale
+        WrapDeformer_Beastren_Female: wrap.beastFemale
+      to_runtime:
+        null.m: Mesh
+        null.c1: Chain_Human
+        null.c2: Chain_Beastren
+        null.g1: Gpuc_Human
+        null.g2: Gpuc_Beastren
+        null.c: Clsp
+        wrap.w1: WrapDeformer_Human_Male
+        wrap.w2: WrapDeformer_Human_Female
+        wrap.w3: WrapDeformer_Beastren_Male
+        wrap.w4: WrapDeformer_Beastren_Female
 
   items.styles.helms.HelmSkin:
     to_string: "HelmSkin {id:enum(app.CharacterEditDefine.HelmSkinID)} | {skin._Material}"
@@ -165,9 +212,9 @@ classes:
     fields:
       _HelmStyle: { readOnly: true }
       _Gender: { readOnly: true }
-      _MeshID: { enum: HelmMesh, label: Mesh }
-      _SkinID: { enum: HelmSkin, label: Skin }
-      _SubMeshID: { enum: HelmMesh, label: Sub Mesh }
-      _SubSkinID: { enum: HelmSkin, label: Sub Skin }
+      _MeshID: { enum: HelmMesh }
+      _SkinID: { enum: HelmSkin }
+      _SubMeshID: { enum: HelmMesh }
+      _SubSkinID: { enum: HelmSkin }
       _PartsEnable: { default: 3301758204931 }
       _SubPartsEnable: { default: 3301758204931 }

@@ -1,3 +1,4 @@
+using ContentEditor.Editor;
 using VYaml.Annotations;
 
 namespace ContentPatcher;
@@ -6,6 +7,8 @@ namespace ContentPatcher;
 public partial record EntityProperty(string field, string path)
 {
     public ContentWorkspace Workspace { get; set; } = null!;
+
+    public StringFormatter? formatter;
 
     public static EntityProperty Deserialize(ContentWorkspace workspace, Dictionary<object, object> data)
     {
@@ -22,6 +25,12 @@ public partial record EntityProperty(string field, string path)
     {
         if (instance is not ResourceEntity entity) {
             throw new NotImplementedException();
+        }
+        if (field == "id") {
+            if (formatter != null) {
+                return formatter.GetString(entity.Id);
+            }
+            return entity.Id;
         }
         var value = entity.Get(field);
         if (value is IPropertyContainer pc) {

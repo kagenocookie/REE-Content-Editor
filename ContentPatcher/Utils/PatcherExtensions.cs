@@ -33,4 +33,16 @@ public static class PatcherExtensions
 
         return node.GetValueKind() == System.Text.Json.JsonValueKind.String && node.GetValue<string>() == "null";
     }
+
+    public static object SafeBoxedID(this long id, RszFieldType targetType)
+    {
+        switch (targetType) {
+            case RszFieldType.S16:
+                return (short)Convert.ToUInt16(id);
+            case RszFieldType.S8:
+                return (sbyte)Convert.ToByte(id);
+            default:
+                return Convert.ChangeType(id, RszInstance.RszFieldTypeToCSharpType(targetType));
+        }
+    }
 }

@@ -55,8 +55,7 @@ public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
         }
 
         var idField = idgen.Fields[0];
-        var fieldType = RszInstance.RszFieldTypeToCSharpType(idField.Field.type);
-        var castId = Convert.ChangeType(id, fieldType);
+        var castId = id.SafeBoxedID(idField.Field.type);
 
         if (res is RSZObjectListResource list) {
             foreach (var item in list.Instances) {
@@ -134,7 +133,7 @@ public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
 
             if (Config.SubIDGenerator != null) {
                 foreach (var resource in ((RSZObjectListResource)item).Instances) {
-                    outList.Add(item);
+                    outList.Add(resource);
                 }
             } else {
                 var citem = (RSZObjectResource)item;

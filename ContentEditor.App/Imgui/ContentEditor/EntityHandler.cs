@@ -37,7 +37,17 @@ public class EntityHandler : IObjectUIHandler
                 if (field != null && !field.IsRequired) {
                     using var pfb = ImguiHelpers.InlinePrefix();
                     if (ImGui.Button($"{AppIcons.SI_GenericDelete}")) {
-                        UndoRedo.RecordCallbackSetter(context, instance, fieldValue, null, (e, v) => workspace!.ResourceManager.UpdateEntityField(e, field.name, v));
+                        // setting it early so we get a NulledResource when needed instead of raw null
+                        // this way undo/redo shouldn't break
+                        workspace!.ResourceManager.UpdateEntityField(instance, field.name, null);
+                        bool isFirstSet = true;
+                        UndoRedo.RecordCallbackSetter(context, instance, fieldValue, instance.Get(field.name), (e, v) => {
+                            if (isFirstSet) {
+                                isFirstSet = false;
+                                return;
+                            }
+                            workspace!.ResourceManager.UpdateEntityField(e, field.name, v);
+                        });
                         UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context);
                         ImGui.PopID();
                         return;
@@ -78,12 +88,10 @@ public class EntityHandler : IObjectUIHandler
                 return;
             }
 
-            // TODO if merged-group resource type, show subtype selection here when possible
-
             var resource = workspace.ResourceManager.CreateEntityField(entity, field, ResourceState.Active);
-            // note: we dont't need to use context.Set() here since we're clearing the context either way
+            // note: we don't need to use context.Set() here since we're clearing the context either way
 
-            UndoRedo.RecordCallbackSetter(context, entity, null, resource, (e, v) => workspace.ResourceManager.UpdateEntityField(e, field.name, v));
+            UndoRedo.RecordCallbackSetter(context, entity, context.Get<IContentResource?>(), resource, (e, v) => workspace.ResourceManager.UpdateEntityField(e, field.name, v));
             UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, parentContext);
         }
     }

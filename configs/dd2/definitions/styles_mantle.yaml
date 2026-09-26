@@ -92,11 +92,16 @@ entities:
           skipFields: 1
     runtime_mapping:
       runtime_type: Mantle
-      to_both:
-        mesh: Mesh
-        chain: Chain
-        clsp: Clsp
-        cloth: Cloth
+      to_desktop:
+        Mesh: mesh
+        Chain: chain
+        Gpuc: cloth
+        Clsp: clsp
+      to_runtime:
+        null.1: Mesh
+        null.2: Chain
+        null.3: Gpuc
+        null.4: Clsp
 
   items.styles.mantle.MantleSkin:
     to_string: "MantleSkin {id:enum(app.CharacterEditDefine.MantleSkinID)} | {skin._Material}"
@@ -120,8 +125,10 @@ entities:
           skipFields: 1
     runtime_mapping:
       runtime_type: MantleSkin
-      to_both:
-        skin: Skin
+      to_desktop:
+        Skin: skin
+      to_runtime:
+        null.s: Skin
 
 classes:
   app.MantleSwapItem:

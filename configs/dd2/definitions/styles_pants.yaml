@@ -106,13 +106,18 @@ entities:
         params:
           skipFields: 1
           catalogClassname: app.PartSwapCatalog.Item
-    # runtime_mapping:
-    #   runtime_type: PantsLgMesh
-    #   to_both:
-    #     mesh: mesh
-    #     beastMesh: BeastMesh
-    #     chain: Chain
-    #     clsp: Clsp
+    runtime_mapping:
+      runtime_type: PantsLg
+      to_desktop:
+        Mesh: mesh
+        Chain: chain
+        Gpuc: cloth
+        Clsp: clsp
+      to_runtime:
+        null.1: Mesh
+        null.2: Chain
+        null.3: Gpuc
+        null.4: Clsp
 
   items.styles.pants.PantsLgSkin:
     to_string: "PantsLgSkin {id:enum(app.CharacterEditDefine.PantsLgSkinID)} | {skin._Material}"
@@ -136,8 +141,10 @@ entities:
           skipFields: 1
     runtime_mapping:
       runtime_type: PantsLgSkin
-      to_both:
-        skin: Skin
+      to_desktop:
+        Skin: skin
+      to_runtime:
+        null.s: Skin
 
   items.styles.pants.PantsWlMesh:
     to_string: "PantsWlMesh {id:enum(app.CharacterEditDefine.PantsWlMeshID)} | {mesh._Mesh}"
@@ -186,13 +193,18 @@ entities:
         params:
           skipFields: 1
           catalogClassname: app.PartSwapCatalog.Item
-    # runtime_mapping:
-    #   runtime_type: PantsWlMesh
-    #   to_both:
-    #     mesh: mesh
-    #     beastMesh: BeastMesh
-    #     chain: Chain
-    #     clsp: Clsp
+    runtime_mapping:
+      runtime_type: PantsWl
+      to_desktop:
+        Mesh: mesh
+        Chain: chain
+        Gpuc: cloth
+        Clsp: clsp
+      to_runtime:
+        null.1: Mesh
+        null.2: Chain
+        null.3: Gpuc
+        null.4: Clsp
 
   items.styles.pants.PantsWlSkin:
     to_string: "PantsWlSkin {id:enum(app.CharacterEditDefine.PantsWlSkinID)} | {skin._Material}"
@@ -216,8 +228,10 @@ entities:
           skipFields: 1
     runtime_mapping:
       runtime_type: PantsWlSkin
-      to_both:
-        skin: Skin
+      to_desktop:
+        Skin: skin
+      to_runtime:
+        null.s: Skin
 
 classes:
   app.PantsSwapItem:

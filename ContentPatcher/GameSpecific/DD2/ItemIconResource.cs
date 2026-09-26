@@ -35,10 +35,10 @@ public class ItemIconResource(ResourceConfig config) : IContentResource
 
     public class ItemRect
     {
-        public float x;
-        public float y;
-        public float h = 160;
-        public float w = 144;
+        public int x;
+        public int y;
+        public int h = 160;
+        public int w = 144;
 
         public override string ToString() => $"{x} {y} {w} {h}";
     }
