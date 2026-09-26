@@ -198,9 +198,18 @@ public class PatchConfig(string filepath)
 
                     // ensure we type the default values correctly
                     if (f.DefaultValue != null) {
-                        var cstype = RszInstance.RszFieldTypeToCSharpType(targetField.type);
-                        if (f.DefaultValue.GetType() != cstype) {
-                            f.DefaultValue = Convert.ChangeType(f.DefaultValue, cstype);
+                        if (targetField.type is RszFieldType.String or RszFieldType.Resource) {
+                            f.DefaultValue = f.DefaultValue.ToString();
+                        } else {
+                            var cstype = RszInstance.RszFieldTypeToCSharpType(targetField.type);
+                            if (f.DefaultValue.GetType() != cstype) {
+                                if (cstype.GetInterface(nameof(IConvertible), false) != null) {
+                                    f.DefaultValue = Convert.ChangeType(f.DefaultValue, cstype);
+                                } else {
+                                    f.DefaultValue = JsonSerializer.SerializeToElement(f.DefaultValue)
+                                        .Deserialize(cstype, JsonConfig.jsonOptionsIncludeFields);
+                                }
+                            }
                         }
                     }
                 }

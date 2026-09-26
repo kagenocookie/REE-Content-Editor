@@ -245,7 +245,7 @@ public class RszClassnamePickerHandler(string? baseClass = null, string label = 
                         if (cls == null) {
                             Logger.Error("Invalid classname " + classInput);
                         } else {
-                            var newInstance = RszInstance.CreateInstance(ws!.Env.RszParser, cls);
+                            var newInstance = ws.CreateRszInstance(cls);
                             if (instance != null) newInstance.CopyCommonValueFieldsFrom(instance);
                             UndoRedo.RecordSet(context, newInstance, postChangeAction: (ctx) => {
                                 ctx.ClearChildren();
@@ -292,7 +292,7 @@ public class RszListInstanceHandler : ListHandlerTyped<RszInstance>
         if (cls == null) {
             return null;
         } else {
-            return RszInstance.CreateInstance(ws.Env.RszParser, cls);
+            return ws.CreateRszInstance(cls);
         }
     }
 
@@ -337,7 +337,7 @@ public class SwappableRszInstanceHandler(string? baseClass = null, bool referenc
                     if (cls == null) {
                         Logger.Error("Invalid classname " + classInput);
                     } else {
-                        var newInstance = RszInstance.CreateInstance(ws!.Env.RszParser, cls);
+                        var newInstance = ws.CreateRszInstance(cls);
                         UndoRedo.RecordSet(context, newInstance, postChangeAction: (ctx) => {
                             ctx.ClearChildren();
                             WindowHandlerFactory.SetupRSZInstanceHandler(ctx);
@@ -467,7 +467,7 @@ public class NestedRszInstanceHandler : IObjectUIHandler
                 if (cls == null) {
                     Logger.Error("Class not found");
                 } else {
-                    UndoRedo.RecordSet(context, RszInstance.CreateInstance(ws.Env.RszParser, cls));
+                    UndoRedo.RecordSet(context, ws.CreateRszInstance(cls));
                 }
             }
             ImGui.PopID();
@@ -564,14 +564,20 @@ public class ArrayRSZHandler : BaseListHandler
         if (_field.type is RszFieldType.Resource or RszFieldType.String) {
             return "";
         }
-        var env = context.GetWorkspace();
-        if (env == null) return null;
+        var ws = context.GetWorkspace();
+        if (ws == null) return null;
         string? classname = GetElementClassnameType(context);
         if (classname == null) {
             Logger.Error("Could not determine array element type");
             return null;
         }
-        return RszInstance.CreateArrayItem(env.Env.RszParser, _field, classname, env.Env.UsesEmbeddedUserdataAny);
+        if (_field.type is RszFieldType.Object or RszFieldType.Struct) {
+            var cls = ws.Env.RszParser.GetRSZClass(classname);
+            if (cls != null) {
+                return ws.CreateRszInstance(cls);
+            }
+        }
+        return RszInstance.CreateArrayItem(ws.Env.RszParser, _field, classname, ws.Env.UsesEmbeddedUserdataAny);
     }
 }
 

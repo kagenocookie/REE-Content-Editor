@@ -1,5 +1,5 @@
 entities:
-  items.item_data:
+  items.ItemData:
     enums:
     - name: app.ItemIDEnum
       format: "It{id:D06}"
@@ -67,6 +67,14 @@ entities:
       # if we used vanilla tech, there would be a uvs file, added to the item master uvs file, and then an ID taken from there
       # alternatively we use content editor runtime tech, the patch needs to be saved as a CE bundle with tex and rect info
       field_type: DD2_ItemIcon
+    - name: DD2_StylePreview
+      field_type: DD2_StylePreview
+      display_after: description
+      required: true
+      resource:
+        params:
+          dataField: ""
+          partField: ""
     - name: enhanceData
       label: Enhance data
       display_after: icon
@@ -133,12 +141,12 @@ entities:
         icon.icon_rect: icon_rect
         icon.icon_path: icon_path
 
-  items.weapon:
+  items.Weapon:
     enums:
     - name: app.WeaponID
       format: "{name}"
       primary: true # denotes that the entity label should override this enum's corresponding display labels (entity id == enum value)
-    to_string: 'Weapon {id:enum(app.WeaponID)} (#{id}): {id:reverseLookupEntity(item_data|\{data?._WeaponId@ItemWeaponParam\}|\{label\}|Unknown item)}'
+    to_string: 'Weapon {id:enum(app.WeaponID)} (#{id}): {id:reverseLookupEntity(ItemData|\{data?._WeaponId@ItemWeaponParam\}|\{label\}|Unknown item)}'
     fields:
       - name: data
         label: Data
@@ -160,21 +168,32 @@ entities:
             tooltip: Enter a name for the weapon ID. This should be unique across all weapons.
             initial: "{id:enum(app.WeaponID)}"
             diffable: false
-      - name: offsets
-        label: Offset setting
+      - name: prefab
+        label: Weapon prefab
+        required: true
+        field_type: resource_link
         resource:
-          id: [ID]
-          type: array-file
-          classname: app.WeaponSetting.OffsetSetting
-          file: AppSystem/Equipment/wp/WeaponSetting.user
-      # - name: prefab
-      #   label: Weapon prefab
-      #   required: true
-      #   field_type: resource_link
-      #   resource:
-      #     resource_type: prefab
-      #     params:
-      #       path: "{data?.Prefab?.Path}"
+          resource_type: prefab
+          params:
+            path: "{data?.Prefab?.Path}"
+    runtime_mapping:
+      runtime_type: weapon
+      to_desktop:
+        id: data.Prefab.ID
+      to_both:
+        data.Prefab.Path: prefab._Item
+  items.WeaponOffset:
+    to_string: "Weapon Offset {id:enum(app.WeaponID)}"
+    fields:
+    - name: data
+      required: true
+      resource:
+        type: array-file
+        id: [ID]
+        classname: app.WeaponSetting.OffsetSetting
+        file: AppSystem/Equipment/wp/WeaponSetting.user
+        params:
+          nested: false
   items.WorldModel:
     to_string: "WorldModel {id} | {model._Mesh}"
     fields:
@@ -197,8 +216,8 @@ classes:
       _Id: { readOnly: true }
       _ModelId: { enum: WorldModel }
       _Attr: { enum: app.ItemAttrBits }
-      _FakeItemId: { enum: item_data }
-      _DecayedItemId: { enum: item_data }
+      _FakeItemId: { enum: ItemData }
+      _DecayedItemId: { enum: ItemData }
       _UseAttr: { enum: app.ItemUseAttrBits }
   app.ItemWeaponParam:
     fields:
@@ -206,6 +225,7 @@ classes:
       _ModelId: { enum: WorldModel }
       _Attr: { enum: app.ItemAttrBits }
       _Job: { enum: ce.ItemJobFlags }
+      _WeaponId: { enum: weapon }
   app.ItemArmorParam:
     fields:
       _Id: { readOnly: true }
@@ -227,46 +247,43 @@ classes:
     to_string: ArmorEnhanceParam {_Type:enum(app.EnhanceType)} {_EnhanceNo}
     fields:
       _Type: { enum: app.EnhanceType }
-      _ItemId: { enum: item_data, readOnly: true }
-      _NeedItemId0: { enum: item_data }
-      _NeedItemId1: { enum: item_data }
+      _ItemId: { enum: ItemData, readOnly: true }
+      _NeedItemId0: { enum: ItemData }
+      _NeedItemId1: { enum: ItemData }
   app.WeaponEnhanceParam:
     to_string: WeaponEnhanceParam {_Type:enum(app.EnhanceType)} {_EnhanceNo}
     fields:
       _Type: { enum: app.EnhanceType }
-      _ItemId: { enum: item_data, readOnly: true }
-      _NeedItemId0: { enum: item_data }
-      _NeedItemId1: { enum: item_data }
+      _ItemId: { enum: ItemData, readOnly: true }
+      _NeedItemId0: { enum: ItemData }
+      _NeedItemId1: { enum: ItemData }
   app.ItemMixParam:
-    to_string: "Mix Param {_ItemId:entity(item_data)}  (x{_Num})"
+    to_string: "Mix Param {_ItemId:entity(ItemData)}  (x{_Num})"
     fields:
-      _ItemId: { enum: item_data } # note: not read only because we currently can't preselect the Id on array item creation
-      _MaterialA: { tooltip: 'Combination requires any MaterialA + any MaterialB item', enum: item_data }
-      _MaterialB: { tooltip: 'Combination requires any MaterialA + any MaterialB item', enum: item_data }
+      _ItemId: { enum: ItemData } # note: not read only because we currently can't preselect the Id on array item creation
+      _MaterialA: { tooltip: 'Combination requires any MaterialA + any MaterialB item', enum: ItemData }
+      _MaterialB: { tooltip: 'Combination requires any MaterialA + any MaterialB item', enum: ItemData }
       _IsNoSame: { tooltip: "Disallow picking the same item if it's present in both material sets" }
       _IsAutoMix: { tooltip: 'Possibly used for logistician?' }
       _Num: { default: 1 }
   app.ItemMixMaterialParam:
     fields:
-      _ItemID: { enum: item_data, readOnly: true }
+      _ItemID: { enum: ItemData, readOnly: true }
   app.ItemMixMaterialParam.CombineData:
     fields:
-      _PairList: { label: Items, enum: item_data, tooltip: Combining with any item from this list will create the combine item }
-      _CombineItem: { label: 'Output Item', enum: item_data }
+      _PairList: { label: Items, enum: ItemData, tooltip: Combining with any item from this list will create the combine item }
+      _CombineItem: { label: 'Output Item', enum: ItemData }
       _CombineMakeNum: { label: 'Output Count', default: 1 }
-    to_string: "CombineData {_CombineItem:entity(item_data)}"
+    to_string: "CombineData {_CombineItem:entity(ItemData)}"
 
   app.ItemModelHolder:
     fields:
       Enabled: { default: true }
 
-  app.TopsPartsEnableItem:
-    to_string: "Tops PartsEnable {_Gender:enum(app.Gender)} Job={_Job:enum(app.Character.JobEnum)} | {_TopsStyle:enum(app.TopsStyle)}"
-  app.TopsAmPartsHiddenItem:
-    to_string: "TopsAm PartsHidden Job={_Job:enum(app.Character.JobEnum)} | {_AmMeshID:enum(app.CharacterEditDefine.TopsAmMeshID)}"
-  app.TopsBdPartsHiddenItem:
-    to_string: "TopsBd PartsHidden Job={_Job:enum(app.Character.JobEnum)} | {_BdMeshID:enum(app.CharacterEditDefine.TopsBdMeshID)}"
-  app.PantsLgPartsHiddenItem:
-    to_string: "PantsLg PartsHidden Job={_Job:enum(app.Character.JobEnum)} | {_LgMeshID:enum(app.CharacterEditDefine.PantsLgMeshID)}"
-  app.TopsBtPrimaryPartsHiddenItem:
-    to_string: "BtPrimary PartsHidden Job={_Job:enum(app.Character.JobEnum)}"
+  app.WeaponSetting.OffsetSetting:
+    to_string: "Weapon Offset Setting {ID:enum(app.WeaponID)}"
+  app.WeaponSetting.Offset:
+    to_string: "Weapon Offset [Left={IsLeftSetting}, {ParentJointName}]"
+    fields:
+      ParentJointName: { default: "R_PropA" }
+      Scale: { default: 1.0 }

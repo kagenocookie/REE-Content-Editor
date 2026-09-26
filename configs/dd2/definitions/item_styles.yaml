@@ -41,3 +41,4 @@ classes:
       _Species: { default: 2501532887 }
       _HeadStyle: { default: 3812533812 }
       _SkinStyle: { default: 3812533812 }
+      _UnderwearStyle: { default: 905051872 }

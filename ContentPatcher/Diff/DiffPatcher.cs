@@ -33,7 +33,7 @@ public class DiffPatcher
                 var newClass = env.RszParser.GetRSZClass(newClassname.GetValue<string>())
                     ?? throw new Exception("Invalid RSZ class " + newClassname.GetValue<string>());
 
-                instance = RszInstance.CreateInstance(env.RszParser, newClass);
+                instance = env.CreateRszInstance(newClass);
             }
         }
         var cls = instance.RszClass;
@@ -149,7 +149,7 @@ public class DiffPatcher
         if (instance == null) {
             var cls = env.RszParser.GetRSZClass(classname!)
                 ?? throw new Exception("Failed to create instance");
-            instance = RszInstance.CreateInstance(env.RszParser, cls);
+            instance = env.CreateRszInstance(cls);
         }
         if (diff == null) return instance;
 

@@ -38,10 +38,10 @@ public class StringCustomField : CustomEntityFieldHandler<StringResource>, IDiff
         }
     }
 
-    public override StringResource? ApplyValue(ContentWorkspace workspace, StringResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
+    public override StringResource ApplyValue(ContentWorkspace workspace, StringResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
     {
         if (data == null) {
-            return null;
+            return new StringResource(Field.Config);
         }
         var newStr = data.GetValue<string>();
         if (currentResource?.Text != newStr) {

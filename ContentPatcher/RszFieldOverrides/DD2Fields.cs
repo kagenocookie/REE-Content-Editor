@@ -1,3 +1,4 @@
+using System.Numerics;
 using ReeLib;
 
 namespace ContentPatcher;
@@ -33,102 +34,36 @@ public static partial class RszFieldCache
         }
 
         /// <summary>
-        /// app.PartSwapMeshHolder
+        /// app.WeaponCatalogData.Data
         /// </summary>
-        [RszAccessor("app.PartSwapMeshHolder", nameof(GameIdentifier.dd2))]
-        public static class PartSwapMeshHolder
+        [RszAccessor("app.WeaponCatalogData.Data", nameof(GameIdentifier.dd2))]
+        public static class WeaponCatalogData
         {
-            public static readonly RszFieldAccessorName<string> _Mesh = Name<string>().Resource("via.render.MeshResourceHolder");
+            public static readonly RszFieldAccessorName<uint> ID = Name<uint>();
+            public static readonly RszFieldAccessorName<RszInstance> Prefab = Name<RszInstance>();
         }
 
         /// <summary>
-        /// app.PartSwapMaterialHolder
+        /// app.WeaponSetting.OffsetSetting
         /// </summary>
-        [RszAccessor("app.PartSwapMaterialHolder", nameof(GameIdentifier.dd2))]
-        public static class PartSwapMaterialHolder
+        [RszAccessor("app.WeaponSetting.OffsetSetting", nameof(GameIdentifier.dd2))]
+        public static class WeaponSetting_OffsetSetting
         {
-            public static readonly RszFieldAccessorName<string> _Material = Name<string>().Resource("via.render.MeshMaterialResourceHolder");
+            public static readonly RszFieldAccessorName<List<object>> DrawSetting = Name<List<object>>();
+            public static readonly RszFieldAccessorName<List<object>> SheatheSetting = Name<List<object>>();
         }
 
         /// <summary>
-        /// app.BodyMeshSwapItem
+        /// app.WeaponSetting.Offset
         /// </summary>
-        [RszAccessor("app.BodyMeshSwapItem", nameof(GameIdentifier.dd2))]
-        public static class BodyMeshSwapItem
+        [RszAccessor("app.WeaponSetting.Offset", nameof(GameIdentifier.dd2))]
+        public static class WeaponSetting_Offset
         {
-            public static readonly RszFieldAccessorName<uint> _Species = Name<uint>();
-            public static readonly RszFieldAccessorName<uint> _Gender = Name<uint>();
-            public static readonly RszFieldAccessorName<uint> _MeshID = Name<uint>();
-        }
-
-        /// <summary>
-        /// app.BodySkinSwapItem
-        /// </summary>
-        [RszAccessor("app.BodySkinSwapItem", nameof(GameIdentifier.dd2))]
-        public static class BodySkinSwapItem
-        {
-            public static readonly RszFieldAccessorName<uint> _Species = Name<uint>();
-            public static readonly RszFieldAccessorName<uint> _Gender = Name<uint>();
-            public static readonly RszFieldAccessorName<uint> _SkinID = Name<uint>();
-        }
-
-        /// <summary>
-        /// app.HeadMeshSwapItem
-        /// </summary>
-        [RszAccessor("app.HeadMeshSwapItem", nameof(GameIdentifier.dd2))]
-        public static class HeadMeshSwapItem
-        {
-            public static readonly RszFieldAccessorName<uint> _Species = Name<uint>();
-            public static readonly RszFieldAccessorName<uint> _Gender = Name<uint>();
-            public static readonly RszFieldAccessorName<uint> _HeadStyle = Name<uint>();
-            public static readonly RszFieldAccessorName<uint> _MeshID = Name<uint>();
-        }
-
-        /// <summary>
-        /// app.HeadSkinSwapItem
-        /// </summary>
-        [RszAccessor("app.HeadSkinSwapItem", nameof(GameIdentifier.dd2))]
-        public static class HeadSkinSwapItem
-        {
-            public static readonly RszFieldAccessorName<uint> _Species = Name<uint>();
-            public static readonly RszFieldAccessorName<uint> _Gender = Name<uint>();
-            public static readonly RszFieldAccessorName<uint> _SkinStyle = Name<uint>();
-            public static readonly RszFieldAccessorName<uint> _SkinID = Name<uint>();
-            public static readonly RszFieldAccessorName<uint> _AnimID = Name<uint>();
-        }
-
-        /// <summary>
-        /// app.HairSwapItem
-        /// </summary>
-        [RszAccessor("app.HairSwapItem", nameof(GameIdentifier.dd2))]
-        public static class HairSwapItem
-        {
-            public static readonly RszFieldAccessorName<uint> _MeshID = Name<uint>();
-            public static readonly RszFieldAccessorName<uint> _SkinID = Name<uint>();
-            public static readonly RszFieldAccessorName<bool> _UseChain = Name<bool>();
-            public static readonly RszFieldAccessorName<uint> _SwapMeshID = Name<uint>();
-            public static readonly RszFieldAccessorName<uint> _SwapSkinID = Name<uint>();
-        }
-
-        /// <summary>
-        /// app.BeardSwapItem
-        /// </summary>
-        [RszAccessor("app.BeardSwapItem", nameof(GameIdentifier.dd2))]
-        public static class BeardSwapItem
-        {
-            public static readonly RszFieldAccessorName<uint> _MeshID = Name<uint>();
-            public static readonly RszFieldAccessorName<uint> _SkinID = Name<uint>();
-            public static readonly RszFieldAccessorName<uint> _TextureID = Name<uint>();
-        }
-
-        /// <summary>
-        /// app.PartSwapCatalog.Item
-        /// </summary>
-        [RszAccessor("app.PartSwapCatalog.Item", nameof(GameIdentifier.dd2))]
-        public static class PartSwapCatalogItem
-        {
-            public static readonly RszFieldAccessorName<RszInstance> _Prefab = Name<RszInstance>();
-            public static readonly RszFieldAccessorName<uint> _Hash = Name<uint>();
+            public static readonly RszFieldAccessorName<bool> IsLeftSetting = Name<bool>();
+            public static readonly RszFieldAccessorName<string> ParentJointName = Name<string>();
+            public static readonly RszFieldAccessorName<Vector3> LocalPosition = Name<Vector3>();
+            public static readonly RszFieldAccessorName<Quaternion> LocalRotation = Name<Quaternion>();
+            public static readonly RszFieldAccessorName<float> Scale = Name<float>();
         }
     }
 }

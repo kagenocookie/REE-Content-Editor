@@ -1,5 +1,5 @@
 entities:
-  items.item_data:
+  items.ItemData:
     to_string: "Item [{data._ItemIDStr}]: {name}"
     fields:
     # TODO: add an easy UI link to the prefab of ItemData
@@ -52,7 +52,7 @@ entities:
         type: array-file
         classname: app.CraftRecipeCatalogUserData.CraftSoundCatalogUserData.CatalogData
         file: sound/craftsoundcataloguserdata.user
-  items.craft_recipe:
+  items.CraftRecipe:
     to_string: Recipe [{data._RecipeIDStr}] => {data._ProductItems.0._ItemID:translate_fmt(Item_Name_$0)}
     fields:
     - name: data

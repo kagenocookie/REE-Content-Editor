@@ -175,7 +175,7 @@ public class Component(GameObject gameObject, RszInstance data)
 
     public static Component Create(GameObject gameObject, Workspace workspace, RszClass rszClass)
     {
-        var comp = Create(gameObject, RszInstance.CreateInstance(workspace.RszParser, rszClass));
+        var comp = Create(gameObject, workspace.CreateRszInstance(rszClass));
         (comp as IConstructorComponent)?.ComponentInit();
         return comp;
     }

@@ -81,7 +81,7 @@ public class Prefab(FileHandle handle, PfbFile file) : IReeLibResourceFile
 
     public GameObject Instantiate(Scene? scene = null)
     {
-        return new GameObject(file.GameObjects![0].Clone(), scene);
+        return new GameObject(file.GameObjects![0].Clone(), scene) { PrefabPath = handle.ResourcePath };
     }
 
     public void WriteTo(string filepath)

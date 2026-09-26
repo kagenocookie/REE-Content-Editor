@@ -413,3 +413,14 @@ classes:
       _AmSubPartsEnable: { default: 3302292454401 }
       _BtPartsEnable: { default: 1049603 }
       _BtSubPartsEnable: { default: 1049603 }
+
+  app.TopsPartsEnableItem:
+    to_string: "Tops PartsEnable {_Gender:enum(app.Gender)} Job={_Job:enum(app.Character.JobEnum)} | {_TopsStyle:enum(app.TopsStyle)}"
+  app.TopsAmPartsHiddenItem:
+    to_string: "TopsAm PartsHidden Job={_Job:enum(app.Character.JobEnum)} | {_AmMeshID:enum(app.CharacterEditDefine.TopsAmMeshID)}"
+  app.TopsBdPartsHiddenItem:
+    to_string: "TopsBd PartsHidden Job={_Job:enum(app.Character.JobEnum)} | {_BdMeshID:enum(app.CharacterEditDefine.TopsBdMeshID)}"
+  app.PantsLgPartsHiddenItem:
+    to_string: "PantsLg PartsHidden Job={_Job:enum(app.Character.JobEnum)} | {_LgMeshID:enum(app.CharacterEditDefine.PantsLgMeshID)}"
+  app.TopsBtPrimaryPartsHiddenItem:
+    to_string: "BtPrimary PartsHidden Job={_Job:enum(app.Character.JobEnum)}"

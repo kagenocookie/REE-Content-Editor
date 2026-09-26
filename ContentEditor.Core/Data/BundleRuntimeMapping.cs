@@ -184,7 +184,13 @@ public class BundleRuntimeMapping
         }
         var sep = path.IndexOf('.');
         if (sep == -1) {
-            obj[path] = value;
+            if (value?.GetValueKind() == System.Text.Json.JsonValueKind.String) {
+                // engine doesn't enforce front slashes for paths so runtime bundles might end up with backslashes
+                // we don't want them here, make them gone
+                obj[path] = value.GetValue<string>().Replace('\\', '/');
+            } else {
+                obj[path] = value;
+            }
             return;
         }
 

@@ -79,15 +79,17 @@ public class EntitySelection : IWindowHandler
         ImGui.SameLine();
         ImGui.EndDisabled();
 
-        ImGui.BeginDisabled(workspace.CurrentBundle == null || selected == null);
-        if (ImGui.Button($"{AppIcons.SI_Copy}") && selected != null) {
-            selected = workspace.ResourceManager.CreateEntity(selected.Type, selected.ToJson(workspace.Env));
-            data.Context.children.Clear();
-            SelectedEntityId = selected.Id;
+        if (canCreate) {
+            ImGui.BeginDisabled(workspace.CurrentBundle == null || selected == null);
+            if (ImGui.Button($"{AppIcons.SI_Copy}") && selected != null) {
+                selected = workspace.ResourceManager.CreateEntity(selected.Type, selected.ToJson(workspace.Env));
+                data.Context.children.Clear();
+                SelectedEntityId = selected.Id;
+            }
+            ImguiHelpers.Tooltip(Lang.Buttons.Duplicate);
+            ImGui.EndDisabled();
+            ImGui.SameLine();
         }
-        ImguiHelpers.Tooltip(Lang.Buttons.Duplicate);
-        ImGui.EndDisabled();
-        ImGui.SameLine();
 
         bool doCreate = false;
         if (canCreate && entityConfig != null) {

@@ -93,6 +93,7 @@ public class PartSwapper(GameObject gameObject, RszInstance data) : BaseMultiMes
         UpdateMantle(Gender, MantleStyle);
         UpdateFacewear(Gender, FacewearStyle, Species);
         UpdateBackpack(Gender, BackpackStyle);
+        UpdateUnderwear(Gender, UnderwearStyle);
     }
 
     private void UpdateBodyMesh(uint gender, uint species, uint skinStyle)
@@ -104,7 +105,11 @@ public class PartSwapper(GameObject gameObject, RszInstance data) : BaseMultiMes
         if (bodyMesh == null) return;
 
         var skinId = (uint?)GetEntitySwapItem_GenderSpecies("BodySkinStyle__data", skinStyle, gender, species)?.GetFieldValue("_SkinID") ?? 0u;
-        AddMesh(bodyMesh, GetSkinOrNull("BodySkin", skinId));
+        if (!GameObject.IsSerialized) {
+            GameObject.GetOrAddComponent<MeshComponent>().SetMesh(bodyMesh, GetSkinOrNull("BodySkin", skinId));
+        } else {
+            AddMesh(bodyMesh, GetSkinOrNull("BodySkin", skinId));
+        }
     }
 
     private void UpdateHeadMesh(uint gender, uint species, uint headStyle, uint skinStyle)
@@ -207,6 +212,16 @@ public class PartSwapper(GameObject gameObject, RszInstance data) : BaseMultiMes
         }
 
         AddMeshSkin(swap, "_MeshID", "_SkinID", "BackpackMesh", "mesh", "BackpackSkin", "_PartsEnable");
+    }
+
+    private void UpdateUnderwear(uint gender, uint styleHash)
+    {
+        var swap = GetEntitySwapItem_Gender("UnderwearStyle__data", styleHash, gender);
+        if (swap == null) {
+            return;
+        }
+
+        AddMeshSkin(swap, "_MeshID", "_SkinID", "UnderwearMesh", "mesh", "UnderwearSkin");
     }
 
     private void AddMeshSkin(
