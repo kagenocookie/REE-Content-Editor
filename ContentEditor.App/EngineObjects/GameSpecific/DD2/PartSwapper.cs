@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ContentEditor.App.Graphics;
+using ContentEditor.App.Windowing;
 using ContentPatcher;
 using ReeLib;
 
@@ -99,15 +100,32 @@ public class PartSwapper(GameObject gameObject, RszInstance data) : BaseMultiMes
 
     private void UpdateBodyMesh(uint gender, uint species, uint skinStyle)
     {
-        // 3468739823 = body_000_m, 3066141223 = body_000_f
-        var bodyMeshId = gender == Gender_Male ? 3468739823 : 3066141223;
+        var bodyMeshId = gender switch {
+            Gender_Male => 3468739823, // body_000_m
+            Gender_Female => 3066141223, // body_000_f
+            _ => 0u,
+        };
         var bodyMesh = GetMeshOrNull("BodyMesh", bodyMeshId);
 
-        if (bodyMesh == null) return;
+        if (bodyMesh == null) {
+            if (!GameObject.IsSerialized && GameObject.HasComponent<MeshComponent>()) {
+                EditorWindow.CurrentWindow?.InvokeFromUIThread(() => {
+                    GameObject.RemoveComponent<MeshComponent>();
+                });
+            }
+            return;
+        }
 
         var skinId = (uint?)GetEntitySwapItem_GenderSpecies("BodySkinStyle__data", skinStyle, gender, species)?.GetFieldValue("_SkinID") ?? 0u;
         if (!GameObject.IsSerialized) {
-            GameObject.GetOrAddComponent<MeshComponent>().SetMesh(bodyMesh, GetSkinOrNull("BodySkin", skinId));
+            var meshComp = GameObject.GetComponent<MeshComponent>();
+            if (meshComp == null) {
+                EditorWindow.CurrentWindow?.InvokeFromUIThread(() => {
+                    GameObject.GetOrAddComponent<MeshComponent>().SetMesh(bodyMesh, GetSkinOrNull("BodySkin", skinId));
+                });
+            } else {
+                meshComp.SetMesh(bodyMesh, GetSkinOrNull("BodySkin", skinId));
+            }
         } else {
             AddMesh(bodyMesh, GetSkinOrNull("BodySkin", skinId));
         }

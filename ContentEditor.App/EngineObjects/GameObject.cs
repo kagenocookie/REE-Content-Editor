@@ -234,6 +234,17 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         }
         return true;
     }
+
+    public bool RemoveComponent<TComponent>() where TComponent : Component
+    {
+        var comp = GetComponent<TComponent>();
+        if (comp != null) {
+            RemoveComponent(comp);
+            return true;
+        }
+        return false;
+    }
+
     public Component? RemoveComponent(RszInstance componentData)
     {
         foreach (var comp in Components) {
