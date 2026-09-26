@@ -295,6 +295,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         if (workspace != null && cfg.Key_OpenMacroShelf.Get().IsPressed()) {
             AddUniqueSubwindow(new LuaMacroShelf(workspace));
         }
+        if (workspace != null && cfg.Key_OpenFileSearch.Get().IsPressed()) {
+            AddSubwindow(new FileSearchWindow());
+        }
     }
 
     protected override void SetupMouse(IMouse mouse)
@@ -1032,7 +1035,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 if (ImGui.MenuItem(Lang.Windows.BundleManager)) {
                     ShowBundleManagement();
                 }
-                if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Windows.FileSearch))) {
+                if (AppImguiHelpers.HotkeyMenuItem(Lang.Windows.FileSearch, AppConfig.Instance.Key_OpenFileSearch.Get())) {
                     AddSubwindow(new FileSearchWindow());
                 }
                 if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Windows.TexturePacker))) {
