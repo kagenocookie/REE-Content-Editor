@@ -286,9 +286,12 @@ public class ResourcePathPicker : IObjectUIHandler
                 ImGui.SetNextWindowSizeConstraints(new Vector2(rect.X - buttonMargin, ImGui.GetTextLineHeightWithSpacing() * 5), new Vector2(float.MaxValue));
                 if (ImGui.BeginPopup("Suggestions"u8)) {
                     ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+                    if (ImGui.IsWindowAppearing()) ImGui.SetKeyboardFocusHere();
                     ImGui.InputTextWithHint("##Filter"u8, $"{AppIcons.Search} Filter", ref searchFilter, 100);
 
                     ImGui.SeparatorText("Suggestions from active bundle"u8);
+                    ImGui.SetNextWindowSizeConstraints(new Vector2(0, 0), new Vector2(float.MaxValue, 600));
+                    ImGui.BeginChild("##contents"u8, new Vector2(0, 0), ImGuiChildFlags.AutoResizeY);
                     bool matchedAny = false;
                     foreach (var suggest in bundleFiles) {
                         var suggestDisplay = flags.HasFlag(PathPickerFlags.UseTargetPath) ? suggest : workspace.Env.GetResourcePath(suggest).ToString();
@@ -296,14 +299,18 @@ public class ResourcePathPicker : IObjectUIHandler
                         if (flags.HasFlag(PathPickerFlags.IsPathForIngame) && suggestDisplay.StartsWith("streaming/", StringComparison.OrdinalIgnoreCase)) continue;
 
                         matchedAny |= true;
-                        if (ImGui.Selectable(suggestDisplay, suggestDisplay.Equals(currentPath, StringComparison.OrdinalIgnoreCase))) {
+                        var isCurrent = suggestDisplay.Equals(currentPath, StringComparison.OrdinalIgnoreCase);
+                        if (ImGui.Selectable(suggestDisplay, isCurrent)) {
                             currentPath = pendingPath = suggestDisplay;
                             changed = true;
                         }
+
+                        if (isCurrent && ImGui.IsWindowAppearing()) ImGui.SetScrollHereY();
                     }
                     if (!matchedAny) {
                         ImGui.TextColored(Colors.Faded, "No matching results"u8);
                     }
+                    ImGui.EndChild();
                     ImGui.EndPopup();
                 }
             }
