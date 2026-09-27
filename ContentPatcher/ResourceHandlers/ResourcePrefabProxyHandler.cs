@@ -84,8 +84,12 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
 
         var existingCatalogEntry = list.FirstOrDefault(item => idgen.GetID((RszInstance)item) == id) as RszInstance;
         if (resource.CatalogEntry != null && existingCatalogEntry != null && existingCatalogEntry != resource.CatalogEntry) {
-            list.Remove(existingCatalogEntry);
-            catFile.Modified = true;
+            if (existingCatalogEntry.IsEqualTo(resource.CatalogEntry)) {
+                resource.CatalogEntry = existingCatalogEntry;
+            } else {
+                list.Remove(existingCatalogEntry);
+                catFile.Modified = true;
+            }
         }
 
         if (IsEmptyObject(resource.Instance)) {
@@ -146,6 +150,9 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
         if (comp == null) {
             go.Components.Add(comp = workspace.CreateRszInstance(componentClass));
             catFile.Modified = true;
+        }
+        if (comp.IsEqualTo(resource.Instance) && !pfbHandle.Modified) {
+            workspace.ResourceManager.CloseFile(pfbHandle);
         }
         go.Components[go.Components.IndexOf(comp)] = resource.Instance;
     }
