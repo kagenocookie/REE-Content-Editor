@@ -1,6 +1,5 @@
 using System.Text.Json.Nodes;
 using ReeLib;
-using ReeLib.Common;
 
 namespace ContentPatcher;
 
@@ -23,8 +22,7 @@ public class UserFileSingletonResourceHandler : ResourceHandler, IResourceHandle
         var userfile = workspace.ResourceManager.GetFileContents<UserFile>(filepath);
 
         var instance = userfile.Instance!;
-        var id = MurMur3HashUtils.GetHash(filepath);
-        dict[id] = new RSZObjectResource(Config, instance, filepath);
+        dict[0] = new RSZObjectResource(Config, instance, filepath);
     }
 
     public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data, ResourceEntity? entity)
