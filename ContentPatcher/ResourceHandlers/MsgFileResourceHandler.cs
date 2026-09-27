@@ -83,17 +83,18 @@ public class MsgFileResourceHandler : ResourceHandler, IResourceHandlerStatic
     public override void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources)
     {
         foreach (var file in Files) {
-            var msgFile = workspace.ResourceManager.GetFileContents<MsgFile>(file, true);
-            if (msgFile == null) {
+            if (!workspace.ResourceManager.TryResolveGameFile(file, out var handle)) {
                 Logger.Warn($"Could not load msg file {file}");
                 continue;
             }
+            var msgFile = handle.GetFile<MsgFile>();
 
             foreach (var (hash, entry) in resources) {
                 var storedEntry = msgFile.FindEntryByKeyHash((uint)hash);
                 if (entry is NulledResource) {
                     if (storedEntry != null) {
                         msgFile.Entries.Remove(storedEntry);
+                        handle.Modified = true;
                     }
                     continue;
                 }
@@ -106,24 +107,31 @@ public class MsgFileResourceHandler : ResourceHandler, IResourceHandlerStatic
 
                     data.FileResourcePath = file;
                     storedEntry = msgFile.AddNewEntry(data.MessageKey);
+                    handle.Modified = true;
                 }
 
                 foreach (var (lang, text) in data.Messages) {
                     var langIndex = (int)Enum.Parse<Language>(lang);
-                    storedEntry.Strings[langIndex] = text;
+                    ModifyFile(handle, ref storedEntry.Strings[langIndex], text);
                 }
 
                 foreach (var (attr, value) in data.Attributes) {
-                    storedEntry.SetAttribute(attr, value);
+                    var attrIndex = storedEntry.GetAttributeIndex(attr);
+                    storedEntry.AttributeValues ??= new object[storedEntry.AttributeItems.Count];
+                    storedEntry.AttributeValues[attrIndex] = value;
+                    ModifyFileObject(handle, ref storedEntry.AttributeValues[attrIndex], value);
                 }
 
                 if (data.SoundID != 0) {
-                    storedEntry.Header.soundId = data.SoundID;
+                    ModifyFile(handle, ref storedEntry.Header.soundId, data.SoundID);
                 }
                 if (data.Guid == Guid.Empty) {
                     if (data.Guid == Guid.Empty) data.Guid = Guid.NewGuid();
-                    storedEntry.Header.guid = data.Guid;
+                    ModifyFile(handle, ref storedEntry.Header.guid, data.Guid);
                 }
+            }
+            if (!handle.Modified) {
+                workspace.ResourceManager.CloseFile(handle, true);
             }
         }
     }

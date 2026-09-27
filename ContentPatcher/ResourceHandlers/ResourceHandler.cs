@@ -92,6 +92,28 @@ public abstract class ResourceHandler
     /// Apply all resource changes to files based on current resource data. The resource value can always be a NullableResource to indicate an explicit removal.
     /// </summary>
     public abstract void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources);
+
+    /// <summary>
+    /// Compare field value with the target value, updating it and marking the file as modified if they're different.
+    /// </summary>
+    protected static void ModifyFile<T>(FileHandle file, ref T field, T value) where T : IEquatable<T>
+    {
+        if (!field.Equals(value)) {
+            file.Modified = true;
+            field = value;
+        }
+    }
+
+    /// <summary>
+    /// Compare field value with the target value, updating it and marking the file as modified if they're different.
+    /// </summary>
+    protected static void ModifyFileObject(FileHandle file, ref object field, object value)
+    {
+        if (!field.Equals(value)) {
+            file.Modified = true;
+            field = value;
+        }
+    }
 }
 
 public interface IResourceHandlerStatic

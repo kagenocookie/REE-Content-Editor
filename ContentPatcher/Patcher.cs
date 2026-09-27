@@ -169,6 +169,12 @@ public class Patcher : IDisposable
         var needsSubPak = Parameters.StoreGDeflateTexturesAsSubPak && Env.RequiresSubPaksForTextures;
         var hasTextures = false;
         foreach (var file in workspace!.ResourceManager.GetOpenFiles()) {
+            // files modified through entity/resources should be consistently marked as modified
+            // always include raw bundle files since they wouldn't get marked as modified
+            if (!file.Modified && !string.IsNullOrEmpty(file.TargetPath) && !workspace.BundleManager.ActiveBundles.Any(b => b.ContainsResource(file.TargetPath))) {
+                continue;
+            }
+
             var targetPath = file.TargetPath ?? file.Filepath;
             string fileOutput;
             if (needsSubPak && file.Format.format == KnownFileFormats.Texture) {

@@ -1289,7 +1289,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
     }
 
     /// <summary>
-    /// Resolve the file path for a specific file type and get its contents.
+    /// Resolve a file for a one-off read and get its contents.
     /// </summary>
     /// <param name="filepath">The file path to load.</param>
     /// <param name="markModified">Whether to mark the file as modified. If false, the file will be auto-closed afterwards (removed from the open file list) if no other references are active.</param>
