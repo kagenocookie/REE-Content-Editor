@@ -18,6 +18,7 @@ public interface ISceneEditor
 public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObjectUIHandler, IInspectorController, IWindowHandler, IFilterRoot, ISceneEditor
 {
     public override string HandlerName => "Prefab";
+    public override DockSlot DefaultDockSlot => DockSlot.Hierarchy;
 
     public string Filename => Handle.Filepath;
     public PfbFile File => Handle.GetFile<PfbFile>();

@@ -5,6 +5,7 @@ namespace ContentEditor.App;
 public class TextViewer : IWindowHandler
 {
     public string HandlerName => " Text Viewer ";
+    DockSlot IWindowHandler.DefaultDockSlot => DockSlot.Viewport;
 
     public bool HasUnsavedChanges => false;
     public string? Text { get; private set; }

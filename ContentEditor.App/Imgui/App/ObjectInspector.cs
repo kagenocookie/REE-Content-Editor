@@ -7,6 +7,7 @@ namespace ContentEditor.App.ImguiHandling;
 public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUIHandler, IRSZFileEditor, ISceneEditor
 {
     public string HandlerName => "Inspector";
+    DockSlot IWindowHandler.DefaultDockSlot => DockSlot.Inspector;
 
     public bool HasUnsavedChanges => throw new NotImplementedException();
     public event Action? Closed;

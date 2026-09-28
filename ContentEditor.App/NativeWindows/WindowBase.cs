@@ -72,7 +72,14 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
 
     public WindowData? FocusedWindow { get; private set; }
 
-    protected static readonly HashSet<Type> BaseWindows = [typeof(OverlaysWindow), typeof(ConsoleWindow), typeof(HomeWindow)];
+    /// <summary>
+    /// The window in the viewport slot that was focused last. If it's an <see cref="IViewportDocument"/>, it decides what the hierarchy and inspector panels show.
+    /// </summary>
+    public WindowData? ActiveViewportWindow { get; private set; }
+
+    private static bool IsDockedWithViewport(WindowData data) => data.DockId != 0 && data.DockId == DockLayout.GetSlotNode(DockSlot.Viewport);
+
+    protected static readonly HashSet<Type> BaseWindows = [typeof(OverlaysWindow), typeof(ConsoleWindow), typeof(HomeWindow), typeof(HierarchyPanel), typeof(InspectorPanel)];
     protected static readonly HashSet<Type> WorkspaceSpecificWindows = [typeof(BundleManagementUI), typeof(HomeWindow)];
 
     private static int nextSubwindowID = 1;
@@ -189,12 +196,12 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         Ready?.Invoke();
     }
 
-    public WindowData AddSubwindow(IWindowHandler subwindow)
+    public WindowData AddSubwindow(IWindowHandler subwindow, bool closeHome = true)
     {
         var pos = new Vector2(Size.X / 5 + Random.Shared.NextSingle() * 80, Size.Y / 5 + Random.Shared.NextSingle() * 80);
         var window = new WindowData() { Handler = subwindow, Position = pos, ParentWindow = this };
         AddSubwindow(window);
-        if (subwindow is not HomeWindow) {
+        if (closeHome && subwindow is not HomeWindow) {
             CloseHomeIfOpen();
         }
         return window;
@@ -576,11 +583,15 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         ImGui.SetNextWindowPos(offset, ImGuiCond.Always);
         ImGui.SetNextWindowSize(size, ImGuiCond.Always);
         ImGui.Begin("Dockspace", ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoBringToFrontOnFocus);
-        ImGui.DockSpace(ImGui.GetID("_dock"), new Vector2(0, 0), ImGuiDockNodeFlags.PassthruCentralNode);
+        var dockspaceId = ImGui.GetID("_dock");
+        DefaultDockLayout.Update(dockspaceId, ImGui.GetContentRegionAvail());
+        ImGui.DockSpace(dockspaceId, new Vector2(0, 0), ImGuiDockNodeFlags.PassthruCentralNode);
+        DefaultDockLayout.ShowEmptySlotPlaceholders();
     }
     protected void EndDockableBackground()
     {
         ImGui.End();
+        DockLayout.ForceRedock = false;
     }
 
     private void OnKeyDown(IKeyboard keyboard, Key key, int arg3)
@@ -621,6 +632,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         for (int i = 0; i < removeSubwindows.Count; i++) {
             var close = removeSubwindows[i];
             if (subwindows.Remove(close) || close.ParentWindow != null && subwindows.Any(s => s.Subwindows?.ContainsValue(close) == true)) {
+                if (close == ActiveViewportWindow) ActiveViewportWindow = null;
                 (close.Handler as IDisposable)?.Dispose();
                 close.Context.Get<WindowData>().Handler?.OnClosed();
             }
@@ -638,6 +650,13 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         var saving = SaveInProgress;
         for (int i = 0; i < subwindows.Count; i++) {
             var sub = subwindows[i];
+            if (DockSlotPanel.IsHostedEditor(sub.Handler)) {
+                // drawn as a tab by the hierarchy panel instead of in its own window
+                if (sub.Context?.StateBool == true) {
+                    FocusedWindow = sub;
+                }
+                continue;
+            }
             if (sub.Handler != null) {
                 if (saving && sub.Handler is not IKeepEnabledWhileSaving) ImGui.BeginDisabled();
                 try {
@@ -646,12 +665,20 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
                     ImGui.PopID();
                     if (sub.Context?.StateBool == true) {
                         FocusedWindow = sub;
+                        if (sub.Handler.DefaultDockSlot == DockSlot.Viewport && IsDockedWithViewport(sub)) {
+                            ActiveViewportWindow = sub;
+                        }
                     }
                 } catch (Exception e) {
                     Logger.Error(e, $"Error occurred in window {sub.Name}");
                 }
                 if (saving && sub.Handler is not IKeepEnabledWhileSaving) ImGui.EndDisabled();
             }
+        }
+        // windows only drive the hierarchy and inspector panels while they're docked as a tab next to the viewport
+        // once they get moved elsewhere (floating, another dock node) they go back to showing everything themselves
+        if (ActiveViewportWindow != null && !IsDockedWithViewport(ActiveViewportWindow)) {
+            ActiveViewportWindow = null;
         }
 
         if (imguiOverlays == null) {

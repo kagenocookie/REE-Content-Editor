@@ -8,6 +8,7 @@ public interface IWindowHandler
     bool HasUnsavedChanges { get; }
     int FixedID => 0;
     char Icon => '\0';
+    DockSlot DefaultDockSlot => DockSlot.None;
 
     void OnOpen() { }
     void OnClosed() { }

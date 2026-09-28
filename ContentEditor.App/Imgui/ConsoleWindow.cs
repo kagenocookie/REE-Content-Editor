@@ -16,7 +16,7 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
     private string filter = "";
 
     internal static EventLogger? EventLogger { get; set; }
-    private bool isOpen = false;
+    private bool isOpen = true;
 
     private sealed record LogEntry(string message, LogSeverity level);
     private readonly List<LogEntry> all = new();
@@ -77,8 +77,12 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
         var windowSize = ImGui.GetWindowSize() - new Vector2(ImGui.GetStyle().WindowPadding.X * 2, 0);
         var height = windowSize.Y / 4;
         ImGui.SetNextWindowSize(new System.Numerics.Vector2(windowSize.X, height), ImGuiCond.FirstUseEver);
-        ImGui.SetNextWindowPos(new System.Numerics.Vector2(0, windowSize.Y - height), ImGuiCond.FirstUseEver);
-        if (ImGui.Begin("Log", ref isOpen)) {
+        if (!DockLayout.DockNextWindow(DockSlot.AssetBrowser)) {
+            ImGui.SetNextWindowPos(new System.Numerics.Vector2(0, windowSize.Y - height), ImGuiCond.FirstUseEver);
+        }
+        var logVisible = ImGui.Begin("Log", ref isOpen);
+        DockLayout.TrackCurrentWindow(DockSlot.AssetBrowser);
+        if (logVisible) {
             data.Size = ImGui.GetWindowSize();
             data.Position = ImGui.GetWindowPos();
             ImguiHelpers.Tabs(tabs, ref currentTab, true);

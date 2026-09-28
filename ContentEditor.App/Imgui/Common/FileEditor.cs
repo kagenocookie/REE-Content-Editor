@@ -16,6 +16,8 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
     protected virtual bool AllowJsonCopy => false;
 
     public virtual string HandlerName { get; } = "File";
+    // opened files show up as tabs next to the scene view by default
+    public virtual DockSlot DefaultDockSlot => DockSlot.Viewport;
     public FileHandle Handle { get; protected set; }
     char IWindowHandler.Icon => AppIcons.GetIcon(this, Handle.Resource);
 
@@ -52,7 +54,12 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
 
     public void Focus()
     {
-        var data = GetRootWindowData().context.Get<WindowData>();
+        var root = GetRootWindowData();
+        if (DockSlotPanel.IsHostedEditor(root)) {
+            DockSlotPanel.Focus(root);
+            return;
+        }
+        var data = root.context.Get<WindowData>();
         ImGui.SetWindowFocus($"{HandlerName}: {Handle.Filename}##{data.ID}");
     }
 

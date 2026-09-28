@@ -69,6 +69,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     private string recentFileFilter = "";
     private string activeBundleFilter = "";
 
+    private WindowData? pendingDefaultAssetBrowser;
+    private int pendingDefaultAssetBrowserFrames;
+
     private bool _workspaceSetupInProgress;
     private string? _resourceSetupFailure;
     public bool IsReady => !_workspaceSetupInProgress && _resourceSetupFailure == null;
@@ -159,6 +162,33 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         if (bundle != null && workspace.CurrentBundle != null) {
             AppConfig.Settings.RecentBundles.AddRecent(workspace.Game, bundle);
         }
+        // deferred so that any PAK browsers closed by the workspace change are actually gone by then
+        InvokeFromUIThread(OpenDefaultAssetBrowser);
+    }
+
+    /// <summary>
+    /// Opens a PAK browser in the asset browser slot of the default layout, unless one is already open.
+    /// </summary>
+    private void OpenDefaultAssetBrowser()
+    {
+        if (workspace == null || HasSubwindow<PakBrowser>(out _)) return;
+
+        // keep the home page open, this isn't something the user explicitly requested
+        pendingDefaultAssetBrowser = AddSubwindow(new PakBrowser(workspace, null), closeHome: false);
+        pendingDefaultAssetBrowserFrames = 0;
+    }
+
+    /// <summary>
+    /// The PAK browser gets docked after the log window, so once it's docked we move it in front and select it.
+    /// </summary>
+    private void UpdatePendingDefaultAssetBrowser()
+    {
+        if (pendingDefaultAssetBrowser == null) return;
+
+        // give up if it never ends up docked (e.g. the user removed the asset browser slot from the layout)
+        if (DockLayout.SelectDockedTab(pendingDefaultAssetBrowser.Name, true) || ++pendingDefaultAssetBrowserFrames > 30) {
+            pendingDefaultAssetBrowser = null;
+        }
     }
 
     private static void SetupTypes(ContentWorkspace workspace)
@@ -210,6 +240,8 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         var console = AddSubwindow(new ConsoleWindow());
         console.Size = new Vector2(Size.X, 200);
         console.Position = new Vector2(0, Size.Y - 200);
+        AddSubwindow(new HierarchyPanel(), closeHome: false);
+        AddSubwindow(new InspectorPanel(), closeHome: false);
         _window.Move += OnResize;
         _window.FramebufferResize += OnResize;
     }
@@ -383,6 +415,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             }
         }
         workspace.Env.ResetListFile();
+        InvokeFromUIThread(OpenDefaultAssetBrowser);
     }
 
     protected void ShowGameSelectionMenu()
@@ -1048,6 +1081,10 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     AddUniqueSubwindow(new LuaMacroShelf(workspace));
                 }
             }
+            ImGui.Separator();
+            if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Windows.ResetLayout))) {
+                DefaultDockLayout.RequestReset();
+            }
             ImGui.PopStyleVar();
             ImGui.EndMenu();
         }
@@ -1148,17 +1185,19 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     protected override void OnIMGUI()
     {
         ShowMainMenuBar();
-        var dragging = IsDragging;
-        if (dragging) ImGui.BeginDisabled();
-
         viewportOffset = new Vector2(0, ImGui.CalcTextSize("a").Y + ImGui.GetStyle().FramePadding.Y * 2);
         BeginDockableBackground(viewportOffset);
         if (Overlays != null) {
             Overlays.ShowHelp = !_disableIntroGuide && !subwindows.Any(s => !IsDefaultWindow(s, false)) && !SceneManager.HasActiveMasterScene;
         }
+        // windows get redocked in creation order after a layout reset, which would put the log before the PAK browser
+        if (DefaultDockLayout.ConsumeRebuilt() && HasSubwindow<PakBrowser>(out var pakBrowser)) {
+            pendingDefaultAssetBrowser = pakBrowser;
+            pendingDefaultAssetBrowserFrames = 0;
+        }
         DrawImguiWindows();
+        UpdatePendingDefaultAssetBrowser();
         EndDockableBackground();
-        if (dragging) ImGui.EndDisabled();
     }
 
     internal bool ApplyContentPatches(PatchOutputType outputType, bool usePak, string? outputPath = null, string? singleBundle = null)

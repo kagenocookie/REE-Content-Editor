@@ -238,12 +238,16 @@ public static class ImguiHelpers
     public static bool BeginWindow(WindowData data, string? name = null, ImGuiWindowFlags flags = ImGuiWindowFlags.None)
     {
         ImGui.SetNextWindowSize(data.Size, ImGuiCond.FirstUseEver);
-        ImGui.SetNextWindowPos(data.Position, ImGuiCond.FirstUseEver);
+        if (!DockLayout.DockNextWindow(data.Handler?.DefaultDockSlot ?? DockSlot.None)) {
+            ImGui.SetNextWindowPos(data.Position, ImGuiCond.FirstUseEver);
+        }
         if (data.Context?.Changed == true && !data.Context.DisableUndo) {
             flags |= ImGuiWindowFlags.UnsavedDocument;
         }
         var open = true;
         ImGui.Begin(name ?? data.Name ?? $"{data.Handler}##{data.ID}", ref open, flags);
+        DockLayout.TrackCurrentWindow(data.Handler?.DefaultDockSlot ?? DockSlot.None);
+        data.DockId = ImGui.GetWindowDockID();
         if (data.Context != null) {
             data.Context.StateBool = ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows|ImGuiFocusedFlags.NoPopupHierarchy);
         }

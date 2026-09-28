@@ -18,6 +18,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
     public bool HasUnsavedChanges => fileHandle?.Modified == true;
 
     public string HandlerName => $"Texture Viewer";
+    DockSlot IWindowHandler.DefaultDockSlot => DockSlot.Viewport;
 
     public bool CanClose => true;
 
