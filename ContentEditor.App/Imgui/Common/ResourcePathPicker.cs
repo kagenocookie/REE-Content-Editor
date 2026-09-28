@@ -303,6 +303,7 @@ public class ResourcePathPicker : IObjectUIHandler
                         if (ImGui.Selectable(suggestDisplay, isCurrent)) {
                             currentPath = pendingPath = suggestDisplay;
                             changed = true;
+                            ImGui.CloseCurrentPopup();
                         }
 
                         if (isCurrent && ImGui.IsWindowAppearing()) ImGui.SetScrollHereY();
