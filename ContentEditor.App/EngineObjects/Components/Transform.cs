@@ -14,7 +14,7 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
     {
     }
 
-    public Transform(GameObject gameObject, Workspace env) : base(gameObject, env.CreateRszInstance(env.Classes.Transform))
+    public Transform(GameObject gameObject, ContentWorkspace ws) : base(gameObject, ws.CreateRszInstance(ws.Env.Classes.Transform))
     {
     }
 

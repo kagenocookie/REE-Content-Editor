@@ -250,7 +250,7 @@ public sealed class FilePreviewGenerator : IDisposable
         tmpScene.SetActive(true);
         tmpScene.ActiveCamera.ProjectionMode = CameraProjection.Orthographic;
 
-        var go = new GameObject("mesh", workspace.Env, tmpScene.RootFolder, tmpScene);
+        var go = new GameObject("mesh", workspace, tmpScene.RootFolder, tmpScene);
         var comp = go.AddComponent<MeshComponent>();
         var basePath = PathUtils.GetFilepathWithoutExtensionOrVersion(path).ToString();
         workspace.ResourceManager.TryResolveGameFile(basePath + ".mdf2", out var mdfHandle);

@@ -127,7 +127,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
     private MeshViewerContext CreateAdditionalMesh(FileHandle mesh)
     {
-        var go = new GameObject($"_preview_{meshContexts.Count}", Workspace.Env, scene?.RootFolder, scene);
+        var go = new GameObject($"_preview_{meshContexts.Count}", Workspace, scene?.RootFolder, scene);
         scene?.Add(go);
         var ctx = new MeshViewerContext(this, context.AddChild(go.Name, go), mesh);
         meshContexts.Add(ctx);

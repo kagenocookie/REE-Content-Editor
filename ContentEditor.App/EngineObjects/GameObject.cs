@@ -102,9 +102,9 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         Components.Add(Transform = new Transform(this, transformInstance));
     }
 
-    public GameObject(string name, Workspace workspace, Folder? folder = null, Scene? scene = null)
+    public GameObject(string name, ContentWorkspace workspace, Folder? folder = null, Scene? scene = null)
     {
-        instance = workspace.CreateRszInstance(workspace.Classes.GameObject);
+        instance = workspace.CreateRszInstance(workspace.Env.Classes.GameObject);
         Name = name;
         Update = true;
         Folder = folder;
