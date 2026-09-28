@@ -21,7 +21,7 @@ entities:
         label: Catalog data
         required: true
         resource:
-          type: array-file
+          type: object-catalog
           id: [_Type]
           classname: app.ropeway.WeaponPrefabUserData.WeaponParam
           file: SectionRoot/UserData/System/Equipment/WeaponPrefabUserData_Catalog_1st.user

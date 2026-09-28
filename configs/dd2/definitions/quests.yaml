@@ -11,7 +11,7 @@ entities:
       required: true
       resource:
         id: [_IDValue]
-        type: array-file
+        type: object-catalog
         file: AppSystem/Quest/UserData/QuestContext.user
         field: ContextDataArray
         classname: app.QuestContextData.ContextData
@@ -19,7 +19,7 @@ entities:
       label: Variable Data
       resource:
         id: [_IDValue]
-        type: array-file
+        type: object-catalog
         file: AppSystem/Quest/UserData/QuestContext.user
         field: VariableDataArray
         classname: app.QuestContextData.VariableData
@@ -27,7 +27,7 @@ entities:
       label: Deliver Data
       resource:
         id: [_IDValue]
-        type: array-file
+        type: object-catalog
         file: AppSystem/Quest/UserData/QuestContext.user
         field: DeliverDataArray
         classname: app.QuestContextData.DeliverData
@@ -35,7 +35,7 @@ entities:
       label: After Story Data
       resource:
         id: [_IDValue]
-        type: array-file
+        type: object-catalog
         file: AppSystem/Quest/UserData/QuestContext.user
         field: AfterStoryDataArray
         classname: app.QuestContextData.AfterStoryData
@@ -43,7 +43,7 @@ entities:
       label: Quest Logs
       resource:
         id: [_Id]
-        type: array-file
+        type: object-catalog
         file: AppSystem/Catalog/MainContents/UserData/QuestLogCatalog.user
         classname: app.QuestLogCatalog.Item
 

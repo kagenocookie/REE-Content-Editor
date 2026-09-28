@@ -20,13 +20,13 @@ entities:
         subtypes:
           male:
             file: AppSystem/CharaEdit/ch000/SwapData/UnderwearSwapData.user
-            type: array-file
+            type: object-catalog
             filter:
             - property: _Gender
               equals: 2776536455
           female:
             file: AppSystem/CharaEdit/ch000/SwapData/UnderwearSwapData.user
-            type: array-file
+            type: object-catalog
             filter:
             - property: _Gender
               equals: 1910070090
@@ -48,7 +48,7 @@ entities:
       resource:
         custom_id_range: [10000, 10000000]
         file: AppSystem/CharaEdit/ch000/Catalog/UnderwearMeshCatalog.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     runtime_mapping:
@@ -73,7 +73,7 @@ entities:
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/UnderwearSkinCatalog.user
         custom_id_range: [10000, 10000000]
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     runtime_mapping:

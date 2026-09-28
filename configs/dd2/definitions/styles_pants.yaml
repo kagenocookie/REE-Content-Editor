@@ -27,13 +27,13 @@ entities:
         subtypes:
           male:
             file: AppSystem/CharaEdit/ch000/SwapData/PantsSwapData.user
-            type: array-file
+            type: object-catalog
             filter:
             - property: _Gender
               equals: 2776536455
           female:
             file: AppSystem/CharaEdit/ch000/SwapData/PantsSwapData.user
-            type: array-file
+            type: object-catalog
             filter:
             - property: _Gender
               equals: 1910070090
@@ -54,12 +54,12 @@ entities:
         subtypes:
           male:
             file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_m_Pants.user
-            type: resource_proxy_pfb
+            type: resource-holder-pfb
             params:
               skipFields: 1
           female:
             file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_f_Pants.user
-            type: resource_proxy_pfb
+            type: resource-holder-pfb
             params:
               skipFields: 1
 
@@ -80,32 +80,32 @@ entities:
       resource:
         custom_id_range: [10000, 10000000]
         file: AppSystem/CharaEdit/ch000/Catalog/PantsLgMeshCatalog_Default.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: chain
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/PantsLgChainCatalog_Default.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: clsp
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/PantsLgCollisionShapePresetCatalog_Default.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: cloth
       resource:
         custom_id_range: [10000, 10000000]
         file: AppSystem/CharaEdit/ch000/Catalog/PantsLgGpuClothCatalog_Default.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: sfur
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/PantsLgShellFurCatalog_Default.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         classname: app.PartSwapShellFurHolder
         params:
           skipFields: 1
@@ -140,7 +140,7 @@ entities:
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/PantsLgSkinCatalog_Default.user
         custom_id_range: [10000, 10000000]
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     runtime_mapping:
@@ -167,32 +167,32 @@ entities:
       resource:
         custom_id_range: [10000, 10000000]
         file: AppSystem/CharaEdit/ch000/Catalog/PantsWlMeshCatalog_Default.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: chain
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/PantsWlChainCatalog_Default.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: clsp
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/PantsWlCollisionShapePresetCatalog_Default.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: cloth
       resource:
         custom_id_range: [10000, 10000000]
         file: AppSystem/CharaEdit/ch000/Catalog/PantsWlGpuClothCatalog_Default.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: sfur
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/PantsWlShellFurCatalog_Default.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         classname: app.PartSwapShellFurHolder
         params:
           skipFields: 1
@@ -227,7 +227,7 @@ entities:
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/PantsWlSkinCatalog_Default.user
         custom_id_range: [10000, 10000000]
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     runtime_mapping:

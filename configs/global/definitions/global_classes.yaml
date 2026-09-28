@@ -12,4 +12,4 @@ classes:
       TimeScale: { default: -1.0 }
   via.Transform:
     fields:
-      LocalScale: { default: { X: 1.0, Y: 1.0, Z: 1.0 } }
+      Scale: { default: { X: 1.0, Y: 1.0, Z: 1.0 } }

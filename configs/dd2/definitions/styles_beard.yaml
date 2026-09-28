@@ -22,7 +22,7 @@ entities:
         custom_id_range: [10000, 10000000]
         classname: app.BeardSwapItem
         file: AppSystem/CharaEdit/ch000/SwapData/BeardSwapData.user
-        type: array-file
+        type: object-catalog
         params:
           nested: false
 
@@ -42,13 +42,13 @@ entities:
       resource:
         custom_id_range: [10000, 10000000]
         file: AppSystem/CharaEdit/ch000/Catalog/BeardMeshCatalog.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: wrap
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/BeardWrapDeformerCatalog.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
 
@@ -68,7 +68,7 @@ entities:
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/BeardSkinCatalog.user
         custom_id_range: [10000, 10000000]
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
   charaEdit.beard.BeardTexture:
@@ -87,7 +87,7 @@ entities:
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/BeardTextureCatalog.user
         custom_id_range: [10000, 10000000]
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
 

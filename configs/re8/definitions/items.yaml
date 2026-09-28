@@ -28,5 +28,5 @@
 #     id: [ItemID]
 #     to_string: "Item {ItemID}: {Basic.NameMessageID:translate()}"
 #     patcher:
-#       type: array-file
+#       type: object-catalog
 #       file: natives/stm/singletonuserdatas/itemspecificationdata.user.2

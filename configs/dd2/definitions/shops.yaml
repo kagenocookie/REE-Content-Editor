@@ -5,7 +5,7 @@ entities:
     - name: data
       resource:
         file: AppSystem/Item/ItemShopData/ItemShopData.user
-        type: array-file
+        type: object-catalog
         classname: app.ItemShopParam
         id: [_ShopId]
         params:

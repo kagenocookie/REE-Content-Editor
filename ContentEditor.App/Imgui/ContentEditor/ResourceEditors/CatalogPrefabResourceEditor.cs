@@ -21,7 +21,7 @@ public class CatalogPrefabResourceEditor : IObjectUIHandler
             var workspace = context.GetWorkspace();
             if (workspace == null) return;
 
-            if (res.ResourceType.Resource is ResourceProxyPrefabHandler proxy) {
+            if (res.ResourceType.Resource is ResourceHolderPrefabHandler proxy) {
                 var instanceChild = context.AddChild("Instance", res, ChildrenOnlyHandler.Instance, r => r!.Instance, (r, v) => r.Instance = v!);
                 WindowHandlerFactory.AddRszInstanceFieldChildren(instanceChild, proxy.SkipFieldCount);
                 if (instanceChild.children.Count == 1 && !instanceChild.children[0].label.String.Replace(" ", "").Contains(context.label.String.Replace(" ", ""), StringComparison.OrdinalIgnoreCase)) {

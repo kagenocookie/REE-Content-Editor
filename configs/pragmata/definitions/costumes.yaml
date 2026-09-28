@@ -5,7 +5,7 @@ entities:
       - name: closet
         resource:
           id: [{ path: _CharacterID.Hash, class: app.ObjectDefine }]
-          type: multi-array
+          type: item-list-catalog
           classname: app.Costume.Closet
           field: _Closets
           params:

@@ -13,7 +13,7 @@ entities:
         required: true
         resource:
           id: [_WeaponID]
-          type: array-file
+          type: object-catalog
           classname: chainsaw.WeaponCatalogUserData.Data
           file: natives/stm/_chainsaw/appsystem/weapon/weaponcataloguserdata_1st.user.2
       - name: name
@@ -40,7 +40,7 @@ entities:
         label: Equip data
         resource:
           id: [_WeaponID]
-          type: array-file
+          type: object-catalog
           classname: chainsaw.WeaponEquipParamCatalogUserData.Data
           file: natives/stm/_anotherorder/appsystem/weapon/weaponequipparamcataloguserdata_ao.user.2
           params:
@@ -49,7 +49,7 @@ entities:
         label: Upgrades
         resource:
           id: [_WeaponID]
-          type: array-file
+          type: object-catalog
           classname: chainsaw.WeaponDetailCustomUserdata.WeaponDetailStage
           file: natives/stm/_anotherorder/appsystem/weaponcustom/weapondetailcustomuserdata_ao.user.2
       - name: prefab

@@ -4,7 +4,7 @@ entities:
     fields:
     - name: data
       resource:
-        type: array-file
+        type: object-catalog
         id: [_Species, _Gender]
         classname: app.BodyMeshSwapItem
         file: AppSystem/CharaEdit/ch000/SwapData/BodyMeshSwapData.user
@@ -18,7 +18,7 @@ entities:
       required: true
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/BodyMeshCatalog.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
 
@@ -41,7 +41,7 @@ entities:
         subtypes:
           humanMale:
             file: AppSystem/CharaEdit/ch000/SwapData/BodySkinSwapData.user
-            type: array-file
+            type: object-catalog
             filter:
             - property: _Gender
               equals: 2776536455
@@ -49,7 +49,7 @@ entities:
               equals: 2501532887
           humanFemale:
             file: AppSystem/CharaEdit/ch000/SwapData/BodySkinSwapData.user
-            type: array-file
+            type: object-catalog
             filter:
             - property: _Gender
               equals: 1910070090
@@ -57,7 +57,7 @@ entities:
               equals: 2501532887
           beastMale:
             file: AppSystem/CharaEdit/ch000/SwapData/BodySkinSwapData.user
-            type: array-file
+            type: object-catalog
             filter:
             - property: _Gender
               equals: 2776536455
@@ -65,7 +65,7 @@ entities:
               equals: 3666037007
           beastFemale:
             file: AppSystem/CharaEdit/ch000/SwapData/BodySkinSwapData.user
-            type: array-file
+            type: object-catalog
             filter:
             - property: _Gender
               equals: 1910070090
@@ -87,7 +87,7 @@ entities:
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/BodySkinCatalog_Main.user
         custom_id_range: [10000, 10000000]
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     runtime_mapping:

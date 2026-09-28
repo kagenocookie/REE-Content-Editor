@@ -10,7 +10,7 @@ entities:
         required: true
         resource:
           id: [_JobID]
-          type: array-file
+          type: object-catalog
           classname: app.JobInformationParam
           file: AppSystem/Gui/JobMenu/JobInformationData.user
       - name: custom_skills
@@ -18,7 +18,7 @@ entities:
         required: true
         resource:
           id: [_Job]
-          type: array-file
+          type: object-catalog
           classname: app.CustomSkillSet
           file: AppSystem/Gui/JobMenu/CustomSkillInformationData.user
       - name: normal_skills
@@ -26,7 +26,7 @@ entities:
         required: true
         resource:
           id: [_Job]
-          type: array-file
+          type: object-catalog
           classname: app.NormalSkillSet
           file: AppSystem/Gui/JobMenu/NormalSkillInformationData.user
 

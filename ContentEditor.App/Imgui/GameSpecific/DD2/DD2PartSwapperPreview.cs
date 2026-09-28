@@ -36,7 +36,7 @@ public sealed class DD2PartSwapperPreview : IObjectUIHandler
         if (sceneView == null) {
             sceneView = context.CreateEmbedded3DScene($"PartPreview{context.GetHashCode()}");
 
-            var go = new GameObject("Preview", workspace.Env) { SceneFlags = SceneFlags.DefaultNonSerialized };
+            var go = new GameObject("Preview", workspace) { SceneFlags = SceneFlags.DefaultNonSerialized };
             sceneView.Scene.Add(go);
             var swp = go.AddComponent("app.PartSwapper");
             // default values currently only work on the immediate instance so re-create the _Meta field here
@@ -63,7 +63,7 @@ public sealed class DD2PartSwapperPreview : IObjectUIHandler
                     if ((data as RSZObjectResource)?.Instance.RszClass.name == "app.ItemWeaponParam") {
                         var weaponGo = sceneView.Scene.Find("Preview/Weapon");
                         if (weaponGo == null) {
-                            weaponGo = new GameObject("Weapon", workspace.Env);
+                            weaponGo = new GameObject("Weapon", workspace);
                             sceneView.Scene.GameObjects.First().AddChild(weaponGo);
                         }
                         var meshComp = weaponGo.GetOrAddComponent<MeshComponent>();

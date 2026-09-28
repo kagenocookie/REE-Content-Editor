@@ -30,13 +30,13 @@ entities:
         subtypes:
           male:
             file: AppSystem/CharaEdit/ch000/SwapData/TopsSwapData.user
-            type: array-file
+            type: object-catalog
             filter:
             - property: _Gender
               equals: 2776536455
           female:
             file: AppSystem/CharaEdit/ch000/SwapData/TopsSwapData.user
-            type: array-file
+            type: object-catalog
             filter:
             - property: _Gender
               equals: 1910070090
@@ -57,12 +57,12 @@ entities:
         subtypes:
           male:
             file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_m_Tops.user
-            type: resource_proxy_pfb
+            type: resource-holder-pfb
             params:
               skipFields: 1
           female:
             file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_f_Tops.user
-            type: resource_proxy_pfb
+            type: resource-holder-pfb
             params:
               skipFields: 1
     runtime_mapping:
@@ -96,39 +96,39 @@ entities:
         # catalog entry ID field should be auto determinable here
         file: AppSystem/CharaEdit/ch000/Catalog/TopsBdMeshCatalog_Default.user
         # `type` tells it how to handle the catalog entry
-        # resource_proxy_pfb: the entity is an object that contains a via.Prefab and it also has an ID field somewhere
+        # resource-holder-pfb: the entity is an object that contains a via.Prefab and it also has an ID field somewhere
         # optionally we can manually configure but it should reasonably know how to auto determine the prefab and ID fields
         # this one specifically is just a pfb containing a resource path (awful shit, really)
         # the resource part inside the actual pfb will be auto handled to: 1. find single non-transform component, 2. find a resource field
         # additionally, check for any "Enabled" flags and set them true, or maybe we can explicitly configure classname default values instead of looking for an enable flag
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: chain
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/TopsBdChainCatalog_Default.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: clsp
       label: Collision Shape Preset
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/TopsBdCollisionShapePresetCatalog_Default.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: cloth
       label: GPU Cloth
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/TopsBdGpuClothCatalog_Default.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: sfur
       label: Shell Fur
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/TopsBdShellFurCatalog_Default.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     runtime_mapping:
@@ -161,7 +161,7 @@ entities:
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/TopsBdSkinCatalog_Default.user
         custom_id_range: [10000, 10000000]
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     runtime_mapping:
@@ -188,34 +188,34 @@ entities:
       resource:
         custom_id_range: [10000, 10000000]
         file: AppSystem/CharaEdit/ch000/Catalog/TopsWbMeshCatalog_Default.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: chain
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/TopsWbChainCatalog_Default.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: clsp
       label: Collision Shape Preset
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/TopsWbCollisionShapePresetCatalog_Default.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: cloth
       label: GPU Cloth
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/TopsWbGpuClothCatalog_Default.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: sfur
       label: Shell Fur
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/TopsWbShellFurCatalog_Default.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     runtime_mapping:
@@ -248,7 +248,7 @@ entities:
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/TopsWbSkinCatalog_Default.user
         custom_id_range: [10000, 10000000]
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     runtime_mapping:
@@ -275,27 +275,27 @@ entities:
       resource:
         custom_id_range: [10000, 10000000]
         file: AppSystem/CharaEdit/ch000/Catalog/TopsAmMeshCatalog_Default.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: chain
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/TopsAmChainCatalog_Default.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: clsp
       label: Collision Shape Preset
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/TopsAmCollisionShapePresetCatalog_Default.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: cloth
       label: GPU Cloth
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/TopsAmGpuClothCatalog_Default.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     runtime_mapping:
@@ -328,7 +328,7 @@ entities:
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/TopsAmSkinCatalog_Default.user
         custom_id_range: [10000, 10000000]
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     runtime_mapping:
@@ -355,20 +355,20 @@ entities:
       resource:
         custom_id_range: [10000, 10000000]
         file: AppSystem/CharaEdit/ch000/Catalog/TopsBtMeshCatalog_Default.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: chain
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/TopsBtChainCatalog.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: clsp
       label: Collision Shape Preset
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/TopsBtCollisionShapePresetCatalog.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     runtime_mapping:
@@ -399,7 +399,7 @@ entities:
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/TopsBtSkinCatalog_Default.user
         custom_id_range: [10000, 10000000]
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     runtime_mapping:

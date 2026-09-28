@@ -12,7 +12,7 @@ entities:
       required: true
       resource:
         id: [_Style]
-        type: array-file
+        type: object-catalog
         custom_id_range: [10000, 10000000]
         classname: app.ScarSwapItem
         file: AppSystem/CharaEdit/ch000/SwapData/ScarSwapData.user
@@ -33,7 +33,7 @@ entities:
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/ScarCatalog.user
         custom_id_range: [10000, 10000000]
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
 

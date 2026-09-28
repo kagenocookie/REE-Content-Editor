@@ -22,7 +22,7 @@ entities:
         required: true
         resource:
           id: [_Type]
-          type: array-file
+          type: object-catalog
           classname: offline.WeaponPrefabUserData.WeaponParam
           file: sectionroot/userdata/system/equipment/weaponprefabuserdata.user
           params:
@@ -31,7 +31,7 @@ entities:
         required: true
         resource:
           id: [_WeaponType]
-          type: array-file
+          type: object-catalog
           classname: offline.survivor.motion.WeaponCharacterMotionResourcePrefabSettings
           file: sectionroot/userdata/system/equipment/weaponcharactermotionresourceuserdata.user
           params:

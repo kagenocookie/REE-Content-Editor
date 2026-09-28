@@ -23,7 +23,7 @@ entities:
         id: [_CostumeId]
         sub_id: [_CostumeVariationId]
         classname: app.TimelineEventCostumeCatalog.Unit
-        type: array-file
+        type: object-catalog
         file: natives/stm/event/resource/costumecatalog/ch0200.user.3
   # costumes.montage_preset:
   #   custom_id_range: [100000, 999999]
@@ -55,7 +55,7 @@ classes:
     # sub_id: [_Preset._ID]
     to_string: "Montage Preset Entry [{_Preset._ModelID} / {_Preset._ID}] {:path(_Preset)}"
     # patcher:
-    #   type: array-file
+    #   type: object-catalog
     #   file: natives/stm/gameassets/character/characterprefab/cp_e9/cp_e900/montage/cp_e900charactermontagepresetcataloguserdata.user.3
     #   file: natives/stm/gameassets/character/characterprefab/cp_a1/cp_a100/userdata/cp_a100montagepresetdata.user.3
     #   file: natives/stm/appsystem/event/timelineevent/catalog/timelineevent_charactermontagepresetcataloguserdata.user.3

@@ -5,8 +5,8 @@ using ReeLib;
 
 namespace ContentPatcher;
 
-[ResourcePatcher("array-file")]
-public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
+[ResourcePatcher("object-catalog")]
+public class ObjectCatalogResourceHandler : ResourceHandler, IResourceHandlerStatic
 {
     private RszFieldAccessorBase<IList<object>> arrayAccessor = null!;
 
@@ -14,7 +14,7 @@ public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
 
     public static ResourceHandler Deserialize(ResourceConfig resource, ResourceConfigSerialized data, ContentWorkspace workspace)
     {
-        return new ArrayFileResourceHandler() {
+        return new ObjectCatalogResourceHandler() {
             Config = resource,
             Files = data.TargetFiles.ToList(),
             arrayAccessor = data.GetDirectFieldAccessor<IList<object>>(static f => f.array && f.type == RszFieldType.Object),

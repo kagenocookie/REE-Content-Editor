@@ -39,7 +39,7 @@ entities:
         required: true
         resource:
           id: [ID]
-          type: array-file
+          type: object-catalog
           custom_id_range: [1000, 999999]
           filter:
           - property: _SubNPC
@@ -51,7 +51,7 @@ entities:
         required: true
         resource:
           id: [ID]
-          type: array-file
+          type: object-catalog
           custom_id_range: [1000, 999999]
           filter:
           - property: _SubNPC
@@ -63,7 +63,7 @@ entities:
         required: true
         resource:
           id: [_CharacterID]
-          type: array-file
+          type: object-catalog
           classname: app.charaedit.ch000.EditDataTable.Data
           file: AppSystem/CharaEdit/ch000/EditDataTable_Npc.user
       - name: name

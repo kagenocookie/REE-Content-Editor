@@ -19,11 +19,11 @@ entities:
           left:
             file: AppSystem/CharaEdit/ch000/SwapData/EyeLeftSwapData.user
             classname: app.EyeLeftSwapItem
-            type: array-file
+            type: object-catalog
           right:
             file: AppSystem/CharaEdit/ch000/SwapData/EyeRightSwapData.user
             classname: app.EyeRightSwapItem
-            type: array-file
+            type: object-catalog
 
   charaEdit.eyes.EyeTexture:
     to_string: "EyeTexture {id:enum(app.CharacterEditDefine.EyeLeftTextureID)} | {textureLeft._Materials[0]._Texture}"
@@ -44,7 +44,7 @@ entities:
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/EyeLeftTextureCatalog.user
         custom_id_range: [10000, 10000000]
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: textureRight
@@ -52,7 +52,7 @@ entities:
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/EyeRightTextureCatalog.user
         custom_id_range: [10000, 10000000]
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
 
@@ -75,7 +75,7 @@ entities:
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/EyeLeftParallaxCatalog.user
         custom_id_range: [10000, 10000000]
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: textureRight
@@ -83,7 +83,7 @@ entities:
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/EyeRightParallaxCatalog.user
         custom_id_range: [10000, 10000000]
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
 

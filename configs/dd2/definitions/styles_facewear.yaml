@@ -29,13 +29,13 @@ entities:
         subtypes:
           male:
             file: AppSystem/CharaEdit/ch000/SwapData/FacewearSwapData.user
-            type: array-file
+            type: object-catalog
             filter:
             - property: _Gender
               equals: 2776536455
           female:
             file: AppSystem/CharaEdit/ch000/SwapData/FacewearSwapData.user
-            type: array-file
+            type: object-catalog
             filter:
             - property: _Gender
               equals: 1910070090
@@ -56,12 +56,12 @@ entities:
         subtypes:
           male:
             file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_m_Facewear.user
-            type: resource_proxy_pfb
+            type: resource-holder-pfb
             params:
               skipFields: 1
           female:
             file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_f_Facewear.user
-            type: resource_proxy_pfb
+            type: resource-holder-pfb
             params:
               skipFields: 1
 
@@ -81,38 +81,38 @@ entities:
       resource:
         custom_id_range: [10000, 10000000]
         file: AppSystem/CharaEdit/ch000/Catalog/FacewearMeshCatalog_Default_HA.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: beastMesh
       required: true
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/FacewearMeshCatalog_Default_BA.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: humanJcns
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/FacewearJcnsCatalog_Default_HA.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: beastJcns
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/FacewearJcnsCatalog_Default_BA.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: humanWrap
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/FacewearWrapCatalog_Default_HA.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     - name: beastWrap
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/FacewearWrapCatalog_Default_BA.user
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     runtime_mapping:
@@ -138,7 +138,7 @@ entities:
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/FacewearSkinCatalog_Default.user
         custom_id_range: [10000, 10000000]
-        type: resource_proxy_pfb
+        type: resource-holder-pfb
         params:
           skipFields: 1
     runtime_mapping:

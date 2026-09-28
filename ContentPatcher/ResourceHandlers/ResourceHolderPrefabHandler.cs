@@ -19,8 +19,11 @@ public class CatalogPrefabResource(ResourceConfig type, RszInstance instance, st
     };
 }
 
-[ResourcePatcher("resource_proxy_pfb")]
-public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStatic
+/// <summary>
+/// Resource type of a catalog .user file pointing to data holder prefabs where the .pfb has exactly one GameObject with exactly one non-transform component, usually for storing resource paths.
+/// </summary>
+[ResourcePatcher("resource-holder-pfb")]
+public class ResourceHolderPrefabHandler : ResourceHandler, IResourceHandlerStatic
 {
     private RszFieldAccessorBase<List<object>> arrayAccessor = null!;
 
@@ -36,7 +39,7 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
 
     public static ResourceHandler Deserialize(ResourceConfig resource, ResourceConfigSerialized data, ContentWorkspace workspace)
     {
-        return new ResourceProxyPrefabHandler() {
+        return new ResourceHolderPrefabHandler() {
             Config = resource,
             Files = data.TargetFiles.ToList(),
             SkipFieldCount = data.GetParam<int>("skipFields", 0),

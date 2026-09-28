@@ -11,14 +11,14 @@ entities:
     - name: costumeData
       required: true
       resource:
-        type: array-file
+        type: object-catalog
         classname: app.user_data.CostumeItemTable.cCostumeItemData
         id: [_ItemID]
         file: GameDesign/GUI/CostumeChange/CostumeItemData.user
     - name: itemData
       required: true
       resource:
-        type: array-file
+        type: object-catalog
         classname: app.user_data.ItemData.cData
         id: [{ path: _Id._Value, class: app.ItemEnum.ID_Serializable }]
         file: GameDesign/DataExcel/ItemData.user
@@ -32,7 +32,7 @@ entities:
         property: _PlayerCloakID
         not_equals: 15318
       resource:
-        type: array-file
+        type: object-catalog
         id: [_ID]
         classname: app.user_data.PlayerPartsList.cData
         files:
@@ -48,7 +48,7 @@ entities:
         property: _PlayerCloakID
         not_equals: 15318
       resource:
-        type: array-file
+        type: object-catalog
         id: [_ID]
         classname: app.user_data.PlayerPartsList.cData
         files:
@@ -69,56 +69,56 @@ entities:
           nested: true
         subtypes:
           weaponParts:
-            type: array-file
+            type: object-catalog
             id: [_ID]
             classname: app.user_data.PlayerPartsList.cData
             files:
             - GameDesign/System/CatalogData/PlayerWeaponPartsList_2nd.user
             - GameDesign/System/CatalogData/PlayerWeaponPartsList_1st.user
           weaponPartsHQ:
-            type: array-file
+            type: object-catalog
             id: [_ID]
             classname: app.user_data.PlayerPartsList.cData
             files:
             - GameDesign/System/CatalogData/PlayerWeaponPartsListHQ_2nd.user
             - GameDesign/System/CatalogData/PlayerWeaponPartsListHQ_1st.user
           weaponSubParts:
-            type: array-file
+            type: object-catalog
             id: [_ID]
             classname: app.user_data.PlayerPartsList.cData
             files:
             - GameDesign/System/CatalogData/PlayerWeaponSubPartsList_2nd.user
             - GameDesign/System/CatalogData/PlayerWeaponSubPartsList_1st.user
           weaponSubPartsHQ:
-            type: array-file
+            type: object-catalog
             id: [_ID]
             classname: app.user_data.PlayerPartsList.cData
             files:
             - GameDesign/System/CatalogData/PlayerWeaponSubPartsListHQ_2nd.user
             - GameDesign/System/CatalogData/PlayerWeaponSubPartsListHQ_1st.user
           weaponSheathParts:
-            type: array-file
+            type: object-catalog
             id: [_ID]
             classname: app.user_data.PlayerPartsList.cData
             files:
             - GameDesign/System/CatalogData/PlayerSheathPartsList_2nd.user
             - GameDesign/System/CatalogData/PlayerSheathPartsList_1st.user
           weaponSheathPartsHQ:
-            type: array-file
+            type: object-catalog
             id: [_ID]
             classname: app.user_data.PlayerPartsList.cData
             files:
             - GameDesign/System/CatalogData/PlayerSheathPartsListHQ_2nd.user
             - GameDesign/System/CatalogData/PlayerSheathPartsListHQ_1st.user
           weaponSheathSubParts:
-            type: array-file
+            type: object-catalog
             id: [_ID]
             classname: app.user_data.PlayerPartsList.cData
             files:
             - GameDesign/System/CatalogData/PlayerSheathSubPartsList_2nd.user
             - GameDesign/System/CatalogData/PlayerSheathSubPartsList_1st.user
           weaponSheathSubPartsHQ:
-            type: array-file
+            type: object-catalog
             id: [_ID]
             classname: app.user_data.PlayerPartsList.cData
             files:
@@ -136,14 +136,14 @@ entities:
         type: group
         subtypes:
           bodyParts:
-            type: array-file
+            type: object-catalog
             id: [_ID]
             classname: app.user_data.PlayerPartsList.cData
             files:
             - GameDesign/System/CatalogData/PlayerBodyPartsList_2nd.user
             - GameDesign/System/CatalogData/PlayerBodyPartsList_1st.user
           bodyPartsHQ:
-            type: array-file
+            type: object-catalog
             id: [_ID]
             classname: app.user_data.PlayerPartsList.cData
             files:

@@ -12,7 +12,7 @@ entities:
       resource:
         classname: app.WeaponParamCatalogUserData.Data
         id: [_WeaponID]
-        type: array-file
+        type: object-catalog
         custom_id_range: [100000, 999999]
         files:
         - gameassets/weapon/catalog/weaponparamcataloguserdata.user
@@ -23,7 +23,7 @@ entities:
       resource:
         id: [_WeaponID]
         classname: app.WeaponCatalogUserData.Data
-        type: array-file
+        type: object-catalog
         files:
         - gameassets/weapon/catalog/weaponcataloguserdata.user
         - gameassets/weapon/catalog/weaponcataloguserdata_firstchunk.user
@@ -34,7 +34,7 @@ entities:
       required: true
       resource:
         id: [_ID]
-        type: array-file
+        type: object-catalog
         classname: app.WeaponAccessoryCatalogUserData.Data
         files:
         - gameassets/weapon/catalog/weaponaccessorycataloguserdata.user
@@ -43,19 +43,19 @@ entities:
 resources:
   weapons.sling_preset:
     id: [_WeaponID]
-    type: array-file
+    type: object-catalog
     classname: app.PlayerSlingWeaponChainPresetConfiguration.PlayerSlingWeaponChainPresetUserData.SlingWeaponChainPresetData
     file: appsystem/character/characterprefab/playercommon/userdata/playerslingweaponchainpresetuserdata.user
   weapons.attachment_catalog:
     id: [_AttachmentID]
-    type: array-file
+    type: object-catalog
     classname: app.WeaponAttachmentCatalogUserData.Data
     files:
     - gameassets/weapon/catalog/weaponattachmentcatalog.user
     - gameassets/content/dlc/dlc_02/weaponattachmentcatalog_dlc_02.user
   weapons.attachment_param_catalog:
     id: [_AttachmentID]
-    type: array-file
+    type: object-catalog
     classname: app.WeaponAttachmentParamCatalogUserData.Data
     files:
     - gameassets/weapon/catalog/weaponattachmentparamcataloguserdata.user

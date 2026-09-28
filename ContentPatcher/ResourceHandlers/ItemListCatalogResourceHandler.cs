@@ -4,8 +4,8 @@ using ReeLib;
 
 namespace ContentPatcher;
 
-[ResourcePatcher("multi-array")]
-public class MultiFileArrayResourceHandler : ResourceHandler, IResourceHandlerStatic
+[ResourcePatcher("item-list-catalog")]
+public class ItemListCatalogResourceHandler : ResourceHandler, IResourceHandlerStatic
 {
     private RszFieldAccessorBase<IList<object>> arrayAccessor = null!;
 
@@ -13,9 +13,9 @@ public class MultiFileArrayResourceHandler : ResourceHandler, IResourceHandlerSt
 
     public static ResourceHandler Deserialize(ResourceConfig resource, ResourceConfigSerialized data, ContentWorkspace workspace)
     {
-        return new MultiFileArrayResourceHandler() {
+        return new ItemListCatalogResourceHandler() {
             Config = resource,
-            // path = data.Field ?? throw new Exception("Field is required for multi-array patcher!"),
+            // path = data.Field ?? throw new Exception("Field is required for item-list-catalog patcher!"),
             Files = data.TargetFiles.ToList(),
             arrayAccessor = data.GetDirectFieldAccessor<IList<object>>(static f => f.array && f.type == RszFieldType.Object),
         };

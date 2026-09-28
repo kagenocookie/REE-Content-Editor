@@ -6,7 +6,7 @@ entities:
         resource:
           id: [_SerialNum]
           custom_id_range: [10000, 999000]
-          type: array-file
+          type: object-catalog
           classname: app.SuddenQuestSelectData
           file: appsystem/quest/userdata/questsudden/suddenquesttable.user
           field: _SelectDataArray
@@ -26,7 +26,7 @@ entities:
           id: [_SerialNum]
           custom_id_range: [10000, 999000]
           classname: app.SuddenQuestContextData
-          type: array-file
+          type: object-catalog
           file: appsystem/quest/userdata/questsudden/suddenquesttable.user
           field: _ContextDataArray
           params:
@@ -48,7 +48,7 @@ entities:
         resource:
           id: [_RequestID]
           classname: app.DomainQueryGenerateTable.DomainQueryGenetateTableElement
-          type: array-file
+          type: object-catalog
           custom_id_range: [1500, 999999]
           file: leveldesign/generate/domainquerygenerate/domainquerygeneratetable.user
 

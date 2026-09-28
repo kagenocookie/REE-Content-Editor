@@ -13,7 +13,7 @@ entities:
         required: true
         resource:
           id: [ItemID]
-          type: array-file
+          type: object-catalog
           file: natives/stm/singletonuserdatas/playerweaponspecificationdata.user.2
           params:
             nested: false

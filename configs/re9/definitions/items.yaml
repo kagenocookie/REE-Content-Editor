@@ -8,7 +8,7 @@ entities:
       display_after: caption
       resource:
         id: [_ItemIDStr]
-        type: array-file
+        type: object-catalog
         custom_id_range: [100000, 999999]
         classname: app.ItemCatalogUserData.ItemData
         file: leveldesign/item/userdata/itemcataloguserdata.user
@@ -33,7 +33,7 @@ entities:
       label: GUI Data
       resource:
         id: [_ItemIdStr]
-        type: array-file
+        type: object-catalog
         classname: app.GuiItemInfo
         file: gui/userdata/guiitemdata.user
     - name: detail_search
@@ -41,7 +41,7 @@ entities:
       required: true
       resource:
         id: [_IDStr]
-        type: array-file
+        type: object-catalog
         classname: app.DetailSearchCatalogUserData`1.ObjectData<app.ItemID>
         file: gameassets/item/userdata/detailsearchitemcatalog.user
     - name: craft_sound
@@ -49,7 +49,7 @@ entities:
       required: true
       resource:
         id: [_ItemID]
-        type: array-file
+        type: object-catalog
         classname: app.CraftRecipeCatalogUserData.CraftSoundCatalogUserData.CatalogData
         file: sound/craftsoundcataloguserdata.user
   items.CraftRecipe:
@@ -60,7 +60,7 @@ entities:
       required: true
       resource:
         id: [_RecipeIDStr]
-        type: array-file
+        type: object-catalog
         classname: app.CraftRecipe
         file: leveldesign/item/userdata/craftrecipecataloguserdata.user
 

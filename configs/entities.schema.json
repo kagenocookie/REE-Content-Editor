@@ -280,7 +280,7 @@
         "type": {
           "description": "Resource loading and patching type",
           "type": "string",
-          "enum": ["array-file", "multi-array", "resource_proxy_pfb", "enum_mapping", "string", "msg", "group", "merged-group", "user-singleton"]
+          "enum": ["object-catalog", "item-list-catalog", "resource-holder-pfb", "enum_mapping", "string", "msg", "group", "merged-group", "user-singleton"]
         },
         "custom_id_range": {
           "description": "Single file path for this resource.",
@@ -311,7 +311,7 @@
           "type": "string"
         },
         "files": {
-          "description": "Array of file paths for array-file resources.",
+          "description": "List of files for this resources.",
           "type": "array",
           "items": {
             "type": "string"
