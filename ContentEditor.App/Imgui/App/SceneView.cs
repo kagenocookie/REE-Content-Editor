@@ -13,6 +13,7 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
     public string HandlerName => $"Scene";
 
     int IWindowHandler.FixedID => -100;
+    DockSlot IWindowHandler.DefaultDockSlot => DockSlot.Viewport;
 
     public ContentWorkspace Workspace { get; }
     public Scene Scene { get; }
@@ -46,13 +47,10 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
 
     public void OnWindow()
     {
-        var dragging = Scene.Mouse.IsDragging;
-        if (dragging) ImGui.EndDisabled();
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(0));
         if (!ImguiHelpers.BeginWindow(data, flags: ImGuiWindowFlags.MenuBar)) {
             WindowManager.Instance.CloseWindow(data);
             ImGui.PopStyleVar();
-            if (dragging) ImGui.BeginDisabled();
             return;
         }
         ImGui.PopStyleVar();
@@ -62,7 +60,6 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(0));
         ImGui.End();
         ImGui.PopStyleVar();
-        if (dragging) ImGui.BeginDisabled();
     }
 
     public void OnIMGUI()

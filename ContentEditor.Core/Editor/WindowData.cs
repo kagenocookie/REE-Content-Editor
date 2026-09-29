@@ -24,6 +24,12 @@ public class WindowData
 
     public bool IsFocused => Context.StateBool;
 
+    /// <summary>
+    /// ImGui dock node the window was docked in when it was last drawn, 0 if it's floating.
+    /// </summary>
+    [JsonIgnore]
+    public uint DockId { get; set; }
+
     [JsonIgnore]
     public UIContext Context { get; set; } = null!;
     [JsonIgnore]

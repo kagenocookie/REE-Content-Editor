@@ -16,7 +16,7 @@ using System.Text.Json;
 
 namespace ContentEditor.App;
 
-public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReferenceHolder
+public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReferenceHolder, IViewportDocument
 {
     public override bool HasUnsavedChanges => Handle.Modified;
 
@@ -212,9 +212,12 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             embeddedMenuPos = ImGui.GetCursorPos();
         }
         var availableSize = ImGui.GetWindowSize() - ImGui.GetCursorPos() - ImGui.GetStyle().WindowPadding;
-        var editorPanelWidth = GetOutlinerPanelWidth(availableSize.X);
+        // while we're the active viewport window the outliner is shown in the hierarchy panel instead
+        var outlinerInPanel = IsActiveViewportDocument;
+        var editorPanelWidth = outlinerInPanel ? 0 : GetOutlinerPanelWidth(availableSize.X);
+        var splitterWidth = outlinerInPanel ? 0 : MeshEditor.SplitterWidth;
         var expectedSize = availableSize;
-        expectedSize.X -= editorPanelWidth + MeshEditor.SplitterWidth;
+        expectedSize.X -= editorPanelWidth + splitterWidth;
         expectedSize.X = Math.Max(expectedSize.X, 4);
         expectedSize.Y = Math.Max(expectedSize.Y, 4);
         float meshViewerSize = meshComponent.LocalBounds.Size.Length();
@@ -231,11 +234,11 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         if (isOutlinerOnLeft) {
             editorPanelPosition = c;
             editorSplitterPosition = editorPanelPosition + new Vector2(editorPanelWidth, 0);
-            sceneImagePosition = editorSplitterPosition + new Vector2(MeshEditor.SplitterWidth, 0);
+            sceneImagePosition = editorSplitterPosition + new Vector2(splitterWidth, 0);
         } else {
             sceneImagePosition = c;
             editorSplitterPosition = c + new Vector2(expectedSize.X, 0);
-            editorPanelPosition = editorSplitterPosition + new Vector2(MeshEditor.SplitterWidth, 0);
+            editorPanelPosition = editorSplitterPosition + new Vector2(splitterWidth, 0);
         }
         if (embeddedMenuPos != null) embeddedMenuPos = sceneImagePosition;
 
@@ -255,8 +258,8 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         var meshClick = ImGui.IsItemClicked(ImGuiMouseButton.Right) || ImGui.IsItemClicked(ImGuiMouseButton.Left) || ImGui.IsItemClicked(ImGuiMouseButton.Middle);
         var hoveredMesh = ImGui.IsItemHovered();
 
-        var overlayLeftOffset = isOutlinerOnLeft ? editorPanelWidth + MeshEditor.SplitterWidth + 10.0f * UI.UIScale : 0.0f;
-        var overlayRightPanelWidth = !isOutlinerOnLeft ? outlinerWidth : 0.0f;
+        var overlayLeftOffset = isOutlinerOnLeft ? editorPanelWidth + splitterWidth + 10.0f * UI.UIScale : 0.0f;
+        var overlayRightPanelWidth = !isOutlinerOnLeft && !outlinerInPanel ? outlinerWidth : 0.0f;
         if (meshEditor.IsEnabled) {
             var modeControlsHovered = ShowMeshEditorModesOverlay(overlayLeftOffset);
             var modeControlsHeight = ImGui.GetItemRectSize().Y;
@@ -280,10 +283,12 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
         // 3D view controls
         meshClick = meshClick || ImGui.IsItemClicked(ImGuiMouseButton.Right) || ImGui.IsItemClicked(ImGuiMouseButton.Left) || ImGui.IsItemClicked(ImGuiMouseButton.Middle);
-        ImGui.SetCursorPos(editorSplitterPosition);
-        ShowOutlinerSplitter(expectedSize.Y, availableSize.X);
-        ImGui.SetCursorPos(editorPanelPosition);
-        ShowOutliner(new Vector2(editorPanelWidth, expectedSize.Y));
+        if (!outlinerInPanel) {
+            ImGui.SetCursorPos(editorSplitterPosition);
+            ShowOutlinerSplitter(expectedSize.Y, availableSize.X);
+            ImGui.SetCursorPos(editorPanelPosition);
+            ShowOutliner(new Vector2(editorPanelWidth, expectedSize.Y));
+        }
 
         if (meshClick) {
             if (!isDragging) {
@@ -389,6 +394,15 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         ImguiHelpers.Tooltip(Lang.MeshViewer.Tooltip_OutlinerCollapse);
        
         ImGui.SameLine();
+        ShowOutlinerTabBar();
+        ImGui.BeginChild("##OutlinerTabList", new Vector2(size.X - ImGui.GetStyle().ScrollbarSize, 0));
+        ShowOutlinerTabContents();
+        ImGui.EndChild();
+        ImGui.EndChild();
+
+    }
+    private void ShowOutlinerTabBar()
+    {
         if (ImGui.BeginTabBar("##OutlinerTabBar")) {
             if (ImGui.BeginTabItem(Lang.MeshViewer.Tab_OutlinerModels)) {
                 ImGui.Spacing();
@@ -402,14 +416,42 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             }
             ImGui.EndTabBar();
         }
-        ImGui.BeginChild("##OutlinerTabList", new Vector2(size.X - ImGui.GetStyle().ScrollbarSize, 0));
+    }
+    private void ShowOutlinerTabContents()
+    {
         switch (outlinerTab) {
             case OutlinerTab.Objects: ShowOutlinerTabObjects(); break;
             case OutlinerTab.Animations: ShowOutlinerTabAnimations(); break;
         }
+    }
+
+    private bool IsActiveViewportDocument => EditorWindow.CurrentWindow?.ActiveViewportWindow?.Handler == this;
+
+    public void OnHierarchyIMGUI()
+    {
+        if (meshContexts.Count == 0) {
+            ImGui.TextDisabled(Lang.MeshViewer.NoMeshLoaded);
+            return;
+        }
+        ShowOutlinerTabBar();
+        ImGui.BeginChild("##OutlinerTabList");
+        ShowOutlinerTabContents();
         ImGui.EndChild();
-        ImGui.EndChild();
-        
+    }
+
+    public void OnInspectorIMGUI()
+    {
+        var mainCtx = meshContexts.FirstOrDefault();
+        if (mainCtx?.MeshFile == null) {
+            ImGui.TextDisabled(Lang.MeshViewer.NoMeshLoaded);
+            return;
+        }
+        if (ImGui.CollapsingHeader(Lang.MeshViewer.Tooltip_OutlinerMeshInfo, ImGuiTreeNodeFlags.DefaultOpen)) {
+            ShowMeshInfo(mainCtx, true);
+        }
+        if (mainCtx.GameObject != null && ImGui.CollapsingHeader(Lang.MeshViewer.Menu_Material, ImGuiTreeNodeFlags.DefaultOpen)) {
+            mainCtx.ShowMaterialSettings();
+        }
     }
     private void ShowOutlinerSplitter(float height, float availableWidth)
     {

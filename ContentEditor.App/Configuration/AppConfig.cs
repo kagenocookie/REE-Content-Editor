@@ -1093,6 +1093,7 @@ public struct KeyBinding : IEquatable<KeyBinding>
 public class AppJsonSettings
 {
     public SceneViewSettings SceneView { get; init; } = new();
+    public DockLayoutSettings DockLayout { get; init; } = new();
     public MeshViewerSettings MeshViewer { get; init; } = new();
     public BundleDefaults BundleDefaults { get; init; } = new();
     public ImportSettings Import { get; init; } = new();
@@ -1198,6 +1199,14 @@ public record SceneViewSettings
 {
     public SceneCameraMode CameraMode { get; set; } = SceneCameraMode.FPSCamera;
     public float MoveSpeed { get; set; } = 8f;
+}
+public record DockLayoutSettings
+{
+    public int Version { get; set; }
+    public uint Hierarchy { get; set; }
+    public uint Viewport { get; set; }
+    public uint Inspector { get; set; }
+    public uint AssetBrowser { get; set; }
 }
 public record DevSettings
 {

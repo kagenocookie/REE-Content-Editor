@@ -8,6 +8,7 @@ namespace ContentEditor.App.ImguiHandling;
 public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObjectUIHandler, IInspectorController, IWindowHandler, IFilterRoot, ISceneEditor
 {
     public override string HandlerName => "Scene";
+    public override DockSlot DefaultDockSlot => DockSlot.Hierarchy;
 
     public string Filename => Handle.Filepath;
     public ScnFile File => Handle.GetFile<ScnFile>();
