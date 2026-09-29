@@ -149,7 +149,7 @@ public class BundleRuntimeMapping
             var (editorField, editorPath) = desktop;
             if (!editorEntity.Data.TryGetValue(editorField, out var sourceData) || sourceData == null) {
                 if (editorField == "null") {
-                    SetNodeByPath(runtimeData, runtimePath, new JsonObject(), true);
+                    SetNodeByPath(runtimeData, runtimePath, null, true);
                 }
                 continue;
             }
@@ -197,6 +197,10 @@ public class BundleRuntimeMapping
         var sep = path.IndexOf('.');
         if (sep == -1) {
             if (isRuntime) {
+                if (value == null) {
+                    obj.Remove(path);
+                    return;
+                }
                 obj[path] = value;
                 // TODO ensure uint64s become int64 because ref-lua can't read those properly
                 if (value is JsonObject leafObj) {

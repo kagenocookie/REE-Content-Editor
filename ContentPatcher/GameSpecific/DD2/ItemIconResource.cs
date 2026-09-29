@@ -15,9 +15,9 @@ public class ItemIconResource(ResourceConfig config) : IContentResource
 
     public IContentResource Clone() => new ItemIconResource(ResourceType) { data = data.Clone() };
 
-    public JsonNode ToJson(Workspace env) => JsonSerializer.SerializeToNode(data, JsonConfig.jsonOptionsIncludeFields)!;
+    public JsonNode ToJson(Workspace env) => JsonSerializer.SerializeToNode(data, JsonConfig.jsonOptionsIncludeAllFields)!;
     public static ItemIconResource.ItemRectData FromJson(JsonNode json)
-        => json.Deserialize<ItemIconResource.ItemRectData>(JsonConfig.jsonOptionsIncludeFields)!;
+        => json.Deserialize<ItemIconResource.ItemRectData>(JsonConfig.jsonOptionsIncludeAllFields)!;
 
     public class ItemRectData
     {
