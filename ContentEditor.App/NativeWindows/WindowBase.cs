@@ -386,6 +386,9 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
                     if (count > 0) {
                         Overlays.ShowTooltip($"Saved {count} files!", 1);
                     }
+                    foreach (var entityEditor in subwindows.Where(sw => sw.Handler is EntitiesWindow)) {
+                        entityEditor.Context.Save();
+                    }
                 } finally {
                     SaveInProgress = false;
                 }
