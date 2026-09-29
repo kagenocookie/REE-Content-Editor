@@ -347,7 +347,7 @@ public class FileConverter : BaseWindowHandler
                 }
                 if (backupPath != null) {
                     Directory.CreateDirectory(Path.GetDirectoryName(backupPath)!);
-                    File.Copy(sourcePath, backupPath);
+                    File.Copy(sourcePath, backupPath, true);
                 }
 
                 var convertSuccess = converter.Upgrade(sourceFile, destinationPath, context);

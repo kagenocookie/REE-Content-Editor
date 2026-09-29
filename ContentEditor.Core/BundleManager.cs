@@ -207,7 +207,7 @@ public class BundleManager
             desktopEntity.Label = runtimeEntity.Label;
 
             if (Mapping.MapToDesktop(runtimeEntity.Type, runtimeEntityRaw, desktopEntity)) {
-                Logger.Info($"Auto-migrated bundle \"{bundle.Name}\" runtime entity \"{runtimeEntity}\" to desktop entity");
+                // Logger.Info($"Auto-migrated bundle \"{bundle.Name}\" runtime entity \"{runtimeEntity}\" to desktop entity");
             } else {
                 Logger.Warn($"Failed to migrate bundle \"{bundle.Name}\" runtime entity \"{runtimeEntity}\" to desktop entity \"{desktopEntity}\"");
             }

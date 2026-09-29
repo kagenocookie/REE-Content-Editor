@@ -155,9 +155,9 @@ public class BundleRuntimeMapping
             }
 
             if (!string.IsNullOrEmpty(editorPath)) {
-                sourceData = GetNodeByPath(sourceData, editorPath)?.DeepClone();
+                sourceData = GetNodeByPath(sourceData, editorPath);
             }
-            SetNodeByPath(runtimeData, runtimePath, sourceData, true);
+            SetNodeByPath(runtimeData, runtimePath, sourceData?.DeepClone(), true);
         }
         return true;
     }

@@ -583,8 +583,11 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
     {
         LoadCustomEnums(entity.Enums);
         var idField = entity.Config.IDField;
-        if (entity.Get(idField.name) == null) {
+        var idValue = entity.Get(idField.name);
+        if (idValue == null) {
             entity.FieldValues[idField.name] = idField.ValueHandler.FetchResource(workspace, entity, -1, state);
+        } else if (state == ResourceState.Active && idValue == GetBaseResourceInstance(idField.Config.Type, entity.Id)) {
+            entity.FieldValues[idField.name] = idField.ValueHandler.FetchResource(workspace, entity, entity.Id, state);
         }
         foreach (var field in entity.Config.Fields) {
             if (field == idField) {

@@ -66,7 +66,8 @@ public class EntitySelection : IWindowHandler
         var selectedId = SelectedEntityId;
         var selected = selectedId == -1 ? null : workspace.ResourceManager.GetActiveEntityInstance(entityType, selectedId);
         if (selectedId == -1 && instances.Count() == 1 && selected == null) {
-            (selectedId, selected) = instances.First();
+            selectedId = instances.First().Key;
+            selected = workspace.ResourceManager.GetActiveEntityInstance(entityType, selectedId);
         }
 
         var pfx = ImguiHelpers.InlinePrefix();
