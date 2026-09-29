@@ -235,7 +235,7 @@ public class ResourceStringFormatter() : ISource
 
         if (selectorInfo.SelectorOperator.Contains('?')) return false;
 
-        throw new Exception($"Invalid field {selectorInfo.SelectorText} for resource {resource}");
+        throw new Exception($"Invalid field \"{selectorInfo.SelectorText}\" for resource {resource}");
     }
 }
 

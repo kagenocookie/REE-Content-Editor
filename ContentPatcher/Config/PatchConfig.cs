@@ -371,15 +371,18 @@ public class PatchConfig(string filepath)
         foreach (var field in config.Fields) {
             if (field.config.fieldId != null) {
                 field.IdField = field.config.fieldId;
-                if (field.IdField.field == "id") {
-                    // OK
-                } else if (config.GetField(field.IdField.field) == null) {
-                    Logger.Warn($"Unknown field {field.IdField.field} for entity {config.Name}");
+                if (!string.IsNullOrEmpty(field.IdField.field)) {
+                    if (field.IdField.field == "id") {
+                        // OK
+                    } else if (config.GetField(field.IdField.field) == null) {
+                        Logger.Warn($"Unknown field {field.IdField.field} for entity {config.Name}");
+                    }
                 }
 
-                if (field.IdField.path.StartsWith('{')) {
-                    field.IdField.formatter = new StringFormatter(field.IdField.path, FormatterSettings.CreateFullEntityFormatter(config, workspace));
+                if (!string.IsNullOrEmpty(field.IdField.format)) {
+                    field.IdField.formatter = new StringFormatter(field.IdField.format, FormatterSettings.CreateFullEntityFormatter(config, workspace));
                 }
+
                 field.IdField.Workspace = workspace;
             }
         }

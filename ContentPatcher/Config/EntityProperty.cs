@@ -4,7 +4,7 @@ using VYaml.Annotations;
 namespace ContentPatcher;
 
 [YamlObject]
-public partial record EntityProperty(string field, string path)
+public partial record EntityProperty(string field, string path, string? format = null)
 {
     public ContentWorkspace Workspace { get; set; } = null!;
 
@@ -18,33 +18,37 @@ public partial record EntityProperty(string field, string path)
         if (!data.TryGetValue("path", out var pathRaw) || pathRaw == null) {
             throw new Exception("Missing path for EntityProperty");
         }
-        return new EntityProperty((string)fieldRaw, (string)pathRaw) { Workspace = workspace };
+        string? format = null;
+        if (data.TryGetValue("format", out var formatRaw) && formatRaw != null) {
+            format = (string)formatRaw;
+        }
+        return new EntityProperty((string)fieldRaw, (string)pathRaw, format) { Workspace = workspace };
     }
 
-    public object? Get(object instance)
+    public object? Get(ResourceEntity entity)
     {
-        if (instance is not ResourceEntity entity) {
-            throw new NotImplementedException();
+        object? value;
+        if (string.IsNullOrEmpty(field)) {
+            value = entity;
+        } else if (field == "id") {
+            value = entity.Id;
+        } else {
+            value = entity.Get(field);
         }
-        if (field == "id") {
-            if (formatter != null) {
-                return formatter.GetString(entity.Id);
-            }
-            return entity.Id;
-        }
-        var value = entity.Get(field);
         if (value is IPropertyContainer pc) {
             return pc.Get(path);
         }
         if (value == null) return null;
+
+        if (formatter != null) {
+            return formatter.GetString(value);
+        }
+
         throw new NotImplementedException();
     }
 
-    public void Set(object instance, object value)
+    public void Set(ResourceEntity entity, object value)
     {
-        if (instance is not ResourceEntity entity) {
-            throw new NotImplementedException();
-        }
         if (entity.Get(field) is IPropertyContainer pc) {
             pc.Set(path, value);
         }

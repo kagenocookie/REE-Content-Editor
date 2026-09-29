@@ -127,7 +127,7 @@ entities:
     - name: wrap
       field_id:
         field: id
-        path: "{:enum_name(app.CharacterEditDefine.HelmMeshID):{:parse(^helm_\\\\d+):{:hash()}}}"
+        format: "{:enum_name(app.CharacterEditDefine.HelmMeshID):{:parse(^helm_\\\\d+)}}"
       resource:
         type: group
         id: [_Hash]

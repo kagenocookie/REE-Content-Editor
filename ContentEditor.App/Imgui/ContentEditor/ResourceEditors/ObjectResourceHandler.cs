@@ -16,7 +16,7 @@ public sealed class ObjectResourceHandler : IObjectUIHandler
             var child = context.AddChild(context.label, instance.Instance, setter: (ctx, val) => instance.Instance = (RszInstance?)val!);
             WindowHandlerFactory.SetupRSZInstanceHandler(child);
         }
-        var nested = field?.forceNested ?? instance.Instance.Fields.Length > 2;
+        var nested = field?.Field.config.GetParam<bool?>("nested", null) ?? instance.Instance.Fields.Length > 2;
         if (nested) {
             if (ImguiHelpers.TreeNodeSuffix(context.label, WindowHandlerFactory.GetString(instance.Instance))) {
                 context.children[0].ShowUI();

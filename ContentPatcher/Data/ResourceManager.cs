@@ -597,7 +597,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
                 continue;
             }
 
-            var fieldId = field.IdField == null ? entity.Id : Convert.ToInt64(field.IdField.Get(entity));
+            var fieldId = field.GetIDForEntity(entity);
 
             var value = entity.Get(field.name);
             if (value != null) {

@@ -1,38 +1,20 @@
 # list of resources required for a new common NPC:
-# - character data natives/stm/AppSystem/ch/ch300/userdata/characterdatalist.user.2
-# - head bake pfb (app.PartSwapTextureHolder pfb)
-# -> catalog - natives/stm/AppSystem/CharaEdit/ch000/catalog/headprebaketexturecatalog_npc.user.2
-# - body bake pfb (app.PartSwapTextureHolder pfb)
-# -> catalog - natives/stm/AppSystem/CharaEdit/ch000/catalog/bodyprebaketexturecatalog_npc.user.2
-# -> catalog _Hash is computed from "ch300000_0" - _0 or _1 for the main/replacement NPCs; does the value matter for anything, can we just pass in the chara ID?
-# - npcart image (app.GUITextureHolder pfb) - natives/stm/AppSystem/gui/prefab/textureholder/npcart/npcart_ch300002_00_00.pfb.17
-# -> add to prefab list - natives/stm/AppSystem/gui/userdata/newtextureholderdata/guinpcarttextureholderdata.user.2
-# -> enum: app.GUITextureLoaderDefine.NPCArtTextureID, enum format "NPCArt_{charaId}_{variantId}_{costumeId?}"
-# - add thumbnail (app.GUITextureHolder pfb) - natives/stm/AppSystem/gui/prefab/textureholder/npcthumb/npcthumb_ch300000_00_00.pfb.17
-# -> add to prefab list - natives/stm/AppSystem/gui/userdata/newtextureholderdata/guinpcthumbnailtextureholderdata.user.2
-# -> enum: app.GUITextureLoaderDefine.NPCThumbnailTextureID, enum format "NPCThumb_{charaId}_{variantId}_{costumeId?}"
-# - corpse image (app.GUITextureHolder pfb) - natives/stm/AppSystem/gui/prefab/textureholder/corpsethumb/corpsethumb_ch300002_00.pfb.17
-# -> add to prefab list - natives/stm/AppSystem/gui/userdata/newtextureholderdata/corpsethumbtextureholderdata.user.2
-# -> enum: app.GUITextureLoaderDefine.CorpseThumbTextureID, enum format "CorpseThumb_{charaId}_{variantId}"
-# - lipsync user file - natives/stm/AppSystem/ch/lipsync/npc/ch300002.pfb.17
-# -> catalog - natives/stm/AppSystem/catalog/maincontents/userdata/lipsynccataloguserdata.user.2
 # - textures - body (ALBD, NRRA), head (ALBD, NRRA)
-# - appearance and costume data (app.charaedit.ch000.EditDataTable.Data) - natives/stm/AppSystem/CharaEdit/ch000/editdatatable_npc.user.2
-# - name "Mes_{_CharacterID:enum(app.CharacterID)}" (natives/stm/message/ui/charactername.msg.22)
-# - NPC schedule - natives/stm/AppSystem/ch/ch300/userdata/npcscheduledata.user.2
-# - spawn them somewhere - natives/stm/appdata/generate/manualset/content/**/npc/normal/normal.user.2
+# - spawn an NPC somewhere - natives/stm/appdata/generate/manualset/content/**/npc/normal/normal.user.2
 
 # other, maybe useless?
 # natives/stm/appdata/generate/manualset/simpleglobalnpcsettable.user.2
 # natives/stm/appdata/generate/manualset/simpleglobalappendnpcsettable.user.2
 
 entities:
-  characters.npc_data:
+  characters.NpcData:
     enums:
     - name: app.CharacterID
       format: "{name}"
       primary: true
     to_string: "NPC {name}: {displayName}"
+    # TODO disallow new npc creation until we support initial string input
+    allow_create_empty: false
     fields:
       - name: data
         label: Data
@@ -86,8 +68,111 @@ entities:
           type: msg
           file: Message/UI/CharacterName.msg
           params:
-            key_format: "Mes_{name}"  # if data._SubNPC -> _X1 suffix
+            key_format: "Mes_{name}"
+      - name: displayName_sub
+        label: Sub Name
+        display_after: displayName
+        resource:
+          type: msg
+          file: Message/UI/CharacterName.msg
+          params:
+            key_format: "Mes_{name}_X1"
+      - name: scheduleData
+        resource:
+          type: item-list-catalog
+          classname: app.NPCSchedule
+          id: [ID]
+          file: AppSystem/ch/ch300/UserData/NPCScheduleData.user
 
+      - name: headPreBakeTexture_0
+        required: true
+        field_id:
+          format: "{name}_0"
+        resource:
+          type: resource-holder-pfb
+          file: AppSystem/CharaEdit/ch000/Catalog/HeadPreBakeTextureCatalog_Npc.user
+          params:
+            skipFields: 1
+            nested: true
+      - name: headPreBakeTexture_1
+        field_id:
+          format: "{name}_1"
+        resource:
+          type: resource-holder-pfb
+          file: AppSystem/CharaEdit/ch000/Catalog/HeadPreBakeTextureCatalog_Npc.user
+          params:
+            skipFields: 1
+            nested: true
+      - name: headPreBakeTexture_2
+        field_id:
+          format: "{name}_2"
+        resource:
+          type: resource-holder-pfb
+          file: AppSystem/CharaEdit/ch000/Catalog/HeadPreBakeTextureCatalog_Npc.user
+          params:
+            skipFields: 1
+            nested: true
+      - name: bodyPreBakeTexture_0
+        required: true
+        field_id:
+          format: "{name}_0"
+        resource:
+          type: resource-holder-pfb
+          file: AppSystem/CharaEdit/ch000/Catalog/BodyPreBakeTextureCatalog_Npc.user
+          params:
+            skipFields: 1
+            nested: true
+      - name: bodyPreBakeTexture_1
+        field_id:
+          format: "{name}_1"
+        resource:
+          type: resource-holder-pfb
+          file: AppSystem/CharaEdit/ch000/Catalog/BodyPreBakeTextureCatalog_Npc.user
+          params:
+            skipFields: 1
+            nested: true
+      - name: bodyPreBakeTexture_2
+        field_id:
+          format: "{name}_2"
+        resource:
+          type: resource-holder-pfb
+          file: AppSystem/CharaEdit/ch000/Catalog/BodyPreBakeTextureCatalog_Npc.user
+          params:
+            skipFields: 1
+            nested: true
+      - name: customLipsyncData
+        resource:
+          type: resource-holder-pfb
+          field: _CharacterElements
+          file: AppSystem/Catalog/MainContents/UserData/LipSyncCatalogUserData.user
+          params:
+            skipFields: 1
+            nested: true
+
+# # -> enum: app.GUITextureLoaderDefine.NPCArtTextureID, enum format "NPCArt_{name}_{variantId}_{costumeId?}"
+#       - name: guiNpcTexture
+#         field_id:
+#           field: TODO need to match catalog entry by NPC "index" via app.GUITextureLoaderDefine.NPCArtTextureID enum
+#           path:
+#         resource:
+#           type: resource-holder-pfb
+#           file: AppSystem/Gui/UserData/NewTextureHolderData/GUINPCArtTextureHolderData.user
+# # -> enum: app.GUITextureLoaderDefine.NPCThumbnailTextureID, enum format "NPCThumb_{name}_{variantId}_{costumeId?}"
+#       - name: guiNpcThumbnail
+#         field_id:
+#           field:
+#           path:
+#         resource:
+#           type: resource-holder-pfb
+#           file: AppSystem/Gui/UserData/NewTextureHolderData/GUINPCThumbnailTextureHolderData.user
+# # -> enum: app.GUITextureLoaderDefine.CorpseThumbTextureID, enum format "CorpseThumb_{name}_{variantId}"
+#       - name: guiNpcCorpseThumbnail
+#         field_id:
+#           field:
+#           path:
+#         resource:
+#           type: resource-holder-pfb
+#           file: AppSystem/Gui/UserData/NewTextureHolderData/CorpseThumbTextureHolderData.user
 classes:
   app.charaedit.ch000.EditDataTable.Data:
     to_string: "EditDataTable Character={_CharacterID:enum(app.CharacterID)}"

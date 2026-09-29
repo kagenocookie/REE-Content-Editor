@@ -152,6 +152,8 @@ entities:
       format: "{name}"
       primary: true # denotes that the entity label should override this enum's corresponding display labels (entity id == enum value)
     to_string: 'Weapon {id:enum(app.WeaponID)} (#{id}): {id:reverseLookupEntity(ItemData|\{data?._WeaponId@ItemWeaponParam\}|\{label\}|Unknown item)}'
+    zero_entity:
+      id: 0
     fields:
       - name: data
         label: Data

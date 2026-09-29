@@ -61,7 +61,9 @@ public class ResourceEntity : Entity
     public long GetFieldId(string field)
     {
         var fieldCfg = Config.GetField(field);
-        return fieldCfg?.IdField == null ? Id : Convert.ToInt64(fieldCfg.IdField.Get(this));
+        if (fieldCfg?.IdField == null) return Id;
+
+        return fieldCfg.GetIDForEntity(this);
     }
 
     public Entity ToJson(Workspace env)
@@ -111,7 +113,7 @@ public class ResourceEntity : Entity
                 continue;
             }
 
-            var resourceId = field.IdField == null ? Id : Convert.ToInt64(field.IdField.Get(this));
+            var resourceId = field.GetIDForEntity(this);
             var baseValue = field.ValueHandler.FetchResource(workspace, this, resourceId, ResourceState.Base);
             if (baseValue == null) {
                 if (value == null) {

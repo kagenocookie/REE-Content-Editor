@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using ReeLib.Common;
 
 namespace ContentPatcher;
 
@@ -44,7 +45,18 @@ public sealed class EntityField
             return mapper.GetID(entity);
         }
 
-        return IdField == null ? entity.Id : Convert.ToInt64(IdField.Get(entity));
+        if (IdField == null) return entity.Id;
+
+        var result = IdField?.Get(entity);
+        if (result is string str) {
+            if (long.TryParse(str, out var id)) {
+                return id;
+            } else {
+                return MurMur3HashUtils.GetHash(str);
+            }
+        }
+
+        return Convert.ToInt64(result);
     }
 
     public override string ToString() => $"{name} [{ResourceType}]";
