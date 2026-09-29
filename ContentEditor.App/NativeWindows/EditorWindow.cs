@@ -232,7 +232,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
         var paks = filenames.Where(f => f.EndsWith(".pak"));
         if (paks.Any()) {
-            var orderedPaks = paks.Order().ToArray();
+            var orderedPaks = paks.OrderDescending().ToArray();
             foreach (var pak in orderedPaks) AppConfig.Settings.RecentFiles.AddRecent(Workspace.Game, pak);
             AddSubwindow(new PakBrowser(workspace, orderedPaks));
             filenames = filenames.Except(paks).ToArray();

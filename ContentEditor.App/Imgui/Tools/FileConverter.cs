@@ -299,6 +299,8 @@ public class FileConverter : BaseWindowHandler
                 updatedFile.DiffHandler.LoadBase(context.updatedEnv, sourceFile);
                 var diff = updatedFile.DiffHandler.FindDiff(updatedFile);
 
+                context.sourceEnv.ResourceManager.CloseFile(sourceFile);
+                context.updatedEnv.ResourceManager.CloseFile(updatedFile);
                 if (diff == null) {
                     Logger.Info($"No changes detected for file {nativePath}");
                     continue;
@@ -348,7 +350,9 @@ public class FileConverter : BaseWindowHandler
                     File.Copy(sourcePath, backupPath);
                 }
 
-                if (!converter.Upgrade(sourceFile, destinationPath, context)) {
+                var convertSuccess = converter.Upgrade(sourceFile, destinationPath, context);
+                context.sourceEnv.ResourceManager.CloseFile(sourceFile);
+                if (!convertSuccess) {
                     Logger.Warn($"Failed to upgrade file: {sourcePath} (native: {nativePath ?? "unknown"})");
                     continue;
                 }
