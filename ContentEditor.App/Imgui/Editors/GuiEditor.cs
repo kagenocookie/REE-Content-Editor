@@ -28,6 +28,7 @@ public class GuiEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
         WindowHandlerFactory.DefineInstantiator<ReeLib.Gui.Attribute>(ctx => new ReeLib.Gui.Attribute(GetGuiVersion(ctx)));
         WindowHandlerFactory.DefineInstantiator<ContainerAttribute1>(ctx => new ContainerAttribute1(GetGuiVersion(ctx)));
         WindowHandlerFactory.DefineInstantiator<ContainerAttribute2>(ctx => new ContainerAttribute2(GetGuiVersion(ctx)));
+        System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(MotlistEditor).TypeHandle);
     }
 
     public GuiEditor(ContentWorkspace env, FileHandle file) : base (file)
