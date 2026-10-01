@@ -823,12 +823,12 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
     {
         ImGui.SetNextWindowSize(new Vector2(300 * UI.UIScale, 0));
         if (ImGui.BeginPopupContextItem()) {
-            if (ImguiHelpers.ContextMenuItem("##CopyPath", AppIcons.SI_FileCopyPath, "Copy Path", Colors.IconPrimary)) {
+            if (ImguiHelpers.SelectableItem("##CopyPath", AppIcons.SI_FileCopyPath, "Copy Path", Colors.IconPrimary)) {
                 EditorWindow.CurrentWindow?.CopyToClipboard(file);
             }
             var isFolder = !Path.HasExtension(file);
             if (!isFolder) {
-                if (ImguiHelpers.ContextMenuItem("##ExtractFile", AppIcons.SIC_FileExtractTo, Lang.PakBrowser.ExtractFile.String, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary])) {
+                if (ImguiHelpers.SelectableItemMultiColor("##ExtractFile", AppIcons.SIC_FileExtractTo, Lang.PakBrowser.ExtractFile.String, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary])) {
                     PlatformUtils.ShowSaveFileDialog((savePath) => {
                         var stream = file.StartsWith(PakReader.UnknownFilePathPrefix.AsSpan()[..^1]) ? reader!.GetUnknownFile(file) : reader!.GetFile(file);
                         if (stream == null) {
@@ -842,7 +842,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
                     ImGui.CloseCurrentPopup();
                 }
             }
-            if (ImguiHelpers.ContextMenuItem("##Extract", AppIcons.SIC_FileExtractTo, isFolder ? Lang.PakBrowser.ExtractFolder.String : Lang.PakBrowser.ExtractFileKeepPaths.String, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary])) {
+            if (ImguiHelpers.SelectableItemMultiColor("##Extract", AppIcons.SIC_FileExtractTo, isFolder ? Lang.PakBrowser.ExtractFolder.String : Lang.PakBrowser.ExtractFileKeepPaths.String, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary])) {
                 // show folder unpack dialog instead
                 PlatformUtils.ShowFolderDialog((output) => {
                     ExtractList(file, output);
@@ -850,23 +850,23 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
                 ImGui.CloseCurrentPopup();
             }
             if (isBookmarked) {
-                if (ImguiHelpers.ContextMenuItem("##RemoveBookmark", AppIcons.SIC_BookmarkRemove, "Remove from Bookmarks", [Colors.IconPrimary, Colors.IconTertiary])) {
+                if (ImguiHelpers.SelectableItemMultiColor("##RemoveBookmark", AppIcons.SIC_BookmarkRemove, "Remove from Bookmarks", [Colors.IconPrimary, Colors.IconTertiary])) {
                     _bookmarks.User.RemoveBookmark(Workspace.Config.Game.name, file);
                 }
             } else {
-                if (ImguiHelpers.ContextMenuItem("##AddBookmark", AppIcons.SIC_BookmarkAdd, "Add to Bookmarks", [Colors.IconPrimary, Colors.IconSecondary])) {
+                if (ImguiHelpers.SelectableItemMultiColor("##AddBookmark", AppIcons.SIC_BookmarkAdd, "Add to Bookmarks", [Colors.IconPrimary, Colors.IconSecondary])) {
                     _bookmarks.User.AddBookmark(Workspace.Config.Game.name, file);
                 }
             }
             if (Path.HasExtension(file) && contentWorkspace.CurrentBundle != null) {
-                if (ImguiHelpers.ContextMenuItem("##SaveToBundle", AppIcons.SIC_BundleSaveTo, Lang.Buttons.SaveToBundle, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary])) {
+                if (ImguiHelpers.SelectableItemMultiColor("##SaveToBundle", AppIcons.SIC_BundleSaveTo, Lang.Buttons.SaveToBundle, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary])) {
                     var handle = contentWorkspace.ResourceManager.GetFileHandle(file);
                     if (handle != null) {
                         ResourcePathPicker.SaveFileToBundle(contentWorkspace, handle, (savePath, localPath, nativePath) => handle.Save(contentWorkspace, savePath), closeFile: true);
                     }
                 }
 
-                if (ImguiHelpers.ContextMenuItem("##SaveToBundleNew", AppIcons.SIC_BundleSaveAsNew, Lang.Buttons.SaveToBundleNewFile, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary])) {
+                if (ImguiHelpers.SelectableItemMultiColor("##SaveToBundleNew", AppIcons.SIC_BundleSaveAsNew, Lang.Buttons.SaveToBundleNewFile, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary])) {
                     var handle = contentWorkspace.ResourceManager.GetFileHandle(file);
                     if (handle != null) {
                         ResourcePathPicker.SaveFileToBundle(contentWorkspace, handle, (savePath, localPath, nativePath) => handle.Save(contentWorkspace, savePath), closeFile: true, useNewTargetPath: true);
@@ -874,7 +874,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
                 }
             }
             if (Path.HasExtension(file)) {
-                if (ImguiHelpers.ContextMenuItem("##JumpToContainingFolder", AppIcons.SIC_FolderContain, "Jump to Containing Folder", [Colors.IconPrimary, Colors.IconSecondary])) {
+                if (ImguiHelpers.SelectableItemMultiColor("##JumpToContainingFolder", AppIcons.SIC_FolderContain, "Jump to Containing Folder", [Colors.IconPrimary, Colors.IconSecondary])) {
                     string currFolder = Path.GetDirectoryName(file)!;
                     _currentDir = PathUtils.NormalizeFilepath(currFolder);
                 }

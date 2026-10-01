@@ -89,6 +89,7 @@ public static partial class Lang
         public static readonly FixedString Description = "Description";
         public static readonly FixedString Theme = "Theme";
         public static readonly FixedString BackgroundColor = "Background Color";
+        public static readonly FixedString HighlightColor = "Mesh Highlight Color";
 
         public static readonly FixedString PreferredLanguage = "Preferred Language";
         public static readonly FixedString MinLogLevel = "Minimum logging level";
@@ -170,6 +171,8 @@ public static partial class Lang
         public static readonly FixedString Key_MeshViewer_CameraTranslate = "Right Click + WASD";
         public static readonly FixedString Key_MeshViewer_CameraRotate = "Right Click + WASD";
         public static readonly FixedString Key_MeshViewer_CameraZoom = "Mouse Scroll Wheel";
+        public static readonly FixedString Bind_MeshViewer_ToggleOutliner = "Expand/Collapse Outliner";
+        public static readonly FixedString Bind_MeshViewer_ResetView = "Reset View Camera";
         public static readonly FixedString Bind_TextureViewer_ResetView = "Reset View";
         public static readonly FixedString Bind_TextureViewer_ZoomIn = "Zoom In";
         public static readonly FixedString Bind_TextureViewer_ZoomOut = "Zoom Out";

@@ -568,45 +568,35 @@ public static class ImguiHelpers
 
         return changed;
     }
-
-    private static bool ContextMenuItemInternal(string id, ReadOnlySpan<char> icons, TranslatableBase label, ReadOnlySpan<Vector4> iconColors, float iconPadding, float separatorPadding, float separatorWidth)
+    /// <summary>
+    /// Draws an imgui selectable with a multi-colored icon
+    /// </summary>
+    public static bool SelectableItemMultiColor(string id, ReadOnlySpan<char> icons, TranslatableBase label, ReadOnlySpan<Vector4> iconColors)
     {
         var style = ImGui.GetStyle();
         var drawList = ImGui.GetWindowDrawList();
         float fontSize = ImGui.GetFontSize();
-        float rowHeight = ImGui.GetFrameHeight();
-        float iconWidth = fontSize;
         Vector2 start = ImGui.GetCursorScreenPos();
 
-        bool activated = ImGui.Selectable($"{id}", false, ImGuiSelectableFlags.None, new Vector2(0, rowHeight));
+        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(style.ItemSpacing.X, 6f));
+        bool clicked = ImGui.Selectable(id, false, ImGuiSelectableFlags.None, new Vector2(0, ImGui.GetFrameHeight()));
+        ImGui.PopStyleVar();
 
-        Vector2 min = ImGui.GetItemRectMin();
-        Vector2 max = ImGui.GetItemRectMax();
-        float textY = min.Y + (rowHeight - fontSize) * 0.5f;
-        float x = min.X + style.FramePadding.X;
-        float iconX = x + (iconWidth - fontSize) * 0.5f;
+        float textY = start.Y + style.FramePadding.Y;
+        float x = start.X;
 
         for (int i = 0; i < icons.Length; i++) {
-            drawList.AddText(new Vector2(iconX, textY), ImGui.ColorConvertFloat4ToU32(iconColors[i]), icons[i].ToString());
+            string glyph = icons[i].ToString();
+            float iconX = x + (fontSize - ImGui.CalcTextSize(glyph).X) * 0.5f;
+            drawList.AddText(new Vector2(iconX, textY), ImGui.ColorConvertFloat4ToU32(iconColors[i]), glyph);
         }
-        x += iconWidth + iconPadding;
-        drawList.AddRectFilled(new Vector2(x, min.Y + separatorPadding), new Vector2(x + separatorWidth, max.Y - separatorPadding), ImGui.GetColorU32(ImGuiCol.TextDisabled));
 
-        x += separatorWidth + iconPadding;
+        x += fontSize + style.ItemInnerSpacing.X;
         drawList.AddText(new Vector2(x, textY), ImGui.GetColorU32(ImGuiCol.Text), label);
 
-        return activated;
+        return clicked;
     }
-    public static bool ContextMenuItem(string id, char icon, TranslatableBase label, Vector4 iconColor, float iconPadding = 6f, float separatorPadding = 4f, float separatorWidth = 2f)
-    {
-        return ContextMenuItemInternal(id, [icon], label, [iconColor], iconPadding, separatorPadding, separatorWidth);
-    }
-
-    public static bool ContextMenuItem(string id, char[] icons, TranslatableBase label, ReadOnlySpan<Vector4> iconColors, float iconPadding = 6f, float separatorPadding = 4f, float separatorWidth = 2f)
-    {
-        return ContextMenuItemInternal(id, icons, label, iconColors, iconPadding, separatorPadding, separatorWidth);
-    }
-
+    public static bool SelectableItem(string id, char icon, TranslatableBase label, Vector4 iconColor) => SelectableItemMultiColor(id, [icon], label, [iconColor]);
     public static void InlineVerticalSeparator()
     {
         ImGui.SameLine();

@@ -487,6 +487,6 @@ public static class AppImguiHelpers
 
     public static string FormatHotkeyString(KeyBinding hotkey)
     {
-        return (hotkey.ctrl ? "Ctrl + " : "") + (hotkey.shift ? "Shift + " : "") + (hotkey.alt ? "Alt + " : "") + hotkey.Key;
+        return (hotkey.ctrl ? "Ctrl + " : "") + (hotkey.shift ? "Shift + " : "") + (hotkey.alt ? "Alt + " : "") + hotkey.Key + (hotkey.wasd ? " + W/A/S/D" : "");
     }
 }
