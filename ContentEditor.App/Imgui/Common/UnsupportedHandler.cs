@@ -31,6 +31,6 @@ public class UnsupportedHandler : IObjectUIHandler
 
     public void OnIMGUI(UIContext context)
     {
-        ImGui.TextColored(Colors.Error, $"{context.label} (unsupported {FieldType} value {context.GetRaw() ?? "NULL"})");
+        ImGui.TextColored(Colors.Error, UiText.F($"{context.label} (unsupported {FieldType} value {context.GetRaw() ?? "NULL"})"));
     }
 }

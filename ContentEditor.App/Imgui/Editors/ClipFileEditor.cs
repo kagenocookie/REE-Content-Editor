@@ -105,7 +105,7 @@ public class TmlNodeGroupHandler : IObjectUIHandler
             context.children[0].ShowUI(); // name
             var group = context.Get<TimelineClipGroup>();
             var vec = new Vector3(group.startFrame, group.endFrame, group.frameCount);
-            if (ImGui.DragFloat3("Frame Range"u8, ref Unsafe.As<Vector3, float>(ref vec))) {
+            if (ImGui.DragFloat3(UiText.LabelUtf8("Frame Range"), ref Unsafe.As<Vector3, float>(ref vec))) {
                 if (vec.Z == group.frameCount) {
                     vec.Z = group.endFrame - group.startFrame;
                 }

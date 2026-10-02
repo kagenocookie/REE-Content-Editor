@@ -84,7 +84,7 @@ public class MotFsm2FileEditor : FileEditor, IWorkspaceContainer, IObjectUIHandl
         ImGui.SameLine();
         ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
-        if (ImGui.Button("Translate names")) {
+        if (ImGui.Button(UiText.Label("Translate names"))) {
             var bhvt = File.BhvtFile;
             var lang = AppConfig.Instance.Language;
             foreach (var node in bhvt.Nodes) {
@@ -112,9 +112,9 @@ public class TransitionMapEditor : IObjectUIHandler
         var map = context.Get<TransitionMap>();
         ImGui.PushID(context.label);
         ImGui.PushItemWidth(ImGui.CalcItemWidth() / 2 - ImGui.GetStyle().FramePadding.X);
-        var changed = ImGui.InputScalar("ID"u8, ImGuiDataType.U32, &map.transitionId);
+        var changed = ImGui.InputScalar(UiText.LabelUtf8("ID"), ImGuiDataType.U32, &map.transitionId);
         ImGui.SameLine();
-        changed = ImGui.InputScalar("Data Index"u8, ImGuiDataType.U32, &map.dataIndex) || changed;
+        changed = ImGui.InputScalar(UiText.LabelUtf8("Data Index"), ImGuiDataType.U32, &map.dataIndex) || changed;
         if (changed) {
             UndoRedo.RecordSet(context, map, undoId: $"tmap{context.label}");
         }
@@ -237,9 +237,9 @@ public class BHVTNodeEditor : IObjectUIHandler
     {
         var node = context.Get<BHVTNode>();
         if (node == null) {
-            ImGui.Text(context.label + ": null");
+            ImGui.Text(context.label + UiText.T(": null"));
             ImGui.SameLine();
-            if (ImGui.Button("Create")) {
+            if (ImGui.Button(UiText.Label("Create"))) {
                 UndoRedo.RecordSet(context, WindowHandlerFactory.Instantiate(context, typeof(BHVTNode)));
             }
             return;
@@ -268,8 +268,8 @@ public class BHVTNodeEditor : IObjectUIHandler
 
         var show = ImguiHelpers.TreeNodeSuffix(context.label, NodeString(node));
         if (ImGui.BeginPopupContextItem(context.label)) {
-            if (ImGui.Selectable("Copy Node")) {
-                VirtualClipboard.CopyToClipboard(node.Clone(), "The object must be pasted over a node's Children list");
+            if (ImGui.Selectable(UiText.Label("Copy Node"))) {
+                VirtualClipboard.CopyToClipboard(node.Clone(), UiText.T("The object must be pasted over a node's Children list"));
             }
             ImGui.EndPopup();
         }
@@ -327,7 +327,7 @@ public class NodeChildrenListHandler : ListHandlerTyped<NChild>
             return true;
         }
 
-        if (VirtualClipboard.TryGetFromClipboard<BHVTNode>(out var newNode) && ImGui.Selectable("Paste as new child node")) {
+        if (VirtualClipboard.TryGetFromClipboard<BHVTNode>(out var newNode) && ImGui.Selectable(UiText.Label("Paste as new child node"))) {
             var nodelist = context.Get<List<NChild>>();
             var parent = context.FindValueInParentValues<BHVTNode>();
             var fileCtx = context.FindParentContextByValue<BhvtFile>();
@@ -439,7 +439,7 @@ public class NActionEditor : IObjectUIHandler
         }
         context.ShowChildrenNestedReorderableUI<NAction>(false, (ctx) => {
             AppImguiHelpers.ShowVirtualCopyPopupButtons<NAction>(ctx);
-            if (ImGui.Selectable("Duplicate")) {
+            if (ImGui.Selectable(UiText.Label("Duplicate"))) {
                 if (ctx.target is IList list) {
                     var clone = ctx.Get<NAction>().DeepCloneGeneric();
                     clone.RandomizeActionID();
@@ -510,7 +510,7 @@ public class TransitionDataEditor : LazyPlainObjectHandler
         if (ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString() ?? string.Empty)) {
             _instancePicker.OnIMGUI(context);
             var root = context.FindHandlerInParents<MotFsm2FileEditor>()?.File;
-            if (ImGui.Button("Create new transition data")) {
+            if (ImGui.Button(UiText.Label("Create new transition data"))) {
                 var stateCtx = context.FindParentContextByValue<NState>();
                 var state = stateCtx?.Get<NState>();
                 if (root == null || state == null) {
@@ -541,7 +541,7 @@ public class TransitionDataEditor : LazyPlainObjectHandler
                 var usedCount = maps.Count(tm => tm.dataIndex == curIndex);
                 if (usedCount > 1) {
                     ImGui.SameLine();
-                    ImGui.TextColored(Colors.Note, "This transition data is used by " + usedCount + " nodes");
+                    ImGui.TextColored(Colors.Note, UiText.T("This transition data is used by ") + usedCount + UiText.T(" nodes"));
                 }
             }
             return true;
@@ -578,7 +578,7 @@ public class NodeIDEditor : IObjectUIHandler
         }
         ImGui.BeginDisabled(false);
         if (ImGui.BeginPopup(context.label)) {
-            if (ImGui.Selectable("Copy ID")) {
+            if (ImGui.Selectable(UiText.Label("Copy ID"))) {
                 EditorWindow.CurrentWindow?.CopyToClipboard(nodeId.ID.ToString(), $"Copied {nodeId.ID.ToString()}!");
                 ImGui.CloseCurrentPopup();
             }

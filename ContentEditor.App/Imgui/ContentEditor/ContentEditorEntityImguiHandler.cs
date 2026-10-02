@@ -10,7 +10,7 @@ public class ContentEditorEntityImguiHandler : IObjectUIHandler
         var instance = context.Get<ResourceEntity>();
         ImGui.Text($"{context.label}: {instance.Label}");
         ImGui.SameLine();
-        if (ImGui.Button($"Copy ID:{instance.Id}")) {
+        if (ImGui.Button(UiText.FormatLabel($"Copy ID:{instance.Id}"))) {
             EditorWindow.CurrentWindow?.CopyToClipboard(instance.Id.ToString(), "ID copied!");
         }
 

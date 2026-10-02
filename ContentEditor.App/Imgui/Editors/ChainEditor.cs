@@ -244,7 +244,7 @@ public class ChainGroupHandler : IObjectUIHandler
 
         var show = ImguiHelpers.TreeNodeSuffix(context.label, group.ToString());
         if (ImGui.BeginPopupContextItem(context.label)) {
-            if (ImGui.Selectable("Copy")) {
+            if (ImGui.Selectable(UiText.Label("Copy"))) {
                 VirtualClipboard.CopyToClipboard(group.Clone());
             }
             ChainGroupBase? newGroup = null;
@@ -257,7 +257,7 @@ public class ChainGroupHandler : IObjectUIHandler
                     newGroup = clip;
                 }
             }
-            if (newGroup != null && ImGui.Selectable("Paste (replace)")) {
+            if (newGroup != null && ImGui.Selectable(UiText.Label("Paste (replace)"))) {
                 var clone = (ChainGroupBase)newGroup.DeepClone();
                 if (newGroup is ChainGroup group1) {
                     var file = context.FindHandlerInParents<ChainEditor>()?.File;
@@ -317,10 +317,10 @@ internal class ChainSettingHandler : LazyPlainObjectHandler<ChainSetting>
     {
         var show = base.DoTreeNode(context, instance);
         if (ImGui.BeginPopupContextItem(context.label)) {
-            if (ImGui.Selectable("Copy")) {
+            if (ImGui.Selectable(UiText.Label("Copy"))) {
                 VirtualClipboard.CopyToClipboard(context.Get<ChainSetting>().Clone());
             }
-            if (VirtualClipboard.TryGetFromClipboard<ChainSetting>(out var copy) && ImGui.Selectable("Paste (replace)")) {
+            if (VirtualClipboard.TryGetFromClipboard<ChainSetting>(out var copy) && ImGui.Selectable(UiText.Label("Paste (replace)"))) {
                 var clone = (ChainSetting)copy.Clone();
                 var file = context.FindHandlerInParents<ChainEditor>()?.File;
                 if (clone.WindSettings != null && file != null && !file.WindSettings.Contains(clone.WindSettings)) {
@@ -344,14 +344,14 @@ internal class Chain2SettingHandler : LazyPlainObjectHandler<Chain2Setting>
     {
         var show = base.DoTreeNode(context, instance);
         if (ImGui.BeginPopupContextItem(context.label)) {
-            if (ImGui.Selectable("Copy")) {
+            if (ImGui.Selectable(UiText.Label("Copy"))) {
                 var src = context.Get<Chain2Setting>();
                 var deepClone = src.DeepCloneGeneric();
                 // ensure we maintain the original wind settings instance so we can deduplicate correctly on paste
                 deepClone.WindSettings = src.WindSettings;
                 VirtualClipboard.CopyToClipboard(deepClone);
             }
-            if (VirtualClipboard.TryGetFromClipboard<Chain2Setting>(out var copy) && ImGui.Selectable("Paste (replace)")) {
+            if (VirtualClipboard.TryGetFromClipboard<Chain2Setting>(out var copy) && ImGui.Selectable(UiText.Label("Paste (replace)"))) {
                 var clone = (Chain2Setting)copy.Clone();
                 clone.WindSettings = copy.WindSettings;
                 var file = context.FindHandlerInParents<Chain2Editor>()?.File;
@@ -376,10 +376,10 @@ internal class WindSettingHandler : LazyPlainObjectHandler<WindSetting>
     {
         var show = base.DoTreeNode(context, instance);
         if (ImGui.BeginPopupContextItem(context.label)) {
-            if (ImGui.Selectable("Copy")) {
+            if (ImGui.Selectable(UiText.Label("Copy"))) {
                 VirtualClipboard.CopyToClipboard(context.Get<WindSetting>().Clone());
             }
-            if (VirtualClipboard.TryGetFromClipboard<WindSetting>(out var copy) && ImGui.Selectable("Paste (replace)")) {
+            if (VirtualClipboard.TryGetFromClipboard<WindSetting>(out var copy) && ImGui.Selectable(UiText.Label("Paste (replace)"))) {
                 var clone = (WindSetting)copy.Clone();
                 var settings = context.FindHandlerInParents<ChainEditor>()?.File.WindSettings
                     ?? context.FindHandlerInParents<Chain2Editor>()?.File.WindSettings;
@@ -494,7 +494,7 @@ internal class ChainNodeHandler : IObjectUIHandler
                 });
             }
 
-            if (ImGui.Button("Align Limit Direction To Bone")) {
+            if (ImGui.Button(UiText.Label("Align Limit Direction To Bone"))) {
                 var editor = context.FindHandlerInParents<ChainEditorBase>();
                 var group = context.FindValueInParentValues<ChainGroupBase>();
                 var selfIndex = group?.ChainNodes.ToList().IndexOf(instance) ?? -1;
@@ -527,8 +527,8 @@ internal class Chain2JiggleDataHandler : IObjectUIHandler
         var instance = context.Get<ChainJiggleData>()!;
         var isChain2 = instance is Chain2JiggleData || context.parent?.Get<ChainNodeBase>() is Chain2Node;
         if (instance == null) {
-            ImGui.Text(context.label + ": NULL");
-            if (ImguiHelpers.SameLine() && ImGui.Button("Create")) {
+            ImGui.Text(context.label + UiText.T(": NULL"));
+            if (ImguiHelpers.SameLine() && ImGui.Button(UiText.Label("Create"))) {
                 UndoRedo.RecordSet(context, isChain2 ? new Chain2JiggleData() : new ChainJiggleData(), mergeMode: UndoRedoMergeMode.NeverMerge);
             } else {
                 return;
@@ -541,7 +541,7 @@ internal class Chain2JiggleDataHandler : IObjectUIHandler
             } else {
                 AppImguiHelpers.ShowVirtualCopyPopupButtons<ChainJiggleData>(instance, context);
             }
-            if (ImGui.Selectable("Remove")) {
+            if (ImGui.Selectable(UiText.Label("Remove"))) {
                 UndoRedo.RecordSet<ChainJiggleData>(context, null!, mergeMode: UndoRedoMergeMode.NeverMerge);
                 instance = null;
             }

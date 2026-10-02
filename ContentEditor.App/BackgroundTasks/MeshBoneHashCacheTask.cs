@@ -45,7 +45,7 @@ public class MeshBoneHashCacheTask(Workspace workspace) : FileCacheTaskBase(work
         return false;
     }
 
-    public override string ToString() => $"Caching mesh bone name hashes";
+    public override string ToString() => UiText.T("Caching mesh bone name hashes");
 
     private Dictionary<uint, string> data = new();
 

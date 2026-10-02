@@ -15,7 +15,7 @@ public sealed class DD2ArmorStyleNoHandler : IObjectUIHandler
         var data = entity?.Get("data") as RSZObjectResource;
         var workspace = context.GetWorkspace();
         if (entity == null || data == null || workspace == null) {
-            ImGui.TextColored(Colors.Error, $"StyleNo field requires a valid item entity and workspace");
+            ImGui.TextColored(Colors.Error, UiText.F($"StyleNo field requires a valid item entity and workspace"));
             return;
         }
 
@@ -32,7 +32,7 @@ public sealed class DD2ArmorStyleNoHandler : IObjectUIHandler
         };
         var expectedEnum = workspace.Env.TypeCache.GetEnumDescriptor(expectedEnumName, RszFieldType.S16);
         if (expectedEnum.IsEmpty) {
-            ImGui.TextColored(Colors.Error, "Could not find suitable enum for equip type " + equipType);
+            ImGui.TextColored(Colors.Error, UiText.T("Could not find suitable enum for equip type ") + equipType);
             return;
         }
 

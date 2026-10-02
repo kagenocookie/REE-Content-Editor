@@ -92,10 +92,10 @@ internal sealed partial class MainLoop : IDisposable
                 while (!window.IsReady || window.Workspace == null) await Task.Delay(100);
                 window.InvokeFromUIThread(() => {
                     if (game == null) {
-                        window.Overlays.ShowToast(15f, """
+                        window.Overlays.ShowToast(15f, UiText.T("""
                             Files might not have opened correctly because we could not automatically determine which game they belong to.
                             Please manually configure and select the game, then re-open your files after doing so.
-                            """);
+                            """));
                     }
                     (windows.First() as EditorWindow)?.OpenFiles(filepaths);
                 });

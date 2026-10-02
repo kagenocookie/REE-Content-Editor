@@ -26,7 +26,7 @@ public class BaseListHandler : IObjectUIHandler
 
     protected virtual bool ShowContextMenuItems(UIContext context)
     {
-        if (ImGui.Selectable("Clear")) {
+        if (ImGui.Selectable(UiText.Label("Clear"))) {
             UndoRedo.RecordListClear(context, context.Get<IList>());
             return true;
         }
@@ -37,15 +37,15 @@ public class BaseListHandler : IObjectUIHandler
     {
         var list = context.Get<IList>();
         if (list == null) {
-            ImGui.Text(context.label + ": NULL");
-            if (containerType != null && ImguiHelpers.SameLine() && ImGui.Button("Create")) {
+            ImGui.Text(context.label + UiText.T(": NULL"));
+            if (containerType != null && ImguiHelpers.SameLine() && ImGui.Button(UiText.Label("Create"))) {
                 UndoRedo.RecordSet(context, CreateNewListInstance());
             }
             return;
         }
         var count = list.Count;
         if (count == 0 && !CanCreateRemoveElements) {
-            ImGui.Text(context.label + ": <empty>");
+            ImGui.Text(context.label + UiText.T(": <empty>"));
             return;
         }
 
@@ -65,7 +65,7 @@ public class BaseListHandler : IObjectUIHandler
         if (show) {
             string? filter = null;
             if (Filterable && list.Count > 0) {
-                ImGui.InputText("Filter", ref context.Filter, 200);
+                ImGui.InputText(UiText.Label("Filter"), ref context.Filter, 200);
                 ImGui.Spacing();
                 filter = context.Filter;
             }
@@ -85,7 +85,7 @@ public class BaseListHandler : IObjectUIHandler
                     ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
                     remove = ImGui.Button($"{AppIcons.SI_GenericClose}");
                     ImGui.PopStyleColor();
-                    ImguiHelpers.Tooltip("Remove"u8);
+                    ImguiHelpers.Tooltip(UiText.Utf8("Remove"));
                     ImGui.SameLine();
                 }
                 child.ShowUI();
@@ -98,7 +98,7 @@ public class BaseListHandler : IObjectUIHandler
                 }
                 ImGui.PopID();
             }
-            if (CanCreateRemoveElements && ImGui.Button($"{AppIcons.SI_GenericAdd} Add")) {
+            if (CanCreateRemoveElements && ImGui.Button(UiText.FormatLabel($"{AppIcons.SI_GenericAdd} Add"))) {
                 try {
                     var newInstance = CreateNewElement(context);
                     if (newInstance != null) {
@@ -223,7 +223,7 @@ public class ResizableArrayHandler : BaseListHandler
 
     protected override bool ShowContextMenuItems(UIContext context)
     {
-        if (ImGui.Selectable("Clear")) {
+        if (ImGui.Selectable(UiText.Label("Clear"))) {
             UndoRedo.RecordSet(context, Array.CreateInstance(elementType, 0));
             return true;
         }

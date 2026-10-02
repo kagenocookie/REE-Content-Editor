@@ -142,7 +142,7 @@ public class QuaternionFieldHandler : Singleton<QuaternionFieldHandler>, IObject
             if (DefaultContextItems(context._label, ref val)) {
                 UndoRedo.RecordSet(context, val);
             }
-            if (ImGui.Selectable("Toggle quaternion/euler display")) {
+            if (ImGui.Selectable(UiText.Label("Toggle quaternion/euler display"))) {
                 context.StateBool = !context.StateBool;
             }
             ImGui.EndPopup();
@@ -176,23 +176,23 @@ public class QuaternionFieldHandler : Singleton<QuaternionFieldHandler>, IObject
     public static bool DefaultContextItems(string label, ref Quaternion val)
     {
         var changed = false;
-        if (ImGui.Selectable("Copy euler angles")) {
+        if (ImGui.Selectable(UiText.Label("Copy euler angles"))) {
             EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(val.ToEuler(), JsonConfig.jsonOptionsIncludeAllFields), $"Copied value of {label}!");
         }
-        if (ImGui.Selectable("Copy quaternion")) {
+        if (ImGui.Selectable(UiText.Label("Copy quaternion"))) {
             EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(val, JsonConfig.jsonOptionsIncludeAllFields), $"Copied value of {label}!");
         }
-        if (ImGui.Selectable("Copy field name")) {
+        if (ImGui.Selectable(UiText.Label("Copy field name"))) {
             EditorWindow.CurrentWindow?.CopyToClipboard(label, $"Copied {label}!");
         }
-        if (ImGui.Selectable("Paste as euler angles")) {
+        if (ImGui.Selectable(UiText.Label("Paste as euler angles"))) {
             if (EditorWindow.CurrentWindow?.GetClipboard()?.TryDeserializeJson<Vector3>(out var vec, out var err, JsonConfig.jsonOptionsIncludeAllFields) == true) {
                 vec *= TransformExtensions.Deg2Rad;
                 val = Quaternion.CreateFromYawPitchRoll(vec.Y, vec.X, vec.Z);
                 changed = true;
             }
         }
-        if (ImGui.Selectable("Paste as quaternion")) {
+        if (ImGui.Selectable(UiText.Label("Paste as quaternion"))) {
             if (EditorWindow.CurrentWindow?.GetClipboard()?.TryDeserializeJson<Quaternion>(out var vec, out var err, JsonConfig.jsonOptionsIncludeAllFields) == true) {
                 val = vec;
                 changed = true;
@@ -215,7 +215,7 @@ public class StringFieldHandler : Singleton<StringFieldHandler>, IObjectUIHandle
         }
 
         if (ImGui.BeginPopupContextItem(context.label)) {
-            if (ImGui.Selectable("Copy UTF-16 hash")) {
+            if (ImGui.Selectable(UiText.Label("Copy UTF-16 hash"))) {
                 var hash = MurMur3HashUtils.GetHash(val);
                 EditorWindow.CurrentWindow?.CopyToClipboard(hash.ToString(), "Copied hash: " + hash);
                 ImGui.CloseCurrentPopup();
@@ -235,12 +235,12 @@ public class ConfirmedStringFieldHandler : Singleton<ConfirmedStringFieldHandler
             UndoRedo.RecordSet(context, context.Filter);
             UndoRedo.AttachClearState(context);
         } else if (context.Filter != curString) {
-            if (ImGui.Button("Confirm")) {
+            if (ImGui.Button(UiText.Label("Confirm"))) {
                 UndoRedo.RecordSet(context, context.Filter);
                 UndoRedo.AttachClearState(context);
             }
             ImGui.SameLine();
-            if (ImGui.Button("Cancel")) {
+            if (ImGui.Button(UiText.Label("Cancel"))) {
                 context.Filter = curString;
             }
         }

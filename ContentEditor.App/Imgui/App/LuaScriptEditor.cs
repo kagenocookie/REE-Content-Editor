@@ -177,7 +177,7 @@ public class LuaScriptEditor : FileEditor
             }
         }
 
-        ImguiHelpers.Tooltip("Create New Script");
+        ImguiHelpers.Tooltip(UiText.T("Create New Script"));
         ImGui.SameLine();
         ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
@@ -193,28 +193,23 @@ public class LuaScriptEditor : FileEditor
     protected override void DrawFileContents()
     {
         if (!AppConfig.Instance.DisableScriptSafetyWarning) {
-            ImGui.TextColored(Colors.Warning, """
-                Be careful when executing scripts you don't understand, custom scripts could affect things beyond what's normally allowed by the app,
-                including altering important files or replacing / breaking your files. Think twice before running untrusted code.
-                Most scripted actions do not support undo so it won't be possible to automatically revert changes after a file is saved.
-                This warning can be disabled via right click.
-                """u8);
+            ImGui.TextColored(Colors.Warning, UiText.Utf8("Be careful when executing scripts you don't understand, custom scripts could affect things beyond what's normally allowed by the app,\r\nincluding altering important files or replacing / breaking your files. Think twice before running untrusted code.\r\nMost scripted actions do not support undo so it won't be possible to automatically revert changes after a file is saved.\r\nThis warning can be disabled via right click."));
             if (ImGui.IsItemHovered() && ImGui.IsItemClicked(ImGuiMouseButton.Right)) {
                 ImGui.OpenPopup("WarningConfirmation");
             }
             if (ImGui.BeginPopup("WarningConfirmation")) {
-                if (ImGui.Selectable("I understand, disable this warning")) {
+                if (ImGui.Selectable(UiText.Label("I understand, disable this warning"))) {
                     AppConfig.Instance.DisableScriptSafetyWarning.Set(true);
                 }
                 ImGui.EndPopup();
             }
         }
-        if (ImguiHelpers.FilterableCombo("Script Group"u8, Groups, Groups, ref selectedGroup, ref groupFilter)) {
+        if (ImguiHelpers.FilterableCombo(UiText.LabelUtf8("Script Group"), Groups, Groups, ref selectedGroup, ref groupFilter)) {
             SetScriptGroup(selectedGroup ?? "");
         }
 
         if (FilesInCurrentGroup.Length > 0) {
-            if (ImguiHelpers.FilterableCombo("Stored Script"u8, FilesInCurrentGroup, FilesInCurrentGroup, ref currentScriptPathRelative, ref groupFilter)) {
+            if (ImguiHelpers.FilterableCombo(UiText.LabelUtf8("Stored Script"), FilesInCurrentGroup, FilesInCurrentGroup, ref currentScriptPathRelative, ref groupFilter)) {
                 if (!string.IsNullOrEmpty(currentScriptPathRelative)) {
                     var fullPath = Path.Combine(CurrentGroupFolder, currentScriptPathRelative);
                     if (File.Exists(fullPath)) {
@@ -230,23 +225,23 @@ public class LuaScriptEditor : FileEditor
             if (ImGui.Button($"{AppIcons.SI_FolderOpen}")) {
                 FileSystemUtils.ShowFileInExplorer(CurrentGroupFolder);
             }
-            ImguiHelpers.Tooltip("Open Script Folder");
+            ImguiHelpers.Tooltip(UiText.T("Open Script Folder"));
             ImGui.SameLine();
         }
         AppImguiHelpers.WikiLinkButton("https://github.com/kagenocookie/REE-Content-Editor/wiki/Lua-API", true);
         ImGui.SameLine();
-        if (ImGui.Button($"{AppIcons.SI_Reset}##rescan_scripts")) {
+        if (ImGui.Button(UiText.FormatLabel($"{AppIcons.SI_Reset}##rescan_scripts"))) {
             ScanScriptFolder();
         }
-        ImguiHelpers.Tooltip("Re-scan scripts folder");
+        ImguiHelpers.Tooltip(UiText.T("Re-scan scripts folder"));
         ImGui.SameLine();
 
-        if (ImGui.Button("Execute Script"u8)) {
+        if (ImGui.Button(UiText.LabelUtf8("Execute Script"))) {
             var lua = LuaWrapper.Create(Workspace, EditorWindow.CurrentWindow);
             lua.Run(Script.Script);
         }
 
-        ImGui.Text("Script");
+        ImGui.Text(UiText.T("Script"));
         var avail = ImGui.GetContentRegionAvail();
         var currentScript = Script.Script;
         if (ImGui.InputTextMultiline("##Script", ref currentScript, 10000, avail)) {

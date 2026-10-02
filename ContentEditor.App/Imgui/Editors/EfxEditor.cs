@@ -222,24 +222,24 @@ public class EfxEntriesListEditorBase<TType> : DictionaryListImguiHandler<string
         if (ImGui.BeginPopupContextItem(itemContext.label)) {
             var item = itemContext.Get<TType>();
             var list = itemContext.parent!.Get<List<TType>>();
-            if (ImGui.Selectable("Copy")) {
+            if (ImGui.Selectable(UiText.Label("Copy"))) {
                 VirtualClipboard.CopyToClipboard(item.DeepCloneGeneric<TType>());
                 ImGui.CloseCurrentPopup();
             }
             if (VirtualClipboard.TryGetFromClipboard<TType>(out var pasteSource)) {
                 if (pasteSource.Version != item.Version) {
                     ImGui.BeginDisabled();
-                    ImGui.Selectable("Paste unavailable due to source EFX version mismatch");
+                    ImGui.Selectable(UiText.Label("Paste unavailable due to source EFX version mismatch"));
                     ImGui.EndDisabled();
                 } else {
-                    if (ImGui.Selectable("Paste (replace)")) {
+                    if (ImGui.Selectable(UiText.Label("Paste (replace)"))) {
                         var clone = pasteSource.DeepCloneGeneric<TType>();
                         clone.name = item.name;
                         UndoRedo.RecordSet(itemContext, clone);
                         itemContext.parent.FindHandlerInParents<EfxEditor>()?.Inspector.SetPrimaryInspector(clone);
                         ImGui.CloseCurrentPopup();
                     }
-                    if (ImGui.Selectable("Paste (new)")) {
+                    if (ImGui.Selectable(UiText.Label("Paste (new)"))) {
                         var clone = pasteSource.DeepCloneGeneric<TType>();
                         clone.name = (clone.name ?? "New_entry").GetUniqueName((x) => list.Any(e => e.name == x), "copy");
                         UndoRedo.RecordListInsert(itemContext.parent, list, clone, list.IndexOf(item) + 1);
@@ -249,14 +249,14 @@ public class EfxEntriesListEditorBase<TType> : DictionaryListImguiHandler<string
                     }
                 }
             }
-            if (ImGui.Selectable("Duplicate")) {
+            if (ImGui.Selectable(UiText.Label("Duplicate"))) {
                 var clone = item.Clone();
                 clone.name = (clone.name ?? "New_entry").GetUniqueName((x) => list.Any(e => e.name == x), "copy");
                 UndoRedo.RecordListInsert(itemContext.parent, list, clone, list.IndexOf(item) + 1);
                 itemContext.parent.FindHandlerInParents<EfxEditor>()?.Inspector.SetPrimaryInspector(clone);
                 ImGui.CloseCurrentPopup();
             }
-            if (ImGui.Selectable("Delete")) {
+            if (ImGui.Selectable(UiText.Label("Delete"))) {
                 UndoRedo.RecordListRemove(itemContext.parent, list, item);
                 ImGui.CloseCurrentPopup();
             }
@@ -408,7 +408,7 @@ public class EfxAttributeListEditor : DictionaryListImguiHandler<EfxAttributeTyp
         protected override void HandleContextMenu(UIContext context)
         {
             if (ImGui.BeginPopupContextItem(context.label)) {
-                if (ImGui.Button("Delete")) {
+                if (ImGui.Button(UiText.Label("Delete"))) {
                     var list = context.parent!.Get<List<EFXAttribute>>();
                     UndoRedo.RecordListRemove(context.parent, list, context.Get<EFXAttribute>(), null, 1);
                     ImGui.CloseCurrentPopup();
@@ -493,7 +493,7 @@ public class EfxExpressionAttributeEditor : IObjectUIHandler
         context.ShowChildrenUI();
         var data = (IExpressionAttribute)attr;
         if (data.Expression == null) {
-            if (ImGui.Button("Create expression")) {
+            if (ImGui.Button(UiText.Label("Create expression"))) {
                 data.Expression = new(attr.Version);
             }
             return;
@@ -501,7 +501,7 @@ public class EfxExpressionAttributeEditor : IObjectUIHandler
         var ws = context.GetWorkspace();
         var efx = context.FindHandlerInParents<EfxEditor>()?.RootEditor.File;
         if (efx == null || ws == null) {
-            ImGui.TextColored(Colors.Error, "EFX file or workspace not found");
+            ImGui.TextColored(Colors.Error, UiText.T("EFX file or workspace not found"));
             return;
         }
 
@@ -509,7 +509,7 @@ public class EfxExpressionAttributeEditor : IObjectUIHandler
 
         if (attr is IMaterialExpressionAttribute matExpr) {
             if (matExpr.MaterialExpressions == null) {
-                if (ImGui.Button("Create material expressions")) {
+                if (ImGui.Button(UiText.Label("Create material expressions"))) {
                     var newExpr = new EFXMaterialExpressionList(efx.Header.Version);
                     UndoRedo.RecordCallbackSetter(
                         context, matExpr, null, newExpr,
@@ -519,7 +519,7 @@ public class EfxExpressionAttributeEditor : IObjectUIHandler
                 return;
             }
 
-            if (ImGui.TreeNode("Material expressions"u8)) {
+            if (ImGui.TreeNode(UiText.LabelUtf8("Material expressions"))) {
                 if (matExpr.MaterialExpressions.ParsedExpressions == null) {
                     matExpr.MaterialExpressions.ParsedExpressions = EfxExpressionTreeUtils.ReconstructExpressionTreeList(data.Expression.Expressions, efx);
                 }
@@ -550,23 +550,23 @@ public class EfxExpressionAttributeEditor : IObjectUIHandler
                     }
 
                     var u32 = exp.mdfPropertyHash;
-                    if (ImGui.InputScalar("MDF Property Hash"u8, ImGuiDataType.U32, &u32)) {
+                    if (ImGui.InputScalar(UiText.LabelUtf8("MDF Property Hash"), ImGuiDataType.U32, &u32)) {
                         UndoRedo.RecordCallbackSetter(context, exp, exp.mdfPropertyHash, u32, static (e, v) => e.mdfPropertyHash = v, $"{context.label} MDF prop {i} hash");
                     }
                     var propIndex = exp.propertyComponentIndex;
-                    if (ImGui.InputScalar("Property Component Index"u8, ImGuiDataType.U32, &propIndex)) {
+                    if (ImGui.InputScalar(UiText.LabelUtf8("Property Component Index"), ImGuiDataType.U32, &propIndex)) {
                         UndoRedo.RecordCallbackSetter(context, exp, exp.propertyComponentIndex, propIndex, static (e, v) => e.propertyComponentIndex = v, $"{context.label} MDF prop {i} component index");
                     }
                     u32 = exp.unkn1;
-                    if (ImGui.InputScalar("Unknown 1"u8, ImGuiDataType.U32, &u32)) {
+                    if (ImGui.InputScalar(UiText.LabelUtf8("Unknown 1"), ImGuiDataType.U32, &u32)) {
                         UndoRedo.RecordCallbackSetter(context, exp, exp.unkn1, u32, static (e, v) => e.unkn1 = v, $"{context.label} MDF prop {i} unkn1");
                     }
                     u32 = exp.unkn2;
-                    if (ImGui.InputScalar("Unknown 2"u8, ImGuiDataType.U32, &u32)) {
+                    if (ImGui.InputScalar(UiText.LabelUtf8("Unknown 2"), ImGuiDataType.U32, &u32)) {
                         UndoRedo.RecordCallbackSetter(context, exp, exp.unkn2, u32, static (e, v) => e.unkn2 = v, $"{context.label} MDF prop {i} unkn2");
                     }
                     u32 = (uint)exp.unkn5.value;
-                    if (ImGui.InputScalar("Unknown 3"u8, ImGuiDataType.U32, &u32)) {
+                    if (ImGui.InputScalar(UiText.LabelUtf8("Unknown 3"), ImGuiDataType.U32, &u32)) {
                         UndoRedo.RecordCallbackSetter(context, exp, exp.unkn5, new UndeterminedFieldType(u32), static (e, v) => e.unkn5 = v, $"{context.label} MDF prop {i} unkn5");
                     }
 
@@ -575,7 +575,7 @@ public class EfxExpressionAttributeEditor : IObjectUIHandler
                         confirmedStrings[expStoreIndex] = orgStr = parsed.root.ToString()!;
                     }
                     var str = pendingStrings.GetValueOrDefault(expStoreIndex) ?? orgStr;
-                    ImGui.Text("Expression");
+                    ImGui.Text(UiText.T("Expression"));
                     if (ImguiHelpers.TextMultilineAutoResize("##expression", ref str, w - 230, 300, UI.FontSize)) {
                         pendingStrings[expStoreIndex] = str;
                     }

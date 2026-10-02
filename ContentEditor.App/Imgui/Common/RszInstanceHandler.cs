@@ -20,7 +20,7 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
     {
         var instance = context.Get<RszInstance>();
         if (instance == null) {
-            ImGui.Text(context.label + ": NULL");
+            ImGui.Text(context.label + UiText.T(": NULL"));
             return;
         }
         if (showLabel) ImguiHelpers.TextSuffix(context.label, context.annotation ??= instance.RszClass.name);
@@ -28,7 +28,7 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
         if (context.children.Count >= 10) {
             ImGui.Spacing();
             ImGui.SetNextItemWidth(Math.Min(200, ImGui.CalcItemWidth() - 16));
-            AppImguiHelpers.ClearableInputText("Filter fields"u8, $"{AppIcons.SI_GenericMagnifyingGlass}", ref context.Filter, 48);
+            AppImguiHelpers.ClearableInputText(UiText.LabelUtf8("Filter fields"), $"{AppIcons.SI_GenericMagnifyingGlass}", ref context.Filter, 48);
             ImGui.Spacing();
         }
         if (string.IsNullOrEmpty(context.Filter)) {
@@ -64,18 +64,18 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
         var ws = context.GetWorkspace()!;
         var env = ws.Env;
         var value = valueGetter?.Invoke(context) ?? context.GetRaw();
-        if (ImGui.Selectable("Copy as JSON")) {
+        if (ImGui.Selectable(UiText.Label("Copy as JSON"))) {
             EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(value, env.JsonOptions)!, "Copied!");
             return true;
         }
         var instance = value as RszInstance;
         if (instance != null) {
-            if (ImGui.Selectable("Copy classname")) {
+            if (ImGui.Selectable(UiText.Label("Copy classname"))) {
                 EditorWindow.CurrentWindow?.CopyToClipboard(instance.RszClass.name);
             }
             var clipboard = EditorWindow.CurrentWindow?.GetClipboard();
             if (!string.IsNullOrEmpty(clipboard)) {
-                if (ImGui.Selectable("Paste JSON (replace values)")) {
+                if (ImGui.Selectable(UiText.Label("Paste JSON (replace values)"))) {
                     try {
                         var newJson = JsonSerializer.Deserialize<JsonNode>(clipboard, env.JsonOptions)!;
                         var prevJson = instance.ToJson(env);
@@ -102,7 +102,7 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
             }
             var gameObjectCtx = context.FindParentContextByValue<GameObject>();
             if (gameObjectCtx != null && env.TypeCache.IsAssignableTo(instance.RszClass.name, "via.Component")) {
-                if (instance.RszClass.name != "via.Transform" && ImGui.Selectable("Remove")) {
+                if (instance.RszClass.name != "via.Transform" && ImGui.Selectable(UiText.Label("Remove"))) {
                     var gameObject = gameObjectCtx.Get<GameObject>();
                     Component? component = null;
                     UndoRedo.RecordCallback(gameObjectCtx, () => {
@@ -123,7 +123,7 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
                         var gameObject = gameObjectCtx.Get<GameObject>();
                         var classname = pasteClassnameStr?.ToString();
                         var isValidComponentClassname = !string.IsNullOrEmpty(classname) && env.TypeCache.IsAssignableTo(classname, "via.Component") && !gameObject.HasComponent(classname);
-                        if (isValidComponentClassname && ImGui.Selectable("Paste as new component")) {
+                        if (isValidComponentClassname && ImGui.Selectable(UiText.Label("Paste as new component"))) {
                             Component? comp = null;
                             UndoRedo.RecordCallback(context, () => {
                                 if (comp == null) {
@@ -142,7 +142,7 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
         }
 
         if (valueSetter == null && context.parent?.uiHandler is ArrayRSZHandler array && instance != null) {
-            if (ImGui.Selectable("Duplicate")) {
+            if (ImGui.Selectable(UiText.Label("Duplicate"))) {
                 var clone = instance.Clone();
                 var parentList = context.parent.Get<IList>();
                 UndoRedo.RecordListAdd(context.parent, parentList, clone);
@@ -156,7 +156,7 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
             if (type != null) {
                 var clipboard = EditorWindow.CurrentWindow?.GetClipboard();
                 if (!string.IsNullOrEmpty(clipboard)) {
-                    if (ImGui.Selectable("Paste JSON")) {
+                    if (ImGui.Selectable(UiText.Label("Paste JSON"))) {
                         try {
                             var newItems = ((IList)(JsonSerializer.Deserialize(clipboard, typeof(List<>).MakeGenericType(type), env.JsonOptions)!)).Cast<object>().ToList();
                             foreach (var item in newItems) {
@@ -174,7 +174,7 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
                 }
             }
         }
-        if (context.IsChanged && ImGui.Selectable("Revert to saved value")) {
+        if (context.IsChanged && ImGui.Selectable(UiText.Label("Revert to saved value"))) {
             context.Revert();
             context.ResetState();
         }
@@ -233,7 +233,7 @@ public class RszClassnamePickerHandler(string? baseClass = null, string label = 
             ImguiHelpers.FilterableCombo(FixedString.Cached(label), classOptions, classValues, ref context.InputClassname!, ref context.ClassnameFilter);
             var classInput = context.InputClassname;
             if (!string.IsNullOrEmpty(classInput) ? classInput != instance?.RszClass.name : allowNull && instance != null) {
-                if (ImGui.Button("Change")) {
+                if (ImGui.Button(UiText.Label("Change"))) {
                     if (string.IsNullOrEmpty(classInput)) {
                         UndoRedo.RecordSet(context, (RszInstance?)null, mergeMode: UndoRedoMergeMode.NeverMerge);
                     } else {
@@ -253,7 +253,7 @@ public class RszClassnamePickerHandler(string? baseClass = null, string label = 
                     }
                 }
                 ImGui.SameLine();
-                if (ImGui.Button("Cancel")) {
+                if (ImGui.Button(UiText.Label("Cancel"))) {
                     context.InputClassname = instance?.RszClass.name ?? string.Empty;
                 }
             }
@@ -325,10 +325,10 @@ public class SwappableRszInstanceHandler(string? baseClass = null, bool referenc
             if (string.IsNullOrEmpty(context.InputClassname)) {
                 context.InputClassname = instance?.RszClass.name ?? string.Empty;
             }
-            ImguiHelpers.FilterableCombo("Class"u8, classOptions, classOptions, ref context.InputClassname!, ref context.ClassnameFilter);
+            ImguiHelpers.FilterableCombo(UiText.LabelUtf8("Class"), classOptions, classOptions, ref context.InputClassname!, ref context.ClassnameFilter);
             var classInput = context.InputClassname;
             if (!string.IsNullOrEmpty(classInput) && classInput != instance?.RszClass.name) {
-                if (ImGui.Button("Change")) {
+                if (ImGui.Button(UiText.Label("Change"))) {
                     var ws = context.GetWorkspace();
                     var cls = ws!.Env.RszParser.GetRSZClass(classInput);
                     if (cls == null) {
@@ -343,7 +343,7 @@ public class SwappableRszInstanceHandler(string? baseClass = null, bool referenc
                     }
                 }
                 ImGui.SameLine();
-                if (ImGui.Button("Cancel"u8)) {
+                if (ImGui.Button(UiText.LabelUtf8("Cancel"))) {
                     context.InputClassname = instance?.RszClass.name ?? "";
                 }
             }
@@ -396,11 +396,11 @@ public class InstancePickerHandler<T>(bool allowNull, Func<UIContext, bool, IEnu
         var spacing = ImGui.GetStyle().ItemSpacing.X;
         var restW = ImGui.CalcItemWidth();
         if (allowNull && instance != null) {
-            if (ImGui.Button("Remove")) {
+            if (ImGui.Button(UiText.Label("Remove"))) {
                 UndoRedo.RecordSet(context, default(T), mergeMode: UndoRedoMergeMode.NeverMerge);
             }
             ImGui.SameLine();
-            restW -= ImGui.CalcTextSize("Remove").X + ImGui.GetStyle().FramePadding.X * 2 + spacing;
+            restW -= ImGui.CalcTextSize(UiText.T("Remove")).X + ImGui.GetStyle().FramePadding.X * 2 + spacing;
         }
         if (!DisableRefresh) {
             ImGui.PushID(context.label);
@@ -408,7 +408,7 @@ public class InstancePickerHandler<T>(bool allowNull, Func<UIContext, bool, IEnu
                 availableInstances = instanceProvider.Invoke(context, true).ToArray();
                 context.SetStateArray<T>(availableInstances);
             }
-            ImguiHelpers.Tooltip("Refresh list"u8);
+            ImguiHelpers.Tooltip(UiText.Utf8("Refresh list"));
             ImGui.PopID();
             restW -= ImGui.CalcTextSize($"{AppIcons.SI_Update}").X + ImGui.GetStyle().FramePadding.X * 2 + spacing;
             ImGui.SameLine();
@@ -450,7 +450,7 @@ public class NestedRszInstanceHandler : IObjectUIHandler
     {
         var instance = context.Get<RszInstance>();
         if (instance == null) {
-            ImGui.Text(context.label + ": NULL");
+            ImGui.Text(context.label + UiText.T(": NULL"));
 
             if (string.IsNullOrEmpty(classname)) return;
 
@@ -459,7 +459,7 @@ public class NestedRszInstanceHandler : IObjectUIHandler
 
             ImGui.SameLine();
             ImGui.PushID(context.label);
-            if (ImGui.Button("Create")) {
+            if (ImGui.Button(UiText.Label("Create"))) {
                 var cls = ws.Env.RszParser.GetRSZClass(classname);
                 if (cls == null) {
                     Logger.Error("Class not found");
@@ -634,7 +634,7 @@ public class RszEnumFieldHandler : IObjectUIHandler
             // the enum-style and value-style handlers use different undo record types (boxed vs direct type) and can't allow merging
             UndoRedo.RecordCallback(null, () => context.StateBool = useCustomValueInput, () => context.StateBool = !useCustomValueInput);
         }
-        ImguiHelpers.Tooltip("Use Custom Value Input"u8);
+        ImguiHelpers.Tooltip(UiText.Utf8("Use Custom Value Input"));
         ImGui.SameLine();
         ImGui.SetNextItemWidth(w - UI.FontSize);
         var valueType = selected!.GetType();
@@ -689,12 +689,12 @@ public class FlagsEnumFieldHandler : IObjectUIHandler
         var endX = ImGui.GetWindowSize().X;
         var totalPadding = startX * 2;
         var w_total = endX - totalPadding;
-        ImGui.Text("Flags: ");
+        ImGui.Text(UiText.T("Flags: "));
         ImGui.SameLine();
         var tabMargin = ImGui.GetStyle().FramePadding.X * 2 + 32; // how do we determine checkbox size properly?
 
         ImGui.PushID(context.label);
-        var x = ImGui.CalcTextSize("Flags: ").X + ImGui.GetStyle().FramePadding.X;
+        var x = ImGui.CalcTextSize(UiText.T("Flags: ")).X + ImGui.GetStyle().FramePadding.X;
         for (int i = 0; i < labels.Length; ++i) {
             var label = labels[i];
             var flagValue = values[i];
@@ -867,14 +867,14 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                 if (ws != null && !string.IsNullOrEmpty(baseClassname)) {
                     var subtypes = ws.Env.TypeCache.GetSubclasses(baseClassname).ToArray();
                     if (subtypes.Length == 0) {
-                        ImGui.Text(context.label + ": NULL (unable to create new instance)");
+                        ImGui.Text(context.label + UiText.T(": NULL (unable to create new instance)"));
                         return;
                     }
                     if (ws.Env.UsesEmbeddedUserdataAny) {
                         // TODO recheck re7 userdata
                         ImGui.PushID(context.label);
                         ImguiHelpers.BeginRect();
-                        ImGui.Text(context.label + ": NULL");
+                        ImGui.Text(context.label + UiText.T(": NULL"));
 
                         if (string.IsNullOrEmpty(context.ClassnameFilter)) {
                             context.ClassnameFilter = subtypes[0];
@@ -882,7 +882,7 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                         ImguiHelpers.ValueCombo(context._label, subtypes, subtypes, ref context.ClassnameFilter);
                         if (!string.IsNullOrEmpty(context.ClassnameFilter)) {
                             ImGui.SameLine();
-                            if (ImGui.Button("Create")) {
+                            if (ImGui.Button(UiText.Label("Create"))) {
                                 var parentRsz = context.FindHandlerInParents<IRSZFileEditor>()?.GetRSZFile();
                                 if (parentRsz == null) {
                                     Logger.Error("Can't find parent RSZ file!");
@@ -907,12 +907,12 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                     return;
                 }
 
-                ImGui.Text(context.label + ": NULL (unable to create new instance)");
+                ImGui.Text(context.label + UiText.T(": NULL (unable to create new instance)"));
                 return;
             }
             if (ws?.Env.UsesEmbeddedUserdataAny == false) {
                 ImguiHelpers.BeginRect();
-                ImGui.Text(context.label + ": NULL");
+                ImGui.Text(context.label + UiText.T(": NULL"));
                 if (context.children.Count == 0) {
                     context.AddChild("User Data File Path", instance, new ResourcePathPicker(ws, KnownFileFormats.UserData), _ => "", (inst, newPath) => {
                         if (newPath == null || !ws.ResourceManager.TryResolveGameFile(newPath, out var file)) {
@@ -937,8 +937,8 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                 context.ShowChildrenUI();
                 ImguiHelpers.EndRect();
             } else {
-                ImGui.TextColored(Colors.Warning, "Invalid UserData instance");
-                if (ws != null && ImGui.Button("Create New")) {
+                ImGui.TextColored(Colors.Warning, UiText.T("Invalid UserData instance"));
+                if (ws != null && ImGui.Button(UiText.Label("Create New"))) {
                     var parentRsz = context.FindHandlerInParents<IRSZFileEditor>()?.GetRSZFile();
                     if (parentRsz == null) {
                         Logger.Error("Can't find parent RSZ file!");
@@ -963,7 +963,7 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                 infoEmbedded.ReadClassName(ws.Env.RszParser);
                 context.CachedString = $"{infoEmbedded.ClassName} [Hash: {infoEmbedded.jsonPathHash}]";
             } else {
-                ImGui.Text(context.label + ": Unhandled UserData");
+                ImGui.Text(context.label + UiText.T(": Unhandled UserData"));
                 return;
             }
         }
@@ -976,7 +976,7 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                     EditorWindow.CurrentWindow!.AddFileEditor(editor.Handle);
                 }
             }
-            ImguiHelpers.Tooltip("Open in New Window"u8);
+            ImguiHelpers.Tooltip(UiText.Utf8("Open in New Window"));
             ImGui.SameLine();
             HandleLinkedUserdata(context, instance, ws);
             ImGui.TreePop();
@@ -1035,7 +1035,7 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
 
                 if (string.IsNullOrEmpty(info.Path)) {
                     context.ShowChildrenUI();
-                    ImGui.TextColored(Colors.Error, "No path for user data");
+                    ImGui.TextColored(Colors.Error, UiText.T("No path for user data"));
                     return;
                 }
 
@@ -1052,8 +1052,8 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                 // TODO re7?
                 var rsz = context.FindHandlerInParents<IRSZFileEditor>()?.GetRSZFile();
                 if (file == null || rsz == null) {
-                    ImGui.TextColored(Colors.Error, "Invalid or missing embedded UserData instance");
-                    if (ImGui.Button("Create")) {
+                    ImGui.TextColored(Colors.Error, UiText.T("Invalid or missing embedded UserData instance"));
+                    if (ImGui.Button(UiText.Label("Create"))) {
                         infoEmbedded.ChangeClass(ws.Env.RszParser, ws.Env.RszFileOption, instance.RszClass, $"assets:/UserData/{instance.RszClass.ShortName}_{System.Random.Shared.Next()}.user.json", rsz);
                         context.parent?.ClearChildren();
                     }
@@ -1075,9 +1075,9 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
 
         if (context.children.Count == 0 || context.GetChild<UserDataFileEditor>() == null) {
             context.ShowChildrenUI();
-            ImGui.TextColored(Colors.Error, "Failed to load or find UserData reference");
+            ImGui.TextColored(Colors.Error, UiText.T("Failed to load or find UserData reference"));
             ImGui.SameLine();
-            if (ImGui.Button("Try again")) {
+            if (ImGui.Button(UiText.Label("Try again"))) {
                 context.StateBool = false;
             }
         } else {
@@ -1101,22 +1101,22 @@ public class GuidFieldHandler : Singleton<GuidFieldHandler>, IObjectUIHandler
             if (Guid.TryParse(str, out var newguid)) {
                 UndoRedo.RecordSet(context, newguid);
             } else {
-                ImGui.TextColored(Colors.Error, "Invalid GUID");
+                ImGui.TextColored(Colors.Error, UiText.T("Invalid GUID"));
             }
         }
 
         if (!noContextMenu && ImGui.BeginPopupContextItem(context.label)) {
-            if (ImGui.Selectable("Randomize")) {
+            if (ImGui.Selectable(UiText.Label("Randomize"))) {
                 UndoRedo.RecordSet(context, Guid.NewGuid());
                 ImGui.CloseCurrentPopup();
             }
-            if (ImGui.Selectable("Find translation")) {
+            if (ImGui.Selectable(UiText.Label("Find translation"))) {
                 var ws = context.GetWorkspace();
                 var window = EditorWindow.CurrentWindow;
                 ws?.Messages.GetTextAsync(val).ContinueWith((res) => {
                     if (res.Result == null) {
                         Logger.Info("Message not found for guid " + val);
-                        window?.Overlays.ShowTooltip("Message not found for guid " + val, 2f);
+                        window?.Overlays.ShowTooltip(UiText.T("Message not found for guid ") + val, 2f);
                     } else {
                         Logger.Info("Guid " + val + " message:\n" + res.Result);
                         window?.Overlays.ShowTooltip(res.Result, 1.5f);
@@ -1135,7 +1135,7 @@ public class ReadOnlyLabelHandler : Singleton<ReadOnlyLabelHandler>, IObjectUIHa
 {
     public void OnIMGUI(UIContext context)
     {
-        ImGui.Text(context.label + " (readonly)");
+        ImGui.Text(context.label + UiText.T(" (readonly)"));
     }
 }
 
@@ -1202,15 +1202,15 @@ public class PrefabRefHandler : IObjectUIHandler
 
         var preloadType = instance.Values[0].GetType();
         var preload = instance.Values[0] is bool b ? b : (byte)instance.Values[0] != 0;
-        var nextW = ImGui.CalcItemWidth() - ImGui.CalcTextSize("Preload").X - ImGui.GetStyle().FramePadding.X * 2;
-        if (ImGui.Checkbox("Preload", ref preload)) {
+        var nextW = ImGui.CalcItemWidth() - ImGui.CalcTextSize(UiText.T("Preload")).X - ImGui.GetStyle().FramePadding.X * 2;
+        if (ImGui.Checkbox(UiText.Label("Preload"), ref preload)) {
             if (preloadType == typeof(bool)) {
                 UndoRedo.RecordCallbackSetter(context, instance, !preload, preload, (i, v) => i.Values[0] = v, $"{instance.GetHashCode()} Preload");
             } else {
                 UndoRedo.RecordCallbackSetter(context, instance, (byte)0, (byte)1, (i, v) => i.Values[0] = v, $"{instance.GetHashCode()} Preload");
             }
         }
-        ImguiHelpers.Tooltip("If true, the prefab will get loaded immediately with the scene and included in the resources list.\nYou rarely want to change this for existing files."u8);
+        ImguiHelpers.Tooltip(UiText.Utf8("If true, the prefab will get loaded immediately with the scene and included in the resources list.\nYou rarely want to change this for existing files."));
         ImGui.SameLine();
         ImGui.SetNextItemWidth(nextW);
         context.ShowChildrenUI();
@@ -1224,7 +1224,7 @@ public class TransformStructHandler : IObjectUIHandler
     public void OnIMGUI(UIContext context)
     {
         var data = context.Get<ReeLib.via.Transform>();
-        var show = ImguiHelpers.TreeNodeSuffix("Transform"u8, data.ToString()!);
+        var show = ImguiHelpers.TreeNodeSuffix(UiText.LabelUtf8("Transform"), data.ToString()!);
         AppImguiHelpers.ShowValueContextMenu(data, context);
         if (show) {
             var pos = data.pos;
@@ -1239,7 +1239,7 @@ public class TransformStructHandler : IObjectUIHandler
             ImGui.SameLine();
             ImGui.SetNextItemWidth(w * 0.25f - ImGui.GetStyle().FramePadding.X * 2);
             ImGui.LabelText("Position", "##labelP");
-            if (ImGui.DragFloat4("Rotation", ref rot, 0.002f)) {
+            if (ImGui.DragFloat4(UiText.Label("Rotation"), ref rot, 0.002f)) {
                 var newrot = Quaternion.Normalize(rot.ToQuaternion());
                 UndoRedo.RecordSet(context, new ReeLib.via.Transform(pos, newrot, scale));
             }
@@ -1266,10 +1266,10 @@ public class SphereStructHandler : IObjectUIHandler
         var show = ImguiHelpers.TreeNodeSuffix(context.label, sphere.ToString());
         AppImguiHelpers.ShowValueContextMenu(sphere, context);
         if (show) {
-            if (ImGui.DragFloat3("Position", ref sphere.pos, 0.005f)) {
+            if (ImGui.DragFloat3(UiText.Label("Position"), ref sphere.pos, 0.005f)) {
                 UndoRedo.RecordSet(context, sphere, undoId: $"{context.GetHashCode()} pos");
             }
-            if (ImGui.DragFloat("Radius", ref sphere.r, 0.002f, 0.001f, 1000f)) {
+            if (ImGui.DragFloat(UiText.Label("Radius"), ref sphere.r, 0.002f, 0.001f, 1000f)) {
                 UndoRedo.RecordSet(context, sphere, undoId: $"{context.GetHashCode()} radius");
             }
             ImGui.TreePop();
@@ -1298,7 +1298,7 @@ public class Mat4StructHandler : IObjectUIHandler
             ImGui.SetNextItemWidth(w * 0.25f - ImGui.GetStyle().FramePadding.X * 2);
             ImGui.LabelText("Offset", "##labelP");
 
-            if (ImGui.DragFloat4("Rotation", ref Unsafe.As<Quaternion, Vector4>(ref rot), 0.005f)) {
+            if (ImGui.DragFloat4(UiText.Label("Rotation"), ref Unsafe.As<Quaternion, Vector4>(ref rot), 0.005f)) {
                 rot = Quaternion.Normalize(rot);
                 mat = Transform.GetMatrixFromTransforms(trans, rot, scale);
                 UndoRedo.RecordSet(context, mat, undoId: $"{context.GetHashCode()} rotation");
@@ -1312,7 +1312,7 @@ public class Mat4StructHandler : IObjectUIHandler
             ImGui.SetNextItemWidth(w * 0.25f - ImGui.GetStyle().FramePadding.X * 2);
             ImGui.LabelText("Scale", "##labelS");
             if (MathF.Abs(scale.X - scale.Y) > 0.001f || MathF.Abs(scale.Y - scale.Z) > 0.001f) {
-                ImGui.TextColored(Colors.Warning, "A non-uniform scale can sometimes cause issues with collisions.");
+                ImGui.TextColored(Colors.Warning, UiText.T("A non-uniform scale can sometimes cause issues with collisions."));
             }
 
             ImGui.TreePop();
@@ -1331,12 +1331,12 @@ public class OBBStructHandler : IObjectUIHandler
         if (show) {
             Matrix4x4.Decompose(box.Coord.ToSystem(), out var scale, out var rot, out var trans);
 
-            if (ImGui.DragFloat3("Offset", ref trans, 0.005f)) {
+            if (ImGui.DragFloat3(UiText.Label("Offset"), ref trans, 0.005f)) {
                 box.Coord = Transform.GetMatrixFromTransforms(trans, rot, scale);
                 UndoRedo.RecordSet(context, box, undoId: $"{context.GetHashCode()} offset");
             }
             if (!context.HasBoolState) context.StateBool = AppConfig.Instance.ShowQuaternionsAsEuler.Get();
-            if (QuaternionFieldHandler.HandleQuaternion("Rotation"u8, ref rot, context.StateBool)) {
+            if (QuaternionFieldHandler.HandleQuaternion(UiText.LabelUtf8("Rotation"), ref rot, context.StateBool)) {
                 box.Coord = Transform.GetMatrixFromTransforms(trans, rot, scale);
                 UndoRedo.RecordSet(context, box, undoId: $"{context.GetHashCode()} rotation");
             }
@@ -1345,21 +1345,21 @@ public class OBBStructHandler : IObjectUIHandler
                     box.Coord = Transform.GetMatrixFromTransforms(trans, rot, scale);
                     UndoRedo.RecordSet(context, box, undoId: $"{context.GetHashCode()} rotation");
                 }
-                if (ImGui.Selectable("Toggle quaternion/euler display")) {
+                if (ImGui.Selectable(UiText.Label("Toggle quaternion/euler display"))) {
                     context.StateBool = !context.StateBool;
                 }
                 ImGui.EndPopup();
             }
-            if (ImGui.DragFloat3("Scale", ref scale, 0.005f)) {
+            if (ImGui.DragFloat3(UiText.Label("Scale"), ref scale, 0.005f)) {
                 box.Coord = Transform.GetMatrixFromTransforms(trans, rot, scale);
                 UndoRedo.RecordSet(context, box, undoId: $"{context.GetHashCode()} scale");
             }
             if (MathF.Abs(scale.X - 1) > 0.001f || MathF.Abs(scale.Y - 1) > 0.001f || MathF.Abs(scale.Z - 1) > 0.001f) {
-                ImGui.TextColored(Colors.Warning, "A scale different from (1, 1, 1) may cause issues with collisions. It's usually more reliable to modify Extent instead.");
+                ImGui.TextColored(Colors.Warning, UiText.T("A scale different from (1, 1, 1) may cause issues with collisions. It's usually more reliable to modify Extent instead."));
             }
 
             var ext = box.Extent;
-            if (ImGui.DragFloat3("Extent", ref ext, 0.002f, 0.001f, 1000f)) {
+            if (ImGui.DragFloat3(UiText.Label("Extent"), ref ext, 0.002f, 0.001f, 1000f)) {
                 box.Extent = ext;
                 UndoRedo.RecordSet(context, box, undoId: $"{context.GetHashCode()} extent");
             }
@@ -1377,15 +1377,15 @@ public class CapsuleStructHandler : IObjectUIHandler
         var show = ImguiHelpers.TreeNodeSuffix(context.label, capsule.ToString());
         AppImguiHelpers.ShowValueContextMenu(capsule, context);
         if (show) {
-            if (ImGui.DragFloat3("Point 1", ref capsule.p0, 0.005f)) {
+            if (ImGui.DragFloat3(UiText.Label("Point 1"), ref capsule.p0, 0.005f)) {
                 UndoRedo.RecordSet(context, capsule, undoId: $"{context.GetHashCode()} p0");
             }
 
-            if (ImGui.DragFloat3("Point 2", ref capsule.p1, 0.005f)) {
+            if (ImGui.DragFloat3(UiText.Label("Point 2"), ref capsule.p1, 0.005f)) {
                 UndoRedo.RecordSet(context, capsule, undoId: $"{context.GetHashCode()} p1");
             }
 
-            if (ImGui.DragFloat("Radius", ref capsule.r, 0.005f, 0.001f, 1000f)) {
+            if (ImGui.DragFloat(UiText.Label("Radius"), ref capsule.r, 0.005f, 0.001f, 1000f)) {
                 UndoRedo.RecordSet(context, capsule, undoId: $"{context.GetHashCode()} r");
             }
 
@@ -1403,15 +1403,15 @@ public class CylinderStructHandler : IObjectUIHandler
         var show = ImguiHelpers.TreeNodeSuffix(context.label, cylinder.ToString());
         AppImguiHelpers.ShowValueContextMenu(cylinder, context);
         if (show) {
-            if (ImGui.DragFloat3("Point 1", ref cylinder.p0, 0.005f)) {
+            if (ImGui.DragFloat3(UiText.Label("Point 1"), ref cylinder.p0, 0.005f)) {
                 UndoRedo.RecordSet(context, cylinder, undoId: $"{context.GetHashCode()} p0");
             }
 
-            if (ImGui.DragFloat3("Point 2", ref cylinder.p1, 0.005f)) {
+            if (ImGui.DragFloat3(UiText.Label("Point 2"), ref cylinder.p1, 0.005f)) {
                 UndoRedo.RecordSet(context, cylinder, undoId: $"{context.GetHashCode()} p1");
             }
 
-            if (ImGui.DragFloat("Radius", ref cylinder.r, 0.005f, 0.001f, 1000f)) {
+            if (ImGui.DragFloat(UiText.Label("Radius"), ref cylinder.r, 0.005f, 0.001f, 1000f)) {
                 UndoRedo.RecordSet(context, cylinder, undoId: $"{context.GetHashCode()} r");
             }
 
@@ -1431,11 +1431,11 @@ public class AABBStructHandler : IObjectUIHandler
         if (show) {
             var center = aabb.Center;
             var size = aabb.Size / 2;
-            if (ImGui.DragFloat3("Center", ref center, 0.005f)) {
+            if (ImGui.DragFloat3(UiText.Label("Center"), ref center, 0.005f)) {
                 UndoRedo.RecordSet(context, new AABB(center - size, center + size), undoId: $"{context.GetHashCode()} c");
             }
 
-            if (ImGui.DragFloat3("Size", ref size, 0.005f, 0.001f, 1000f)) {
+            if (ImGui.DragFloat3(UiText.Label("Size"), ref size, 0.005f, 0.001f, 1000f)) {
                 UndoRedo.RecordSet(context, new AABB(center - size, center + size), undoId: $"{context.GetHashCode()} s");
             }
 
@@ -1456,9 +1456,9 @@ public class UndeterminedFieldTypeHandler : IObjectUIHandler
         }
 #else
         ImGui.BeginDisabled();
-        ImGui.DragInt(context.label + " (value type unknown)", ref value.value);
+        ImGui.DragInt(context.label + UiText.T(" (value type unknown)"), ref value.value);
         ImGui.EndDisabled();
 #endif
-        ImguiHelpers.Tooltip("The value type of this field is unknown. It's most likely always 0 in all known shipped files."u8);
+        ImguiHelpers.Tooltip(UiText.Utf8("The value type of this field is unknown. It's most likely always 0 in all known shipped files."));
     }
 }

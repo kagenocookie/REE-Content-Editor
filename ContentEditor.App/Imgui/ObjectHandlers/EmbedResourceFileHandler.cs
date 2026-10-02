@@ -18,13 +18,13 @@ public class EmbeddedResourceFileHandler(ResourceCustomField field) : IObjectUIH
         var entity = context.GetOwnerEntity();
         var workspace = context.GetWorkspace();
         if (entity == null || workspace == null) {
-            ImGui.TextColored(Colors.Error, $"{field.label} field requires a valid item entity and workspace");
+            ImGui.TextColored(Colors.Error, UiText.F($"{field.label} field requires a valid item entity and workspace"));
             return;
         }
 
         var path = workspace.Env.GetResourcePath(field.GetPath(entity)).ToString();
         if (string.IsNullOrEmpty(path)) {
-            ImGui.Text(context.label + ": No resource");
+            ImGui.Text(context.label + UiText.T(": No resource"));
             if (file != null) {
                 context.ClearChildren();
                 file = null;
@@ -33,7 +33,7 @@ public class EmbeddedResourceFileHandler(ResourceCustomField field) : IObjectUIH
         }
 
         if (entity == null || workspace == null) {
-            ImGui.TextColored(Colors.Error, $"{field.label} field requires a valid item entity and workspace");
+            ImGui.TextColored(Colors.Error, UiText.F($"{field.label} field requires a valid item entity and workspace"));
             return;
         }
         if (file == null || file.ResourcePath == null || !file.ResourcePath.Equals(path, StringComparison.InvariantCultureIgnoreCase)) {
@@ -43,7 +43,7 @@ public class EmbeddedResourceFileHandler(ResourceCustomField field) : IObjectUIH
             }
 
             if (!workspace.ResourceManager.TryResolveGameFile(path, out file)) {
-                ImGui.TextColored(Colors.Warning, "Could not resolve file " + path);
+                ImGui.TextColored(Colors.Warning, UiText.T("Could not resolve file ") + path);
                 return;
             }
         }
@@ -59,7 +59,7 @@ public class EmbeddedResourceFileHandler(ResourceCustomField field) : IObjectUIH
 
         ImGui.Text(field.label);
         ImGui.SameLine();
-        if (ImGui.Button("Open in new window")) {
+        if (ImGui.Button(UiText.Label("Open in new window"))) {
             EditorWindow.CurrentWindow?.AddFileEditor(file);
         }
         ImguiHelpers.BeginRect();

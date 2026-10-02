@@ -111,23 +111,23 @@ internal partial class MotBatchTransfer(ContentWorkspace workspace, MotlistFileB
 
     protected override bool Show()
     {
-        if (ImGui.Button("Reset mapping") || firstShow) {
+        if (ImGui.Button(UiText.Label("Reset mapping")) || firstShow) {
             ResetMapping();
             firstShow = false;
         }
         ImGui.SameLine();
-        if (ImGui.Button("Confirm transfer")) {
+        if (ImGui.Button(UiText.Label("Confirm transfer"))) {
             Transfer();
             return true;
         }
 
-        ImGui.Checkbox("Overwrite bone list", ref replaceBoneList);
-        ImguiHelpers.Tooltip("The bone list between the two animations is different. This option will overwrite the target bone list with the source one."u8);
+        ImGui.Checkbox(UiText.Label("Overwrite bone list"), ref replaceBoneList);
+        ImguiHelpers.Tooltip(UiText.Utf8("The bone list between the two animations is different. This option will overwrite the target bone list with the source one."));
 
-        ImGui.Checkbox("Only paste already existing channels", ref maintainExistingChannelsOnly);
-        ImguiHelpers.Tooltip("Only channels that already exist in the target motion will be kept, while the rest are ignored.\nCan be used to make pure edits and avoid modifying bones that should not be modified by the animation.");
+        ImGui.Checkbox(UiText.Label("Only paste already existing channels"), ref maintainExistingChannelsOnly);
+        ImguiHelpers.Tooltip(UiText.T("Only channels that already exist in the target motion will be kept, while the rest are ignored.\nCan be used to make pure edits and avoid modifying bones that should not be modified by the animation."));
 
-        if (messages.Count > 0 && ImGui.TreeNode($"Messages ({messages.Count})")) {
+        if (messages.Count > 0 && ImGui.TreeNode(UiText.FormatLabel($"Messages ({messages.Count})"))) {
             foreach (var msg in messages) {
                 ImGui.Text(msg);
             }

@@ -104,7 +104,7 @@ public class FileSearchWindow : IWindowHandler
     {
         var workspace = (data.ParentWindow as IWorkspaceContainer)?.Workspace;
         if (workspace == null) {
-            ImGui.TextColored(Colors.Error, "Workspace not configured");
+            ImGui.TextColored(Colors.Error, UiText.T("Workspace not configured"));
             return;
         }
 
@@ -112,12 +112,12 @@ public class FileSearchWindow : IWindowHandler
         var searching = SearchInProgress;
         if (searching) ImGui.BeginDisabled();
 
-        ImGui.Checkbox("Search all configured games", ref searchAllGames);
+        ImGui.Checkbox(UiText.Label("Search all configured games"), ref searchAllGames);
 
         ImguiHelpers.Tabs(FindTypes, ref findType);
         switch (findType) {
             case 0:
-                ImguiHelpers.CSharpEnumCombo("Search Type", ref rszSearchType);
+                ImguiHelpers.CSharpEnumCombo(UiText.Label("Search Type"), ref rszSearchType);
                 _flagContext ??= context.AddChild("File Types", this, flagHandler, (c) => c!.rszSearchFlags, (c, v) => c.rszSearchFlags = v);
                 _flagContext.options = UIOptions.DisableUndoRedo;
                 flagHandler.OnIMGUI(_flagContext);
@@ -166,19 +166,19 @@ public class FileSearchWindow : IWindowHandler
     {
         if (cancellationTokenSource != null && searchInProgress) {
             ImGui.Separator();
-            ImGui.Text("Query: " + valueString);
-            ImGui.Text("Search in progress...");
-            ImGui.Text("Searched file count: " + searchedFiles);
-            if (ImguiHelpers.SameLine() && ImGui.Button("Stop")) {
+            ImGui.Text(UiText.T("Query: ") + valueString);
+            ImGui.Text(UiText.T("Search in progress..."));
+            ImGui.Text(UiText.T("Searched file count: ") + searchedFiles);
+            if (ImguiHelpers.SameLine() && ImGui.Button(UiText.Label("Stop"))) {
                 cancellationTokenSource?.Cancel();
                 cancellationTokenSource = null;
             }
         } else if (!matches.IsEmpty) {
             ImGui.Separator();
-            ImGui.Text($"Last search results: ({matches.Count} matches)");
-            if (ImguiHelpers.SameLine() && ImGui.Button("Clear")) matches.Clear();
-            if (ImguiHelpers.SameLine() && ImGui.Button("Copy all matches")) EditorWindow.CurrentWindow?.CopyToClipboard(string.Join("\n", matches));
-            if (ImguiHelpers.SameLine() && ImGui.Button("Copy filenames")) EditorWindow.CurrentWindow?.CopyToClipboard(string.Join("\n", matches.Select(m => m.file).Distinct()));
+            ImGui.Text(UiText.F($"Last search results: ({matches.Count} matches)"));
+            if (ImguiHelpers.SameLine() && ImGui.Button(UiText.Label("Clear"))) matches.Clear();
+            if (ImguiHelpers.SameLine() && ImGui.Button(UiText.Label("Copy all matches"))) EditorWindow.CurrentWindow?.CopyToClipboard(string.Join("\n", matches));
+            if (ImguiHelpers.SameLine() && ImGui.Button(UiText.Label("Copy filenames"))) EditorWindow.CurrentWindow?.CopyToClipboard(string.Join("\n", matches.Select(m => m.file).Distinct()));
         } else {
             return;
         }
@@ -196,10 +196,10 @@ public class FileSearchWindow : IWindowHandler
                 ImGui.Text(displayLabel + " :  " + file);
             }
             ImGui.PushID(displayLabel + file);
-            if (ImguiHelpers.SameLine() && ImGui.Button("Copy")) {
-                EditorWindow.CurrentWindow!.CopyToClipboard(displayLabel + " :  " + file, "Copied!");
+            if (ImguiHelpers.SameLine() && ImGui.Button(UiText.Label("Copy"))) {
+                EditorWindow.CurrentWindow!.CopyToClipboard(displayLabel + " :  " + file, UiText.T("Copied!"));
             }
-            if (ImguiHelpers.SameLine() && ImGui.Button("Open")) {
+            if (ImguiHelpers.SameLine() && ImGui.Button(UiText.Label("Open"))) {
                 if (isCurrent) {
                     EditorWindow.CurrentWindow!.OpenFiles([file]);
                 } else {
@@ -219,7 +219,7 @@ public class FileSearchWindow : IWindowHandler
     private UIContext _flagContext = null!;
     private void ShowRszFieldSearch(Workspace env)
     {
-        ImguiHelpers.ValueCombo("Field type", RszFilterTypes, RszFilterTypes, ref rszFieldType);
+        ImguiHelpers.ValueCombo(UiText.Label("Field type"), RszFilterTypes, RszFilterTypes, ref rszFieldType);
         if (!RszFilterableFields.TryGetValue(rszFieldType, out var targetTypes)) {
             return;
         }
@@ -230,7 +230,7 @@ public class FileSearchWindow : IWindowHandler
             return;
         }
 
-        if (ImGui.Button("Run search")) {
+        if (ImGui.Button(UiText.Label("Run search"))) {
             matches.Clear();
             cancellationTokenSource = new();
             var flags = rszSearchFlags;
@@ -264,17 +264,17 @@ public class FileSearchWindow : IWindowHandler
     private void RszClassInfo(Workspace env)
     {
         if (string.IsNullOrEmpty(classname)) return;
-        if (!ImGui.TreeNode("Class Info")) return;
+        if (!ImGui.TreeNode(UiText.Label("Class Info"))) return;
 
         var subs = env.TypeCache.GetSubclasses(classname);
         var rszClass = env.RszParser.GetRSZClass(classname);
         if (rszClass == null) {
-            ImGui.TextColored(Colors.Error, "Class not found");
+            ImGui.TextColored(Colors.Error, UiText.T("Class not found"));
             ImGui.TreePop();
             return;
         }
 
-        if (ImGui.TreeNode("Fields: " + rszClass.fields.Length)) {
+        if (ImGui.TreeNode(UiText.T("Fields: ") + rszClass.fields.Length)) {
             for (int i = 0; i < rszClass.fields.Length; ++i) {
                 var field = rszClass.fields[i];
                 var text = string.IsNullOrEmpty(field.original_type)
@@ -282,10 +282,10 @@ public class FileSearchWindow : IWindowHandler
                     : $"{i}: {field.type}{(field.array ? "[]" : "")} {field.name} (\"{field.original_type}\")";
                 ImGui.Text(text);
                 if (ImGui.BeginPopupContextItem(text)) {
-                    if (ImGui.Selectable("Copy name")) {
+                    if (ImGui.Selectable(UiText.Label("Copy name"))) {
                         EditorWindow.CurrentWindow?.CopyToClipboard(field.name);
                     }
-                    if (!string.IsNullOrEmpty(field.original_type) && ImGui.Selectable("Copy classname")) {
+                    if (!string.IsNullOrEmpty(field.original_type) && ImGui.Selectable(UiText.Label("Copy classname"))) {
                         EditorWindow.CurrentWindow?.CopyToClipboard(field.original_type);
                     }
                     ImGui.EndPopup();
@@ -295,11 +295,11 @@ public class FileSearchWindow : IWindowHandler
         }
 
         string[] parents = env.TypeCache.GetParentClasses(classname);
-        if (parents.Length > 0 && ImGui.TreeNode($"Parent classes ({parents.Length})")) {
+        if (parents.Length > 0 && ImGui.TreeNode(UiText.FormatLabel($"Parent classes ({parents.Length})"))) {
             foreach (var parent in parents) {
                 ImGui.Text(parent);
                 if (ImGui.BeginPopupContextItem(parent)) {
-                    if (ImGui.Selectable("Copy")) {
+                    if (ImGui.Selectable(UiText.Label("Copy"))) {
                         EditorWindow.CurrentWindow?.CopyToClipboard(parent);
                     }
                     ImGui.EndPopup();
@@ -316,12 +316,12 @@ public class FileSearchWindow : IWindowHandler
                 EditorWindow.CurrentWindow?.CopyToClipboard(tmp?.ToString() ?? "", $"Copied: {tmp}");
             }
         } else if (subs.Count > 1) {
-            if (ImGui.TreeNode($"Subclasses ({subs.Count - 1})")) {
+            if (ImGui.TreeNode(UiText.FormatLabel($"Subclasses ({subs.Count - 1})"))) {
                 foreach (var s in subs) {
                     if (s == classname) continue;
                     ImGui.Text(s);
                     if (ImGui.BeginPopupContextItem(s)) {
-                        if (ImGui.Selectable("Copy")) {
+                        if (ImGui.Selectable(UiText.Label("Copy"))) {
                             EditorWindow.CurrentWindow?.CopyToClipboard(s);
                         }
                         ImGui.EndPopup();
@@ -330,7 +330,7 @@ public class FileSearchWindow : IWindowHandler
                 ImGui.TreePop();
             }
         } else {
-            ImGui.Text("No subclasses");
+            ImGui.Text(UiText.T("No subclasses"));
         }
 
         ImGui.TreePop();
@@ -338,17 +338,17 @@ public class FileSearchWindow : IWindowHandler
 
     private void ShowRszClassSearch(Workspace env)
     {
-        ImGui.InputText("Classname", ref classname, 1024);
+        ImGui.InputText(UiText.Label("Classname"), ref classname, 1024);
         RszClass? cls;
         try {
             cls = env.RszParser.GetRSZClass(classname);
         } catch (Exception) {
-            ImGui.TextColored(Colors.Error, "RSZ files not supported for this game.");
+            ImGui.TextColored(Colors.Error, UiText.T("RSZ files not supported for this game."));
             return;
         }
 
         if (cls == null) {
-            ImGui.TextColored(Colors.Warning, "Classname not found");
+            ImGui.TextColored(Colors.Warning, UiText.T("Classname not found"));
             classNames ??= env.RszParser.ClassDict.Values.Select(cs => cs.name).ToArray();
             var suggestions = classNames.OrderBy(s => s.Length).Where(cs => cs.Contains(classname, StringComparison.OrdinalIgnoreCase)).Take(100);
             ImGui.BeginListBox("Suggestions", new System.Numerics.Vector2(ImGui.CalcItemWidth(), 400));
@@ -362,18 +362,18 @@ public class FileSearchWindow : IWindowHandler
         }
 
         RszField? field = null;
-        ImGui.Checkbox("Search references only", ref searchClassOnly);
-        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Search for any reference to this class, regardless of what fields or values it contains");
+        ImGui.Checkbox(UiText.Label("Search references only"), ref searchClassOnly);
+        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip(UiText.T("Search for any reference to this class, regardless of what fields or values it contains"));
         object? value = null;
         if (!searchClassOnly) {
             var fields = cls.fields.Select(f => f.name).ToArray();
             if (fields.Length == 0) {
                 if (cls.name != "") {
-                    ImGui.TextColored(Colors.Warning, "Chosen class has no serialized fields. Search by class only if you wish to find instances of it.");
+                    ImGui.TextColored(Colors.Warning, UiText.T("Chosen class has no serialized fields. Search by class only if you wish to find instances of it."));
                 }
                 return;
             }
-            ImGui.Combo("Field", ref selectedFieldIndex, fields, fields.Length);
+            ImGui.Combo(UiText.Label("Field"), ref selectedFieldIndex, fields, fields.Length);
 
             field = selectedFieldIndex >= 0 && selectedFieldIndex < cls.fields.Length ? cls.fields[selectedFieldIndex] : null;
             value = RszValueInput(field?.type);
@@ -385,7 +385,7 @@ public class FileSearchWindow : IWindowHandler
             return;
         }
 
-        if (ImGui.Button("Run search")) {
+        if (ImGui.Button(UiText.Label("Run search"))) {
             matches.Clear();
             cancellationTokenSource = new();
             var flags = rszSearchFlags;
@@ -424,7 +424,7 @@ public class FileSearchWindow : IWindowHandler
             return;
         }
 
-        if (ImGui.Button("Run search")) {
+        if (ImGui.Button(UiText.Label("Run search"))) {
             matches.Clear();
             cancellationTokenSource = new();
             var flags = rszSearchFlags;
@@ -458,12 +458,12 @@ public class FileSearchWindow : IWindowHandler
     private object? RszValueInput(RszFieldType? type)
     {
         if (type == null) {
-            ImGui.TextColored(Colors.Warning, "Select a field");
+            ImGui.TextColored(Colors.Warning, UiText.T("Select a field"));
             return null;
         }
 
         if (type is ReeLib.RszFieldType.Object or ReeLib.RszFieldType.Struct) {
-            ImGui.TextColored(Colors.Warning, "Not a filterable field");
+            ImGui.TextColored(Colors.Warning, UiText.T("Not a filterable field"));
             return null;
         }
         object? value = null;
@@ -476,12 +476,12 @@ public class FileSearchWindow : IWindowHandler
                     try {
                         csType = RszInstance.RszFieldTypeToCSharpType(type.Value);
                     } catch (Exception) {
-                        ImGui.TextColored(Colors.Warning, "Not a filterable field type: " + type.Value);
+                        ImGui.TextColored(Colors.Warning, UiText.T("Not a filterable field type: ") + type.Value);
                         return null;
                     }
 
                     if (!csType.Namespace!.StartsWith("System")) {
-                        ImGui.TextColored(Colors.Warning, "Not a filterable field type: " + csType);
+                        ImGui.TextColored(Colors.Warning, UiText.T("Not a filterable field type: ") + csType);
                         return null;
                     }
                 }
@@ -492,46 +492,46 @@ public class FileSearchWindow : IWindowHandler
                     case RszFieldType.RuntimeType:
                     case RszFieldType.Resource:
                     case RszFieldType.UserData:
-                        ImGui.InputText("Value", ref valueString, 400);
+                        ImGui.InputText(UiText.Label("Value"), ref valueString, 400);
                         value = valueString;
                         break;
                     case RszFieldType.U8 or RszFieldType.U16 or RszFieldType.U32 or RszFieldType.U64:
-                        ImGui.InputText("Value", ref tmpvalue, 400);
+                        ImGui.InputText(UiText.Label("Value"), ref tmpvalue, 400);
                         if (ulong.TryParse(tmpvalue, out _)) {
                             valueString = tmpvalue;
                             value = Convert.ChangeType(tmpvalue, csType);
                         }
                         break;
                     case RszFieldType.S8 or RszFieldType.S16 or RszFieldType.S32 or RszFieldType.S64:
-                        ImGui.InputText("Value", ref tmpvalue, 400);
+                        ImGui.InputText(UiText.Label("Value"), ref tmpvalue, 400);
                         if (long.TryParse(tmpvalue, out _)) {
                             valueString = tmpvalue;
                             value = Convert.ChangeType(tmpvalue, csType);
                         }
                         break;
                     case RszFieldType.Guid:
-                        ImGui.InputText("Value", ref valueString, 100);
+                        ImGui.InputText(UiText.Label("Value"), ref valueString, 100);
                         value = Guid.TryParse(valueString, out var gg) ? gg : null;
                         break;
                     case RszFieldType.Bool: {
                             var b = valueString == "true";
-                            ImGui.Checkbox("Value", ref b);
+                            ImGui.Checkbox(UiText.Label("Value"), ref b);
                             valueString = b ? "true" : "false";
                             value = b;
                         }
                         break;
                     default:
-                        ImGui.TextColored(Colors.Warning, "Not a filterable field type: " + type);
+                        ImGui.TextColored(Colors.Warning, UiText.T("Not a filterable field type: ") + type);
                         return null;
                 }
                 if (value == null) {
-                    ImGui.TextColored(Colors.Danger, "Could not parse value");
+                    ImGui.TextColored(Colors.Danger, UiText.T("Could not parse value"));
                     return null;
                 }
             }
 
             ImGui.Separator();
-            ImGui.Text("Parsed value: " + value);
+            ImGui.Text(UiText.T("Parsed value: ") + value);
         }
 
         return value;
@@ -539,9 +539,9 @@ public class FileSearchWindow : IWindowHandler
 
     private void ShowMessageFind(Workspace env)
     {
-        ImGui.InputText("Query", ref msgSearch, 100);
+        ImGui.InputText(UiText.Label("Query"), ref msgSearch, 100);
 
-        if (!string.IsNullOrEmpty(msgSearch) && ImGui.Button("Search")) {
+        if (!string.IsNullOrEmpty(msgSearch) && ImGui.Button(UiText.Label("Search"))) {
             matches.Clear();
             cancellationTokenSource = new();
             var token = cancellationTokenSource.Token;
@@ -558,13 +558,13 @@ public class FileSearchWindow : IWindowHandler
 
     private void ShowEfxFind(Workspace env)
     {
-        ImguiHelpers.FilterableCSharpEnumCombo("Type"u8, ref efxAttrType, ref efxAttrFilter);
-        ImGui.InputText("Query", ref efxSearch, 100);
-        ImGui.Checkbox("Match per file", ref efxFileMatchOnly);
+        ImguiHelpers.FilterableCSharpEnumCombo(UiText.LabelUtf8("Type"), ref efxAttrType, ref efxAttrFilter);
+        ImGui.InputText(UiText.Label("Query"), ref efxSearch, 100);
+        ImGui.Checkbox(UiText.Label("Match per file"), ref efxFileMatchOnly);
 
         if (efxAttrType == EfxAttributeType.Unknown && string.IsNullOrEmpty(efxSearch)) return;
 
-        if (ImGui.Button("Search")) {
+        if (ImGui.Button(UiText.Label("Search"))) {
             matches.Clear();
             cancellationTokenSource = new();
             var token = cancellationTokenSource.Token;
@@ -581,12 +581,12 @@ public class FileSearchWindow : IWindowHandler
 
     private void ShowUvarFind(Workspace env)
     {
-        ImguiHelpers.CSharpEnumCombo("Type", ref uvarKind);
-        ImGui.InputText("Query", ref uvarSearch, 100);
+        ImguiHelpers.CSharpEnumCombo(UiText.Label("Type"), ref uvarKind);
+        ImGui.InputText(UiText.Label("Query"), ref uvarSearch, 100);
 
         if (uvarKind == Variable.TypeKind.Unknown && string.IsNullOrEmpty(uvarSearch)) return;
 
-        if (ImGui.Button("Search")) {
+        if (ImGui.Button(UiText.Label("Search"))) {
             matches.Clear();
             cancellationTokenSource = new();
             var token = cancellationTokenSource.Token;
@@ -603,11 +603,11 @@ public class FileSearchWindow : IWindowHandler
 
     private void ShowMotFind(Workspace env)
     {
-        ImGui.InputText("Query", ref motSearch, 100);
+        ImGui.InputText(UiText.Label("Query"), ref motSearch, 100);
 
         if (string.IsNullOrEmpty(motSearch)) return;
 
-        if (ImGui.Button("Search")) {
+        if (ImGui.Button(UiText.Label("Search"))) {
             matches.Clear();
             cancellationTokenSource = new();
             var token = cancellationTokenSource.Token;
@@ -624,11 +624,11 @@ public class FileSearchWindow : IWindowHandler
 
     private void ShowGuiFind(Workspace env)
     {
-        ImGui.InputText("Query", ref guiSearch, 100);
+        ImGui.InputText(UiText.Label("Query"), ref guiSearch, 100);
 
         if (string.IsNullOrEmpty(guiSearch)) return;
 
-        if (ImGui.Button("Search")) {
+        if (ImGui.Button(UiText.Label("Search"))) {
             matches.Clear();
             cancellationTokenSource = new();
             var token = cancellationTokenSource.Token;
@@ -645,12 +645,12 @@ public class FileSearchWindow : IWindowHandler
 
     private void ShowMdf2Find(Workspace env)
     {
-        ImGui.InputText("Query", ref mdf2Search, 100);
-        ImGui.TextColored(Colors.Note, "MDF2 search is supported for partial match of MMTR or texture paths");
+        ImGui.InputText(UiText.Label("Query"), ref mdf2Search, 100);
+        ImGui.TextColored(Colors.Note, UiText.T("MDF2 search is supported for partial match of MMTR or texture paths"));
 
         if (string.IsNullOrEmpty(mdf2Search)) return;
 
-        if (ImGui.Button("Search")) {
+        if (ImGui.Button(UiText.Label("Search"))) {
             matches.Clear();
             cancellationTokenSource = new();
             var token = cancellationTokenSource.Token;

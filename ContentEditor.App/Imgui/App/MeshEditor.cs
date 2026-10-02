@@ -114,7 +114,7 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
         EnsureSceneSubscription();
         if (renderStateDirty) ApplyRenderState();
         else UpdateEditVertexPointSizes();
-        
+
         ImGui.PushStyleColor(ImGuiCol.Button, IsEnabled ? ImguiHelpers.GetColor(ImGuiCol.TabSelected) with { W = 0.25f } : Vector4.Zero);
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_MeshEditor, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconSecondary], null, Lang.MeshViewer.Menu_Editor.String)) {
             SetEnabled(!IsEnabled);
@@ -161,7 +161,7 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
         DrawBoxSelection(viewportPosition);
 
         var controlsStart = ImGui.GetCursorPos();
-        var hovered = false;        
+        var hovered = false;
 
         if (IsMoving && !hovered && ImGui.IsMouseHoveringRect(viewportPosition, viewportPosition + viewportSize)) {
             if (ImGui.IsMouseClicked(ImGuiMouseButton.Left)) {
@@ -1880,8 +1880,8 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
                         submeshes.Add(submesh);
                         var materialName = nativeMesh.MaterialNames.ElementAtOrDefault(submesh.materialIndex);
                         var label = string.IsNullOrEmpty(materialName)
-                            ? $"Submesh {labels.Count}"
-                            : $"Submesh {labels.Count} | {materialName}";
+                            ? UiText.F($"Submesh {labels.Count}")
+                            : UiText.F($"Submesh {labels.Count} | {materialName}");
                         labels.Add(new SubmeshLabel(TranslatableBase.GetNullTerminatedUTF8(label)));
                     }
                 }
@@ -1891,7 +1891,7 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
                 var fallbackIndex = 0;
                 foreach (var mesh in meshes) {
                     if (fallbackIndex >= labels.Count) {
-                        var label = $"Submesh {fallbackIndex}  |  Group {mesh.MeshGroup}";
+                        var label = UiText.F($"Submesh {fallbackIndex}  |  Group {mesh.MeshGroup}");
                         labels.Add(new SubmeshLabel(TranslatableBase.GetNullTerminatedUTF8(label)));
                     }
                     fallbackIndex++;

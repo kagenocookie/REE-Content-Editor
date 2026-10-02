@@ -48,7 +48,7 @@ public static class SpawnAdditions
     [RszContextAction("app.GenerateRowData[]", "dd2")]
     public static bool ShowSpawnCopyMethod(UIContext context)
     {
-        if (ImGui.Button("Copy to featurelist json")) {
+        if (ImGui.Button(UiText.Label("Copy to featurelist json"))) {
             var data = new OpenLayersFeatureItem();
             if (context.TryCast<RszInstance>(out var instance)) {
                 if (instance.RszClass.name == "app.GenerateRowData") {

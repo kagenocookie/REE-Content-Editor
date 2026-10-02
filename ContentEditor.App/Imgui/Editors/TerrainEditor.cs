@@ -39,7 +39,7 @@ public class TerrainEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
         }
 
         var window = EditorWindow.CurrentWindow!;
-        if (ImGui.Button("Export to mesh ...")) {
+        if (ImGui.Button(UiText.Label("Export to mesh ..."))) {
             PlatformUtils.ShowSaveFileDialog((fn) => {
                 lastFilepath = fn;
                 window.InvokeFromUIThread(() => {
@@ -48,7 +48,7 @@ public class TerrainEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
             }, lastFilepath ?? Handle.Filename.ToString(), FileFilters.MeshFilesNoBlend);
         }
         ImGui.SameLine();
-        if (ImGui.Button("Import mesh ...")) {
+        if (ImGui.Button(UiText.Label("Import mesh ..."))) {
             PlatformUtils.ShowFileDialog((files) => {
                 var fn = files[0];
                 lastFilepath = fn;

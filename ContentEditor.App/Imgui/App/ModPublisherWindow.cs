@@ -28,25 +28,25 @@ public class ModPublisherWindow : IWindowHandler
     public void OnIMGUI()
     {
         if (Workspace.CurrentBundle == null) {
-            ImGui.TextColored(Colors.Error, "There is no active bundle!");
+            ImGui.TextColored(Colors.Error, UiText.T("There is no active bundle!"));
             return;
         }
         var bundle = Workspace.CurrentBundle;
         var window = EditorWindow.CurrentWindow!;
 
-        ImGui.Text("Active bundle: " + bundle.Name);
-        ImGui.Text("Author: " + bundle.Author);
-        ImGui.Text("Version: " + bundle.Version);
-        if (!string.IsNullOrEmpty(bundle.Homepage)) ImGui.Text("Homepage: " + bundle.Homepage);
-        ImGui.Text("Description: " + bundle.Description);
-        ImGui.Text("Created at: " + bundle.CreatedAt);
+        ImGui.Text(UiText.T("Active bundle: ") + bundle.Name);
+        ImGui.Text(UiText.T("Author: ") + bundle.Author);
+        ImGui.Text(UiText.T("Version: ") + bundle.Version);
+        if (!string.IsNullOrEmpty(bundle.Homepage)) ImGui.Text(UiText.T("Homepage: ") + bundle.Homepage);
+        ImGui.Text(UiText.T("Description: ") + bundle.Description);
+        ImGui.Text(UiText.T("Created at: ") + bundle.CreatedAt);
 
-        if (ImGui.Button("Edit metadata")) {
+        if (ImGui.Button(UiText.Label("Edit metadata"))) {
             window.ShowBundleManagement();
         }
         var bundlePath = Workspace.BundleManager.GetBundleFolder(bundle);
         ImGui.SameLine();
-        if (ImGui.Button("Publish as loose files ...")) {
+        if (ImGui.Button(UiText.Label("Publish as loose files ..."))) {
             PlatformUtils.ShowFolderDialog((outputPath) => {
                 var modconfig = Path.Combine(outputPath, "modinfo.ini");
                 if (!File.Exists(modconfig)) {
@@ -64,7 +64,7 @@ public class ModPublisherWindow : IWindowHandler
             });
         }
         ImGui.SameLine();
-        if (ImGui.Button("Publish as PAK ...")) {
+        if (ImGui.Button(UiText.Label("Publish as PAK ..."))) {
             var srcFolder = Workspace.BundleManager.GetBundleFolder(Workspace.CurrentBundle);
             PlatformUtils.ShowSaveFileDialog((outputPath) => {
                 var modconfig = Path.Combine(srcFolder, "modinfo.ini");
@@ -83,18 +83,18 @@ public class ModPublisherWindow : IWindowHandler
             }, null, FileFilters.PakFile);
         }
 
-        ImGui.SeparatorText("Content");
-        if (bundle.Entities.Count > 0 && ImGui.TreeNode("Entities")) {
+        ImGui.SeparatorText(UiText.T("Content"));
+        if (bundle.Entities.Count > 0 && ImGui.TreeNode(UiText.Label("Entities"))) {
             foreach (var e in bundle.Entities) {
                 ImGui.Text($"{e.Type} {e.Id} : {e.Label}");
             }
 
             ImGui.TreePop();
         }
-        if (bundle.HasResources && ImGui.TreeNode("Files")) {
+        if (bundle.HasResources && ImGui.TreeNode(UiText.Label("Files"))) {
             foreach (var (localPath, resource) in bundle.ResourcesEntries) {
                 ImGui.PushID(localPath);
-                if (ImGui.Button("Open")) {
+                if (ImGui.Button(UiText.Label("Open"))) {
                     var fullPath = Workspace.BundleManager.ResolvePathToBundleFile(bundle, localPath);
                     if (!File.Exists(fullPath)) {
                         window.OpenFiles([resource.Target]);
@@ -105,10 +105,10 @@ public class ModPublisherWindow : IWindowHandler
                 ImGui.SameLine();
 
                 if (resource.Diff != null && (resource.Diff is JsonObject odiff && odiff.Count > 1)) {
-                    if (ImGui.Button("Show diff")) {
+                    if (ImGui.Button(UiText.Label("Show diff"))) {
                         window.AddSubwindow(new JsonViewer(resource.Diff, $"{localPath} => {resource.Target}"));
                     }
-                    if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Partial patch generated at: " + resource.DiffTime.ToString("O"));
+                    if (ImGui.IsItemHovered()) ImGui.SetItemTooltip(UiText.T("Partial patch generated at: ") + resource.DiffTime.ToString("O"));
                     ImGui.SameLine();
                 }
                 ImGui.Text(localPath);
@@ -120,7 +120,7 @@ public class ModPublisherWindow : IWindowHandler
             ImGui.TreePop();
         }
         if (bundle.Entities.Count == 0 && !bundle.HasResources) {
-            ImGui.TextColored(Colors.Info, "There is currently no content inside the bundle.");
+            ImGui.TextColored(Colors.Info, UiText.T("There is currently no content inside the bundle."));
         }
     }
 

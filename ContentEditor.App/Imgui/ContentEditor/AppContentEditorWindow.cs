@@ -48,7 +48,7 @@ public class AppContentEditorWindow : IWindowHandler, IWorkspaceContainer
     public void OnIMGUI()
     {
         if (Workspace.Config.EntityHierarchy.Count == 0) {
-            ImGui.TextColored(Colors.Warning, "No content editor entities defined for " + Workspace.Game);
+            ImGui.TextColored(Colors.Warning, UiText.T("No content editor entities defined for ") + Workspace.Game);
             return;
         }
 
@@ -56,7 +56,7 @@ public class AppContentEditorWindow : IWindowHandler, IWorkspaceContainer
             SetupEditors();
 
         if (Workspace.CurrentBundle == null) {
-            ImGui.TextColored(Colors.Warning, "No bundle selected. Changes will not be saveable. Select or create a new bundle first.");
+            ImGui.TextColored(Colors.Warning, UiText.T("No bundle selected. Changes will not be saveable. Select or create a new bundle first."));
         }
         var data = context.Get<WindowData>();
         var selectedTabIndexes = data.GetOrAddPersistentClass<List<int>>("tabIndex");

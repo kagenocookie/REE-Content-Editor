@@ -34,19 +34,19 @@ public class NavmeshBakerUI(Scene baseScene, FileHandle mapFileHandle, UIContext
 
     public override void OnIMGUI()
     {
-        ImGui.Text("Base scene: " + BaseScene.ResourcePath);
-        ImGui.Text("Map file: " + File.Filepath);
-        if (ImGui.Button("Open Map File")) {
+        ImGui.Text(UiText.T("Base scene: ") + BaseScene.ResourcePath);
+        ImGui.Text(UiText.T("Map file: ") + File.Filepath);
+        if (ImGui.Button(UiText.Label("Open Map File"))) {
             EditorWindow.CurrentWindow?.AddFileEditor(File);
         }
         ImGui.SameLine();
-        if (ImGui.Button($"{AppIcons.SI_GenericInfo} Help")) {
+        if (ImGui.Button(UiText.FormatLabel($"{AppIcons.SI_GenericInfo} Help"))) {
             ImGui.OpenPopup("NavmeshBakeHelp");
         }
         if (ImGui.BeginPopup("NavmeshBakeHelp")) {
-            ImGui.Text("The Collision Filters list can be used to adjust which colliders get autoselected on their collision filter setting.");
-            ImGui.Text("\"Reset selection\" will reset the selected colliders list based on the allowed collision filters");
-            if (ImGui.Button("Parameters Online Reference")) {
+            ImGui.Text(UiText.T("The Collision Filters list can be used to adjust which colliders get autoselected on their collision filter setting."));
+            ImGui.Text(UiText.T("\"Reset selection\" will reset the selected colliders list based on the allowed collision filters"));
+            if (ImGui.Button(UiText.Label("Parameters Online Reference"))) {
                 FileSystemUtils.OpenURL("https://deepwiki.com/recastnavigation/recastnavigation/2-recast:-navigation-mesh-generation#configuration-parameters");
             }
             ImGui.EndPopup();
@@ -55,7 +55,7 @@ public class NavmeshBakerUI(Scene baseScene, FileHandle mapFileHandle, UIContext
             Context.AddChild<NavmeshBakerUI, NavmeshBuildParams>("Bake Parameters", this, getter: ui => ui!.config, setter: (ui, v) => ui.config = v ?? new()).AddDefaultHandler();
         }
         ImGui.SameLine();
-        if (ImGui.Button("Refresh Scene List")) {
+        if (ImGui.Button(UiText.Label("Refresh Scene List"))) {
             sceneList.Clear();
         }
         if (sceneList.Count == 0) {
@@ -65,10 +65,10 @@ public class NavmeshBakerUI(Scene baseScene, FileHandle mapFileHandle, UIContext
 
         ImGui.SameLine();
         var sceneSpan = CollectionsMarshal.AsSpan(sceneList);
-        if (ImguiHelpers.FilterableCombo("Reference Scene"u8, sceneLabels, sceneSpan, ref referenceScene, ref sceneFilter)) {
+        if (ImguiHelpers.FilterableCombo(UiText.LabelUtf8("Reference Scene"), sceneLabels, sceneSpan, ref referenceScene, ref sceneFilter)) {
             sceneColliders.Clear();
         }
-        ImguiHelpers.Tooltip("The root scene from which to scan for valid colliders");
+        ImguiHelpers.Tooltip(UiText.T("The root scene from which to scan for valid colliders"));
 
         if (referenceScene == null) {
             return;
@@ -120,7 +120,7 @@ public class NavmeshBakerUI(Scene baseScene, FileHandle mapFileHandle, UIContext
 
         ImGui.Separator();
 
-        if (ImGui.Button("Reset selection") || forceReset) {
+        if (ImGui.Button(UiText.Label("Reset selection")) || forceReset) {
             forceReset = false;
             selectedColliders.Clear();
             foreach (var collider in sceneColliders) {
@@ -133,7 +133,7 @@ public class NavmeshBakerUI(Scene baseScene, FileHandle mapFileHandle, UIContext
 
         ImGui.SameLine();
 
-        if (ImGui.Button("Bake")) {
+        if (ImGui.Button(UiText.Label("Bake"))) {
             List<IInputGeomProvider> geoList = new();
             // TODO might need more IInputGeomProviders that can handle other resources (.mesh, RSZ collider shapes, .coco, .hf, .chf, ...)
             foreach (var coll in selectedColliders) {
@@ -192,13 +192,13 @@ public class NavmeshBakerUI(Scene baseScene, FileHandle mapFileHandle, UIContext
     {
         var changed = false;
         ImGui.SeparatorText(label);
-        ImGui.InputText("Filter##" + label, ref filter, 120);
+        ImGui.InputText(UiText.T("Filter##") + label, ref filter, 120);
         var toggleVisible = false;
-        if (ImGui.Button("Toggle filtered##" + label)) {
+        if (ImGui.Button(UiText.T("Toggle filtered##") + label)) {
             toggleVisible = true;
         }
         ImGui.SameLine();
-        if (ImGui.Button("Clear selection")) {
+        if (ImGui.Button(UiText.Label("Clear selection"))) {
             selectedItems.Clear();
         }
         var toggleTargetState = (bool?)null;

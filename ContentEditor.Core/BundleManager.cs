@@ -347,7 +347,7 @@ public class BundleManager
             foreach (var dep in bundle.DependsOn) {
                 var depBundle = GetBundle(dep, null);
                 if (depBundle == null) {
-                    WindowManager.Instance.ShowError($"Missing dependency bundle {dep}!\nData may not be correct, please check your installed content bundles.");
+                    WindowManager.Instance.ShowError(UiText.F($"Missing dependency bundle {dep}!\nData may not be correct, please check your installed content bundles."));
                     continue;
                 }
 

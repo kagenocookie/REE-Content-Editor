@@ -24,7 +24,7 @@ public class SceneVisibilitySettings : ISceneWidget
         if (ImGui.Button($"{AppIcons.Eye}")) {
             ImGui.OpenPopup(WidgetName);
         }
-        ImguiHelpers.Tooltip("Object Visibility");
+        ImguiHelpers.Tooltip(UiText.T("Object Visibility"));
         if (ImGui.BeginPopup(WidgetName)) {
             ImGui.PushItemFlag(ImGuiItemFlags.AutoClosePopups, false);
             var scene = context.Get<Scene>();
@@ -58,7 +58,7 @@ public class SceneVisibilitySettings : ISceneWidget
         ImGui.PopStyleColor();
         ImGui.SameLine();
         ImGui.PushStyleColor(ImGuiCol.Text, ImguiHelpers.GetColor(ImGuiCol.Text) with { W = enabled ? 1 : 0.6f });
-        ImGui.Text(text);
+        ImGui.Text(UiText.T(text));
         ImGui.PopStyleColor();
         return toggled;
     }

@@ -28,9 +28,9 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
     {
         var list = context.Get<TListType>();
         if (list == null) {
-            ImGui.Text(context.label + ": NULL");
+            ImGui.Text(context.label + UiText.T(": NULL"));
             ImGui.SameLine();
-            if (!ImGui.Button("Create")) {
+            if (!ImGui.Button(UiText.Label("Create"))) {
                 return;
             }
             context.Set(list = new TListType());
@@ -42,7 +42,7 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
             if (!ImGui.TreeNode(context.label)) return;
         }
         if (Filterable) {
-            AppImguiHelpers.ClearableInputText("Filter"u8, $"{AppIcons.SI_GenericMagnifyingGlass}", ref context.Filter, 120);
+            AppImguiHelpers.ClearableInputText(UiText.LabelUtf8("Filter"), $"{AppIcons.SI_GenericMagnifyingGlass}", ref context.Filter, 120);
             ImGui.Spacing();
         }
 
@@ -64,7 +64,7 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
                 }
             }
             ImGui.PopStyleColor();
-            ImguiHelpers.Tooltip("Add"u8);
+            ImguiHelpers.Tooltip(UiText.Utf8("Add"));
             ImGui.SameLine();
             newCtx.ShowUI();
             ImGui.Spacing();
@@ -92,7 +92,7 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
                 }
                 child.ShowUI();
                 ImGui.SameLine();
-                if (ImGui.Button("Create")) {
+                if (ImGui.Button(UiText.Label("Create"))) {
                     var newItem = CreateItem(context, child.Get<TKey>());
                     if (newItem != null) list[i] = newItem;
                     context.children[ctxIndex] = null!;

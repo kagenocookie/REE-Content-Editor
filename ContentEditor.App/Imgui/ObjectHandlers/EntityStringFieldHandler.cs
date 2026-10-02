@@ -11,15 +11,15 @@ public class EntityStringFieldHandler(StringCustomField field) : IObjectUIHandle
     {
         var entity = context.GetOwnerEntity();
         if (entity == null) {
-            ImGui.TextColored(Colors.Error, context.label + ": Entity not found");
+            ImGui.TextColored(Colors.Error, context.label + UiText.T(": Entity not found"));
             return;
         }
         var data = entity.Get(field.name) as StringResource;
         if (data == null) {
             if (!field.IsRequired) {
-                ImGui.Text(context.label + ": NULL");
+                ImGui.Text(context.label + UiText.T(": NULL"));
                 ImGui.SameLine();
-                if (ImGui.Button("Add")) {
+                if (ImGui.Button(UiText.Label("Add"))) {
                     data = new StringResource("");
                     entity.Set(field.name, data);
                 }
@@ -38,7 +38,7 @@ public class EntityStringFieldHandler(StringCustomField field) : IObjectUIHandle
         if (field.Regex != null) {
             var isValid = field.Regex.IsMatch(text);
             if (!isValid) {
-                ImGui.TextColored(Colors.Error, "Invalid text - it should match the regex pattern: " + field.Regex);
+                ImGui.TextColored(Colors.Error, UiText.T("Invalid text - it should match the regex pattern: ") + field.Regex);
                 if (field.RegexDescription != null) {
                     ImGui.TextColored(Colors.Error, field.RegexDescription);
                 }

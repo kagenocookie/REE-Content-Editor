@@ -190,7 +190,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
     public void OnIMGUI()
     {
         var selectedName = selectedPreset?.name;
-        if (ImguiHelpers.ValueCombo("Preset", PresetFullNames, PresetNames, ref selectedName, 800)) {
+        if (ImguiHelpers.ValueCombo(UiText.Label("Preset"), PresetFullNames, PresetNames, ref selectedName, 800)) {
             if (selectedPreset != null) {
                 foreach (var s in slots) {
                     s.texture?.Dispose();
@@ -234,13 +234,13 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
         ImGui.Indent(outputPos.X);
         if (outputTexture != null) {
             ImGui.SetCursorPosY(outputPos.Y);
-            if (ImguiHelpers.CSharpEnumCombo("Display", ref outputDisplayChannel, 800)) {
+            if (ImguiHelpers.CSharpEnumCombo(UiText.Label("Display"), ref outputDisplayChannel, 800)) {
                 outputTexture.SetChannel(outputDisplayChannel);
             }
             if (InputSizes.Length <= 1) {
-                ImGui.Text("Size: " + outputTexture.Width + " x " + outputTexture.Height + " (Based on input texture size)");
+                ImGui.Text(UiText.T("Size: ") + outputTexture.Width + " x " + outputTexture.Height + UiText.T(" (Based on input texture size)"));
             } else {
-                if (ImguiHelpers.ValueCombo("Output Size", InputSizes.Select(sz => $"{sz.x} x {sz.y}").ToArray(), InputSizes, ref targetSize, -1)) {
+                if (ImguiHelpers.ValueCombo(UiText.Label("Output Size"), InputSizes.Select(sz => $"{sz.x} x {sz.y}").ToArray(), InputSizes, ref targetSize, -1)) {
                     isDirty = true;
                 }
             }
@@ -249,11 +249,11 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
             var outputSize = ImGui.GetWindowSize() - new Vector2(outputPos.X, outputPos.Y) - ImGui.GetStyle().WindowPadding * 2 - outputBottomMargin - new Vector2(64, 0);
             ImGui.Image(outputTexture.AsTextureRef(), outputSize);
 
-            ImGui.SeparatorText("Saving");
+            ImGui.SeparatorText(UiText.T("Saving"));
 
             var leftEdge = ImGui.GetCursorPosX();
-            var save1 = ImGui.Button("Save As ...");
-            ImguiHelpers.Tooltip("Save the current texture to a standard file format");
+            var save1 = ImGui.Button(UiText.Label("Save As ..."));
+            ImguiHelpers.Tooltip(UiText.T("Save the current texture to a standard file format"));
             if (save1) {
                 PlatformUtils.ShowSaveFileDialog((outpath) => MainLoop.Instance.InvokeFromUIThread(() => {
                     if (Path.GetExtension(outpath) == ".dds") {
@@ -268,8 +268,8 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
                 }), filters: FileFilters.TextureFile);
             }
             ImGui.SameLine();
-            var save2 = ImGui.Button("Convert ...");
-            ImguiHelpers.Tooltip("Save the current texture to the selected .tex file format");
+            var save2 = ImGui.Button(UiText.Label("Convert ..."));
+            ImguiHelpers.Tooltip(UiText.T("Save the current texture to the selected .tex file format"));
             if (save2) {
                 var ver = TexFile.GetFileExtension(convertTemplateConfig);
                 var ext = $".tex.{ver}";
@@ -290,11 +290,11 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
             }
             ImGui.SameLine();
             ImGui.SetNextItemWidth(ImGui.CalcItemWidth() - (ImGui.GetCursorPosX() - leftEdge));
-            ImguiHelpers.ValueCombo("Tex Version", TexFile.AllVersionConfigsWithExtension, TexFile.AllVersionConfigs, ref convertTemplateConfig);
-            if (ImguiHelpers.ValueCombo("DXGI Format", TextureViewer.DxgiFormatStrings, TextureViewer.DxgiFormats, ref exportFormat)) {
+            ImguiHelpers.ValueCombo(UiText.Label("Tex Version"), TexFile.AllVersionConfigsWithExtension, TexFile.AllVersionConfigs, ref convertTemplateConfig);
+            if (ImguiHelpers.ValueCombo(UiText.Label("DXGI Format"), TextureViewer.DxgiFormatStrings, TextureViewer.DxgiFormats, ref exportFormat)) {
                 isDirty = true;
             }
-            if (ImGui.Checkbox("Generate Mip Maps", ref exportMipMaps)) {
+            if (ImGui.Checkbox(UiText.Label("Generate Mip Maps"), ref exportMipMaps)) {
                 isDirty = true;
             }
         }
@@ -435,43 +435,43 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
         ImGui.PushID(slot.input.Name);
         var size = new Vector2(128, 128);
         ImGui.PushItemWidth(size.X);
-        ImguiHelpers.TextCentered(slot.input.Name + " => " + slot.outputSwizzle, size.X);
+        ImguiHelpers.TextCentered(UiText.T(slot.input.Name) + " => " + slot.outputSwizzle, size.X);
 
         bool click;
         var btnPos = ImGui.GetCursorScreenPos();
         if (slot.texture != null) {
-            click = ImGui.ImageButton(slot.input.Name, slot.texture.AsTextureRef(), size - ImGui.GetStyle().FramePadding * 2);
+            click = ImGui.ImageButton(UiText.Label(slot.input.Name), slot.texture.AsTextureRef(), size - ImGui.GetStyle().FramePadding * 2);
             if (ImGui.IsItemHovered() && ImGui.BeginTooltip()) {
-                ImGui.Text("Right click for more options.");
+                ImGui.Text(UiText.T("Right click for more options."));
                 ImGui.Image(slot.texture.AsTextureRef(), new Vector2(512, 512));
                 ImGui.EndTooltip();
             }
             if (ImGui.BeginPopupContextItem()) {
-                if (ImGui.Selectable("Clear")) {
+                if (ImGui.Selectable(UiText.Label("Clear"))) {
                     ReplaceSlotTexture(slot, null);
                 }
-                if (ImGui.Selectable("Make White")) {
+                if (ImGui.Selectable(UiText.Label("Make White"))) {
                     ReplaceSlotTexture(slot, new SixLabors.ImageSharp.Color(new Rgba32(0xffffffff)));
                 }
-                if (ImGui.Selectable("Make Gray")) {
+                if (ImGui.Selectable(UiText.Label("Make Gray"))) {
                     ReplaceSlotTexture(slot, new SixLabors.ImageSharp.Color(new Rgba32(0xff7F7F7F)));
                 }
-                if (ImGui.Selectable("Make Black")) {
+                if (ImGui.Selectable(UiText.Label("Make Black"))) {
                     ReplaceSlotTexture(slot, new SixLabors.ImageSharp.Color(new Rgba32(0xff000000)));
                 }
                 ImGui.EndPopup();
             }
         } else {
-            click = ImGui.Button(slot.input.Name, size);
-            ImguiHelpers.Tooltip("Click to browse for a texture or drag & drop it into the box. Right click for more options.");
+            click = ImGui.Button(UiText.Label(slot.input.Name), size);
+            ImguiHelpers.Tooltip(UiText.T("Click to browse for a texture or drag & drop it into the box. Right click for more options."));
             if (ImGui.BeginPopupContextItem()) {
-                if (ImGui.Selectable("Make White")) {
+                if (ImGui.Selectable(UiText.Label("Make White"))) {
                     ReplaceSlotTexture(slot, new SixLabors.ImageSharp.Color(new Rgba32(0xffffffff)));
                 }
-                if (ImGui.Selectable("Make Gray")) {
+                if (ImGui.Selectable(UiText.Label("Make Gray"))) {
                     ReplaceSlotTexture(slot, new SixLabors.ImageSharp.Color(new Rgba32(0xff7F7F7F)));
                 }
-                if (ImGui.Selectable("Make Black")) {
+                if (ImGui.Selectable(UiText.Label("Make Black"))) {
                     ReplaceSlotTexture(slot, new SixLabors.ImageSharp.Color(new Rgba32(0xff000000)));
                 }
                 ImGui.EndPopup();
@@ -508,7 +508,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
             isDirty = true;
             slot.UpdateSwizzle();
         }
-        if (ImGui.Checkbox("Invert", ref slot.invertSource)) {
+        if (ImGui.Checkbox(UiText.Label("Invert"), ref slot.invertSource)) {
             isDirty = true;
         }
         ImGui.PopItemWidth();

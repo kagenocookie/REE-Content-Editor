@@ -32,7 +32,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
 
     private bool ShowContextMenuItems(UIContext context)
     {
-        if (ImGui.Selectable("Copy motion data")) {
+        if (ImGui.Selectable(UiText.Label("Copy motion data"))) {
             var mot = context.Get<MotFileBase>();
             MotionDataResource motData;
             if (mot is MotFile mf) {
@@ -52,8 +52,8 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
 
         var clipData = EditorWindow.CurrentWindow?.GetClipboard();
         if (!string.IsNullOrEmpty(clipData)) {
-            var paste = ImGui.Selectable("Paste motion data");
-            var pasteExtra = ImGui.Selectable("Paste motion data (Customize) ...");
+            var paste = ImGui.Selectable(UiText.Label("Paste motion data"));
+            var pasteExtra = ImGui.Selectable(UiText.Label("Paste motion data (Customize) ..."));
             paste = paste || pasteExtra;
             if (paste) {
                 if (MotionDataResource.TryDeserialize(clipData, out var motData, out var error)) {
@@ -97,7 +97,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
             }
         }
 
-        if (ImGui.Selectable("Retargeting ...")) {
+        if (ImGui.Selectable(UiText.Label("Retargeting ..."))) {
             var editor = context.GetEditor<MotlistEditor>() ?? context.GetEditor<MotFileEditor>() ?? context.GetEditor<MotpackEditor>();
             var file = editor?.Handle;
             if (Logger.ErrorIf(file == null, "Could not find parent motion file")) return true;
@@ -105,7 +105,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
             retargetWindow = new MotlistRetargetWindow(file, mot, mot, editor);
         }
 
-        if (ImGui.Selectable("Save as single mot ...")) {
+        if (ImGui.Selectable(UiText.Label("Save as single mot ..."))) {
             var mot = context.Get<MotFileBase>();
             var ext = "mot." + (int)((mot as MotFile)?.Header.version ?? 0);
             PlatformUtils.ShowSaveFileDialog((path) => {
@@ -155,55 +155,55 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
             if (!hasShown) {
                 hasShown = true;
                 LoadConfigs();
-                ImGui.OpenPopup(WindowName);
+                ImGui.OpenPopup(UiText.Label(WindowName));
             }
 
             var keepShowing = true;
             ImGui.PushStyleColor(ImGuiCol.ModalWindowDimBg, ImguiHelpers.GetColor(ImGuiCol.ModalWindowDimBg) with { W = 0.5f });
-            if (ImGui.BeginPopupModal(WindowName, ImGuiWindowFlags.AlwaysAutoResize)) {
+            if (ImGui.BeginPopupModal(UiText.Label(WindowName), ImGuiWindowFlags.AlwaysAutoResize)) {
                 if (newFile == replacedFile) {
-                    ImGui.Text("Retarget mot " + newFile);
+                    ImGui.Text(UiText.T("Retarget mot ") + newFile);
                 } else {
-                    ImGui.Text("Attempting to paste mot " + newFile + " over mot " + replacedFile);
+                    ImGui.Text(UiText.T("Attempting to paste mot ") + newFile + UiText.T(" over mot ") + replacedFile);
                 }
                 ImGui.Spacing();
                 ImGui.Spacing();
                 ImGui.Spacing();
 
-                ImGui.SeparatorText("Additional options");
-                ImGui.Checkbox("Only paste already existing channels", ref maintainExistingChannelsOnly);
-                ImguiHelpers.Tooltip("Only channels that already exist in the target motion will be kept, while the rest are ignored.\nCan be used to make pure edits and avoid modifying bones that should not be modified by the animation.");
-                ImGui.Checkbox("Add all source mot file behavior clips", ref copyBehaviorClips);
+                ImGui.SeparatorText(UiText.T("Additional options"));
+                ImGui.Checkbox(UiText.Label("Only paste already existing channels"), ref maintainExistingChannelsOnly);
+                ImguiHelpers.Tooltip(UiText.T("Only channels that already exist in the target motion will be kept, while the rest are ignored.\nCan be used to make pure edits and avoid modifying bones that should not be modified by the animation."));
+                ImGui.Checkbox(UiText.Label("Add all source mot file behavior clips"), ref copyBehaviorClips);
                 if (copyBehaviorClips) {
-                    ImGui.Checkbox("Remove all behavior clips from the target mot file (fully replace with copied)", ref removeExistingBehaviorClips);
-                    ImGui.Checkbox("Copy only behavior clips (ignore animation)", ref copyOnlyBehaviorClips);
+                    ImGui.Checkbox(UiText.Label("Remove all behavior clips from the target mot file (fully replace with copied)"), ref removeExistingBehaviorClips);
+                    ImGui.Checkbox(UiText.Label("Copy only behavior clips (ignore animation)"), ref copyOnlyBehaviorClips);
                 }
                 if (newFile != replacedFile) {
                     if (newFile is MotFile m1 && replacedFile is MotFile m2 && !m1.Bones.Select(b => b.boneHash).Order().SequenceEqual(m2.Bones.Select(x => x.boneHash).Order())) {
-                        ImGui.Checkbox("Overwrite bone list", ref overwriteBoneList);
-                        ImGui.TextColored(Colors.Note, "The bone list between the two animations is different. This option will overwrite the target bone list with the source one.");
+                        ImGui.Checkbox(UiText.Label("Overwrite bone list"), ref overwriteBoneList);
+                        ImGui.TextColored(Colors.Note, UiText.T("The bone list between the two animations is different. This option will overwrite the target bone list with the source one."));
                         if (MotlistFile.HasSharedBoneList(m2.Header.version)) {
-                            ImGui.TextColored(Colors.Danger, "The target mot's file format version only contains one set of bones for all animations in the motlist.");
-                            ImGui.TextColored(Colors.Danger, "Replacing it may affect other animations. When using this, make sure all the required bones are present in the source mesh.");
+                            ImGui.TextColored(Colors.Danger, UiText.T("The target mot's file format version only contains one set of bones for all animations in the motlist."));
+                            ImGui.TextColored(Colors.Danger, UiText.T("Replacing it may affect other animations. When using this, make sure all the required bones are present in the source mesh."));
                         }
                     }
                 }
 
-                ImGui.SeparatorText("Skeleton adjustments");
-                if (ImguiHelpers.ValueCombo("Armature Type", MapTypes, MapTypes, ref selectedArmatureType)) {
+                ImGui.SeparatorText(UiText.T("Skeleton adjustments"));
+                if (ImguiHelpers.ValueCombo(UiText.Label("Armature Type"), MapTypes, MapTypes, ref selectedArmatureType)) {
                     lastSelectedType = selectedArmatureType;
                 }
 
                 if (!string.IsNullOrEmpty(selectedArmatureType) && configs.TryGetValue(selectedArmatureType, out var config)) {
                     var renameSourceGames = config.Renames.SelectMany(r => r.Version1).Concat(config.Renames.SelectMany(r => r.Version2)).Distinct().ToArray();
                     if (renameSourceGames.Length == 0) {
-                        ImGui.TextColored(Colors.Info, "No rename configs available for selected armature type");
+                        ImGui.TextColored(Colors.Info, UiText.T("No rename configs available for selected armature type"));
                     } else {
-                        ImGui.SeparatorText("Bone name remapping");
-                        if (ImguiHelpers.ValueCombo("Source", renameSourceGames, renameSourceGames, ref sourceType)) {
+                        ImGui.SeparatorText(UiText.T("Bone name remapping"));
+                        if (ImguiHelpers.ValueCombo(UiText.Label("Source"), renameSourceGames, renameSourceGames, ref sourceType)) {
                             lastSelectedSource = sourceType;
                         }
-                        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Select the game from which the clip was copied from");
+                        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip(UiText.T("Select the game from which the clip was copied from"));
                         if (!string.IsNullOrEmpty(sourceType)) {
                             var targets = new List<string>();
                             foreach (var c in config.Renames) {
@@ -211,18 +211,18 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                             }
 
                             var targetsArray = targets.Distinct().ToArray();
-                            if (ImguiHelpers.ValueCombo("Remap Config", targetsArray, targetsArray, ref targetRenameConfig)) {
+                            if (ImguiHelpers.ValueCombo(UiText.Label("Remap Config"), targetsArray, targetsArray, ref targetRenameConfig)) {
                                 lastSelectedTarget = targetRenameConfig;
                             }
 
                             var remapConfig = config.Renames.FirstOrDefault(r => r.Name == targetRenameConfig);
                             if (remapConfig?.Version1.Contains(sourceType) == true && remapConfig?.Version2.Contains(sourceType) == true) {
-                                ImGui.Checkbox("Map from bone set 2 to set 1", ref mapToBone1);
-                                if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("The selected configuration can work within the same game, you need to choose which name transfer to use");
+                                ImGui.Checkbox(UiText.Label("Map from bone set 2 to set 1"), ref mapToBone1);
+                                if (ImGui.IsItemHovered()) ImGui.SetItemTooltip(UiText.T("The selected configuration can work within the same game, you need to choose which name transfer to use"));
                             } else {
                                 mapToBone1 = false;
                             }
-                            if (!string.IsNullOrEmpty(targetRenameConfig) && targetsArray.Contains(targetRenameConfig) && remapConfig != null && ImGui.Button("Execute Rename")) {
+                            if (!string.IsNullOrEmpty(targetRenameConfig) && targetsArray.Contains(targetRenameConfig) && remapConfig != null && ImGui.Button(UiText.Label("Execute Rename"))) {
                                 ExecuteRename(remapConfig, sourceType, mapToBone1 ? 1 : 2);
                             }
                         }
@@ -247,7 +247,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                 ImGui.Separator();
                 ImGui.Spacing();
                 if (replacedFile == newFile) {
-                    if (ImGui.Button("Close")) {
+                    if (ImGui.Button(UiText.Label("Close"))) {
                         keepShowing = false;
                     }
                 } else {
@@ -255,16 +255,16 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                         motPreviewContext = UIContext.CreateRootContext("File preview", newFile);
                         motPreviewContext.uiHandler = new MotFileHandler();
                     }
-                    if (ImGui.TreeNode("MOT preview")) {
+                    if (ImGui.TreeNode(UiText.Label("MOT preview"))) {
                         motPreviewContext.ShowUI();
                         ImGui.TreePop();
                     }
                     ImGui.Spacing();
                     ImGui.Separator();
-                    ImguiHelpers.TextColoredWrapped(Colors.Note, "Mot replacement does not support undo/redo. If you need to revert applied changes, reopen the file or restore it from a backup."u8);
+                    ImguiHelpers.TextColoredWrapped(Colors.Note, UiText.Utf8("Mot replacement does not support undo/redo. If you need to revert applied changes, reopen the file or restore it from a backup."));
 
                     ImGui.Spacing();
-                    if (ImGui.Button("Confirm Replace", new Vector2(170, 0))) {
+                    if (ImGui.Button(UiText.Label("Confirm Replace"), new Vector2(170, 0))) {
                         if (replacedFile != newFile) {
                             if (copyBehaviorClips && copyOnlyBehaviorClips) {
                                 if (replacedFile is MotFile mf1 && newFile is MotFile mf2) {
@@ -280,7 +280,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                         keepShowing = false;
                     }
                     ImGui.SameLine();
-                    if (ImGui.Button("Cancel", new Vector2(170, 0))) {
+                    if (ImGui.Button(UiText.Label("Cancel"), new Vector2(170, 0))) {
                         keepShowing = false;
                     }
                 }

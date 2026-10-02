@@ -33,7 +33,7 @@ public class TransformComponentHandler : IObjectUIHandler, IUIContextEventHandle
             var localscale = instance.LocalScale;
             var w = ImGui.CalcItemWidth();
             ImGui.SetNextItemWidth(w * vec3Width);
-            if (ImGui.DragFloat3(useEuler ? "Local Position" : "##Local Position", ref localpos, 0.005f)) {
+            if (ImGui.DragFloat3(useEuler ? UiText.Label("Local Position") : "##Local Position", ref localpos, 0.005f)) {
                 UndoRedo.RecordCallbackSetter(context, instance, instance.LocalPosition, localpos, static (i, v) => i.LocalPosition = v, $"{instance.GetHashCode()} LocalPos");
             }
             if (ImGui.BeginPopupContextItem("##Local Position"u8)) {
@@ -43,10 +43,10 @@ public class TransformComponentHandler : IObjectUIHandler, IUIContextEventHandle
             if (!useEuler) {
                 ImGui.SameLine();
                 if (vec3Width < 1) ImGui.SetNextItemWidth(w * 0.25f - ImGui.GetStyle().FramePadding.X * 2);
-                ImGui.LabelText("Local Position"u8, "##labelP"u8);
+                ImGui.LabelText(UiText.LabelUtf8("Local Position"), "##labelP"u8);
             }
 
-            if (QuaternionFieldHandler.HandleQuaternion("Local Rotation"u8, ref localrot, useEuler)) {
+            if (QuaternionFieldHandler.HandleQuaternion(UiText.LabelUtf8("Local Rotation"), ref localrot, useEuler)) {
                 UndoRedo.RecordCallbackSetter(context, instance, (Quaternion)data.Values[1], localrot, static (inst, value) => inst.LocalRotation = value, $"{instance.GetHashCode()} LocalRot");
             }
             if (ImGui.BeginPopupContextItem("Local Rotation")) {
@@ -57,7 +57,7 @@ public class TransformComponentHandler : IObjectUIHandler, IUIContextEventHandle
             }
 
             ImGui.SetNextItemWidth(w * vec3Width);
-            if (ImGui.DragFloat3(useEuler ? "Local Scale" : "##Local Scale", ref localscale, 0.005f)) {
+            if (ImGui.DragFloat3(useEuler ? UiText.Label("Local Scale") : "##Local Scale", ref localscale, 0.005f)) {
                 UndoRedo.RecordCallbackSetter(context, instance, instance.LocalScale, localscale, static (i, v) => i.LocalScale = v, $"{instance.GetHashCode()} LocalScale");
             }
             if (ImGui.BeginPopupContextItem("##Local Scale"u8)) {
@@ -67,7 +67,7 @@ public class TransformComponentHandler : IObjectUIHandler, IUIContextEventHandle
             if (!useEuler) {
                 ImGui.SameLine();
                 if (vec3Width < 1) ImGui.SetNextItemWidth(w * 0.25f - ImGui.GetStyle().FramePadding.X * 2);
-                ImGui.LabelText("Local Scale"u8, "##labelS"u8);
+                ImGui.LabelText(UiText.LabelUtf8("Local Scale"), "##labelS"u8);
             }
 
             if (context.children.Count == 0) {

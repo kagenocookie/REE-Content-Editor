@@ -65,13 +65,13 @@ public class JsonViewer : IWindowHandler
             ImGui.TextColored(Colors.Faded, targetFile.Filepath);
             if ((!string.IsNullOrEmpty(Json) || JsonNode != null) && targetFile.DiffHandler != null && targetFile.HandleType is FileHandleType.Bundle or FileHandleType.Disk or FileHandleType.LooseFile) {
                 Json ??= JsonNode!.ToJsonString(jsonOptions);
-                if (ImGui.Button("Apply JSON patch")) {
+                if (ImGui.Button(UiText.Label("Apply JSON patch"))) {
                     if (Json.TryDeserializeJson<JsonNode>(out var newJsonNoo, out var error)) {
                         try {
                             targetFile.DiffHandler.ApplyDiff(targetFile, newJsonNoo);
                             targetFile.Modified = true;
 
-                            EditorWindow.CurrentWindow?.Overlays.ShowTooltip("Patch applied.\nIn case of UI issues, re-open the existing file's editor.", 3f);
+                            EditorWindow.CurrentWindow?.Overlays.ShowTooltip(UiText.T("Patch applied.\nIn case of UI issues, re-open the existing file's editor."), 3f);
                             JsonNode = targetFile.DiffHandler.FindDiff(targetFile);
                             if (JsonNode == null) JsonNode = new JsonObject();
                             Json = JsonNode?.ToJsonString(jsonOptions);
@@ -84,7 +84,7 @@ public class JsonViewer : IWindowHandler
                     }
                 }
                 ImGui.SameLine();
-                if (ImGui.Button("Load patch from file ...")) {
+                if (ImGui.Button(UiText.Label("Load patch from file ..."))) {
                     PlatformUtils.ShowFileDialog((files) => {
                         if (files[0].TryDeserializeJsonFile<JsonNode>(out var newJson, out var error)) {
                             JsonNode = newJson;
@@ -96,7 +96,7 @@ public class JsonViewer : IWindowHandler
                     }, null, FileFilters.JsonFile);
                 }
                 ImGui.SameLine();
-                if (ImGui.Button("Compare to file ...")) {
+                if (ImGui.Button(UiText.Label("Compare to file ..."))) {
                     var wnd = EditorWindow.CurrentWindow;
                     PlatformUtils.ShowFileDialog((files) => {
                         var file = files[0];
@@ -109,7 +109,7 @@ public class JsonViewer : IWindowHandler
                                 } else {
                                     var diff = handle.DiffHandler!.FindDiff(targetFile);
                                     if (diff == null) {
-                                        wnd?.InvokeFromUIThread(() => wnd?.Overlays.ShowTooltip("No difference could be found", 3f));
+                                        wnd?.InvokeFromUIThread(() => wnd?.Overlays.ShowTooltip(UiText.T("No difference could be found"), 3f));
                                     } else {
                                         JsonNode = diff;
                                         Json = null;
@@ -127,7 +127,7 @@ public class JsonViewer : IWindowHandler
             }
         }
 
-        ImGui.Checkbox("Show raw JSON data", ref showRaw);
+        ImGui.Checkbox(UiText.Label("Show raw JSON data"), ref showRaw);
         ImGui.SetNextItemWidth(ImGui.GetWindowSize().X - ImGui.GetStyle().WindowPadding.X * 2);
         var height = Math.Max(ImGui.GetWindowSize().Y - ImGui.GetStyle().WindowPadding.Y - ImGui.GetCursorPosY(), 100);
         if (showRaw) {
@@ -136,7 +136,7 @@ public class JsonViewer : IWindowHandler
             }
             var json = Json;
             var maxlen = (uint)(targetFile == null ? json.Length : json.Length + 1000);
-            if (ImguiHelpers.TextMultilineAutoResize("JSON", ref json, ImGui.CalcItemWidth(), height, UI.FontSize, maxLen: maxlen, targetFile == null ? ImGuiInputTextFlags.ReadOnly : ImGuiInputTextFlags.None)) {
+            if (ImguiHelpers.TextMultilineAutoResize(UiText.Label("JSON"), ref json, ImGui.CalcItemWidth(), height, UI.FontSize, maxLen: maxlen, targetFile == null ? ImGuiInputTextFlags.ReadOnly : ImGuiInputTextFlags.None)) {
                 JsonNode = null;
                 Json = json;
             }
@@ -153,7 +153,7 @@ public class JsonViewer : IWindowHandler
                 jsonPathList = DiffHandler.GetDiffTree(JsonNode);
             }
 
-            ImguiHelpers.TextMultilineAutoResize("JSON", ref jsonPathList, ImGui.CalcItemWidth(), height, UI.FontSize, maxLen: (uint)jsonPathList.Length, ImGuiInputTextFlags.ReadOnly);
+            ImguiHelpers.TextMultilineAutoResize(UiText.Label("JSON"), ref jsonPathList, ImGui.CalcItemWidth(), height, UI.FontSize, maxLen: (uint)jsonPathList.Length, ImGuiInputTextFlags.ReadOnly);
         }
     }
 

@@ -66,7 +66,7 @@ public class RcolEditMode : EditModeHandler
         if (Target is RequestSetColliderComponent rcolTarget) {
             var storedSuggestions = rcolTarget.StoredResources?.ToArray() ?? [];
             if (storedSuggestions.Length > 0) {
-                if (ImguiHelpers.ValueCombo("Component Files", storedSuggestions, storedSuggestions, ref rcolPath)) {
+                if (ImguiHelpers.ValueCombo(UiText.Label("Component Files"), storedSuggestions, storedSuggestions, ref rcolPath)) {
                     AppConfig.Settings.RecentRcols.AddRecent(Scene.Workspace.Game, rcolPath);
                     filePicker?.ResetState();
                 }
@@ -83,11 +83,11 @@ public class RcolEditMode : EditModeHandler
 
         if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(rcolPath, out var file)) {
             var rcol = file.GetFile<RcolFile>();
-            if (ImGui.Button("Open Editor")) {
+            if (ImGui.Button(UiText.Label("Open Editor"))) {
                 OpenEditor(file);
             }
         } else if (!string.IsNullOrEmpty(rcolPath)) {
-            ImGui.TextColored(Colors.Warning, "File not found");
+            ImGui.TextColored(Colors.Warning, UiText.T("File not found"));
         }
     }
 

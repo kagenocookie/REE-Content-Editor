@@ -41,7 +41,7 @@ public class TextViewer : IWindowHandler
         ImGui.SetNextItemWidth(ImGui.GetWindowSize().X - ImGui.GetStyle().WindowPadding.X * 2);
         var height = Math.Max(ImGui.GetWindowSize().Y - ImGui.GetStyle().WindowPadding.Y - ImGui.GetCursorPosY(), 100);
         if (!ReadOnly) {
-            if (ImGui.Button("Save as ...")) {
+            if (ImGui.Button(UiText.Label("Save as ..."))) {
                 PlatformUtils.ShowSaveFileDialog((path) => {
                     File.WriteAllText(path, Text);
                 });
@@ -50,7 +50,7 @@ public class TextViewer : IWindowHandler
 
         var text = Text ?? "";
         var maxlen = (uint)(ReadOnly ? text.Length : text.Length + 1000);
-        if (ImguiHelpers.TextMultilineAutoResize("Content", ref text, ImGui.CalcItemWidth(), height, UI.FontSize, maxLen: maxlen, ReadOnly ? ImGuiInputTextFlags.ReadOnly : ImGuiInputTextFlags.None)) {
+        if (ImguiHelpers.TextMultilineAutoResize(UiText.Label("Content"), ref text, ImGui.CalcItemWidth(), height, UI.FontSize, maxLen: maxlen, ReadOnly ? ImGuiInputTextFlags.ReadOnly : ImGuiInputTextFlags.None)) {
             Text = text;
         }
     }

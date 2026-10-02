@@ -14,7 +14,7 @@ public class ByteArrayHandler : IObjectUIHandler
         var data = context.Get<byte[]>();
         var len = data.Length;
         if (len == 0) {
-            ImGui.Text(context.label + ": <empty>");
+            ImGui.Text(context.label + UiText.T(": <empty>"));
             return;
         }
         var rows = (int)Math.Ceiling((float)len / cols);
@@ -22,7 +22,7 @@ public class ByteArrayHandler : IObjectUIHandler
         if (rows > 1) {
             show = ImguiHelpers.TreeNodeSuffix(context.label, "Byte array");
             ImGui.SameLine();
-            if (ImGui.Button("Copy as HEX")) {
+            if (ImGui.Button(UiText.Label("Copy as HEX"))) {
                 var str = new StringBuilder(len * 3);
                 foreach (var b in data) {
                     str.Append(b.ToString("X2")).Append(' ');
@@ -32,7 +32,7 @@ public class ByteArrayHandler : IObjectUIHandler
         } else {
             ImGui.Text(context.label);
             ImGui.SameLine();
-            if (ImGui.Button("Copy as HEX")) {
+            if (ImGui.Button(UiText.Label("Copy as HEX"))) {
                 var str = new StringBuilder(len * 3);
                 foreach (var b in data) {
                     str.Append(b.ToString("X2")).Append(' ');

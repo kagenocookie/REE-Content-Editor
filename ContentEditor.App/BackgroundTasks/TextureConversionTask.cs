@@ -26,7 +26,7 @@ public class TextureConversionTask : IBackgroundTask
         Status = "Starting";
     }
 
-    public override string ToString() => $"Texture Conversion: {dds.FileHandler.FilePath}";
+    public override string ToString() => $"{UiText.T("Texture Conversion")}: {dds.FileHandler.FilePath}";
 
     public unsafe async Task Execute(CancellationToken token = default)
     {

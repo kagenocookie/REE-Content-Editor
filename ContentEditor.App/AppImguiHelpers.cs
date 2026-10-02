@@ -38,7 +38,7 @@ public static class AppImguiHelpers
         if (ImGui.Button($"{AppIcons.SI_FolderBrowse}")) {
             PlatformUtils.ShowFileDialog((list) => fileBrowseResults[id] = list[0], path, extensions, false);
         }
-        ImguiHelpers.Tooltip("Browse..."u8);
+        ImguiHelpers.Tooltip(UiText.Utf8("Browse..."));
         ImGui.SameLine();
         path ??= "";
         ImGui.SetNextItemWidth(w - buttonWidth);
@@ -47,7 +47,7 @@ public static class AppImguiHelpers
         ImGui.PopID();
 
         if (Path.IsPathFullyQualified(path) && ImGui.BeginPopupContextItem(label)) {
-            if (ImGui.Selectable("Open in Explorer")) {
+            if (ImGui.Selectable(UiText.Label("Open in Explorer"))) {
                 FileSystemUtils.ShowFileInExplorer(path);
             }
             ImGui.EndPopup();
@@ -91,7 +91,7 @@ public static class AppImguiHelpers
         if (ImGui.Button($"{AppIcons.SI_FolderBrowse}")) {
             PlatformUtils.ShowFolderDialog((list) => fileBrowseResults[id] = list, path);
         }
-        ImguiHelpers.Tooltip("Browse..."u8);
+        ImguiHelpers.Tooltip(UiText.Utf8("Browse..."));
         ImGui.SameLine();
         path ??= "";
         ImGui.SetNextItemWidth(w - buttonWidth);
@@ -99,7 +99,7 @@ public static class AppImguiHelpers
         ImGui.PopID();
 
         if (Path.IsPathFullyQualified(path) && ImGui.BeginPopupContextItem(label)) {
-            if (ImGui.Selectable("Open in Explorer")) {
+            if (ImGui.Selectable(UiText.Label("Open in Explorer"))) {
                 FileSystemUtils.ShowFileInExplorer(path);
             }
             ImGui.EndPopup();
@@ -123,30 +123,30 @@ public static class AppImguiHelpers
 
     public static void ShowJsonCopyPopupButtons<T>(in T value, UIContext context)
     {
-        if (ImGui.Selectable("Copy value")) {
+        if (ImGui.Selectable(UiText.Label("Copy value"))) {
             EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(value, JsonConfig.jsonOptionsIncludeFields), $"Copied value of {context.label}!");
             ImGui.CloseCurrentPopup();
         }
-        if (ImGui.Selectable("Copy field name")) {
+        if (ImGui.Selectable(UiText.Label("Copy field name"))) {
             EditorWindow.CurrentWindow?.CopyToClipboard(context.label, $"Copied {context.label}!");
             ImGui.CloseCurrentPopup();
         }
-        if (ImGui.Selectable("Paste value")) {
+        if (ImGui.Selectable(UiText.Label("Paste value"))) {
             UndoRedo.RecordClipboardSet<T>(context);
             ImGui.CloseCurrentPopup();
         }
-        if (context.IsChanged && ImGui.Selectable("Revert to saved value")) {
+        if (context.IsChanged && ImGui.Selectable(UiText.Label("Revert to saved value"))) {
             context.Revert();
         }
     }
 
     public static void ShowJsonCopyManualSet<TVal>(in TVal value, UIContext context, Action<UIContext, TVal> setter, string? mergeId)
     {
-        if (ImGui.Selectable("Copy value")) {
+        if (ImGui.Selectable(UiText.Label("Copy value"))) {
             EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(value, JsonConfig.jsonOptionsIncludeFields), $"Copied value of {context.label}!");
             ImGui.CloseCurrentPopup();
         }
-        if (ImGui.Selectable("Paste value")) {
+        if (ImGui.Selectable(UiText.Label("Paste value"))) {
             try {
                 var data = EditorWindow.CurrentWindow?.GetClipboard();
                 if (string.IsNullOrEmpty(data)) return;
@@ -167,19 +167,19 @@ public static class AppImguiHelpers
     public static void ShowJsonCopyPopup(object? value, Type type, UIContext context)
     {
         if (ImGui.BeginPopupContextItem(context.label)) {
-            if (ImGui.Selectable("Copy value")) {
+            if (ImGui.Selectable(UiText.Label("Copy value"))) {
                 EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(value, type, JsonConfig.jsonOptionsIncludeFields), $"Copied value of {context.label}!");
                 ImGui.CloseCurrentPopup();
             }
-            if (ImGui.Selectable("Copy field name")) {
+            if (ImGui.Selectable(UiText.Label("Copy field name"))) {
                 EditorWindow.CurrentWindow?.CopyToClipboard(context.label, $"Copied {context.label}!");
                 ImGui.CloseCurrentPopup();
             }
-            if (ImGui.Selectable("Paste value")) {
+            if (ImGui.Selectable(UiText.Label("Paste value"))) {
                 UndoRedo.RecordClipboardSet(context, type);
                 ImGui.CloseCurrentPopup();
             }
-            if (context.IsChanged && ImGui.Selectable("Revert to saved value")) {
+            if (context.IsChanged && ImGui.Selectable(UiText.Label("Revert to saved value"))) {
                 context.Revert();
             }
             ImGui.EndPopup();
@@ -191,11 +191,11 @@ public static class AppImguiHelpers
         var value = context.Get<T>()!;
         var show = ImguiHelpers.TreeNodeSuffix(context.label, value.ToString() ?? "NULL");
         if (ImGui.BeginPopupContextItem(context.label)) {
-            if (ImGui.Selectable("Copy value")) {
+            if (ImGui.Selectable(UiText.Label("Copy value"))) {
                 EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(value, jsonOptions?? JsonConfig.jsonOptionsIncludeFields), $"Copied value {value}!");
                 ImGui.CloseCurrentPopup();
             }
-            if (ImGui.Selectable("Paste value")) {
+            if (ImGui.Selectable(UiText.Label("Paste value"))) {
                 UndoRedo.RecordClipboardSet<T>(context, jsonOptions);
                 UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context);
                 ImGui.CloseCurrentPopup();
@@ -216,7 +216,7 @@ public static class AppImguiHelpers
         var show = ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString() ?? "NULL");
         if (ImGui.BeginPopupContextItem(context.label)) {
             ShowVirtualCopyPopupButtons<T>(instance, context);
-            if (ImGui.Selectable("Duplicate")) {
+            if (ImGui.Selectable(UiText.Label("Duplicate"))) {
                 var clone = instance.DeepCloneGeneric<T>();
                 var list = context.parent?.Get<IList>();
                 Debug.Assert(list != null && context.parent != null);
@@ -248,10 +248,10 @@ public static class AppImguiHelpers
     public static bool ShowVirtualCopyPopupButtons<T>(UIContext context) where T : class => ShowVirtualCopyPopupButtons<T>(context.Get<T>(), context);
     public static bool ShowVirtualCopyPopupButtons<T>(T target, UIContext context) where T : class
     {
-        if (ImGui.Selectable("Copy")) {
+        if (ImGui.Selectable(UiText.Label("Copy"))) {
             VirtualClipboard.CopyToClipboard(target.DeepCloneGeneric<T>());
         }
-        if (VirtualClipboard.TryGetFromClipboard<T>(out var newClip) && ImGui.Selectable("Paste (replace)")) {
+        if (VirtualClipboard.TryGetFromClipboard<T>(out var newClip) && ImGui.Selectable(UiText.Label("Paste (replace)"))) {
             UndoRedo.RecordSet(context, newClip.DeepCloneGeneric<T>());
             return true;
         }
@@ -361,7 +361,7 @@ public static class AppImguiHelpers
                 files.AddRecent(game, selectedPath);
             }
         }
-        ImguiHelpers.Tooltip("Clear recent files");
+        ImguiHelpers.Tooltip(UiText.T("Clear recent files"));
         return false;
     }
 
@@ -435,18 +435,18 @@ public static class AppImguiHelpers
             ImGui.Separator();
             switch (type) {
                 case ActionModalType.Delete:
-                    if (ImGui.Button("Yes"u8, new Vector2(textSize.X / 2, 0))) {
+                    if (ImGui.Button(UiText.LabelUtf8("Yes"), new Vector2(textSize.X / 2, 0))) {
                         onAction?.Invoke();
                         ImGui.CloseCurrentPopup();
                     }
                     ImGui.SameLine();
-                    if (ImGui.Button("No"u8, new Vector2(textSize.X / 2, 0))) {
+                    if (ImGui.Button(UiText.LabelUtf8("No"), new Vector2(textSize.X / 2, 0))) {
                         onCancel?.Invoke();
                         ImGui.CloseCurrentPopup();
                     }
                     break;
                 case ActionModalType.Error:
-                    if (ImGui.Button("OK"u8, new Vector2(textSize.X, 0))) {
+                    if (ImGui.Button(UiText.LabelUtf8("OK"), new Vector2(textSize.X, 0))) {
                         ImGui.CloseCurrentPopup();
                     }
                     break;

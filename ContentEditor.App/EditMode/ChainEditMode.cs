@@ -71,7 +71,7 @@ public class ChainEditMode : EditModeHandler
         filePicker.ShowUI();
 
         if (Target is Chain component && !string.IsNullOrEmpty(component.ChainAsset)) {
-            if (ImGui.Button("Use Stored Chain File") || string.IsNullOrEmpty(filePath)) {
+            if (ImGui.Button(UiText.Label("Use Stored Chain File")) || string.IsNullOrEmpty(filePath)) {
                 AppConfig.Settings.RecentChains.AddRecent(Scene.Workspace.Game, filePath);
                 filePath = component.ChainAsset;
             }
@@ -116,20 +116,20 @@ public class ChainEditMode : EditModeHandler
         }
 
         if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(filePath, out var file)) {
-            if (ImGui.Button("Open Chain")) {
+            if (ImGui.Button(UiText.Label("Open Chain"))) {
                 OpenEditor(file);
             }
         } else if (!string.IsNullOrEmpty(filePath)) {
-            ImGui.TextColored(Colors.Warning, "Chain file not found");
+            ImGui.TextColored(Colors.Warning, UiText.T("Chain file not found"));
         }
 
         if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(clspPath, out var file2)) {
             if (file != null) ImGui.SameLine();
-            if (ImGui.Button("Open CLSP")) {
+            if (ImGui.Button(UiText.Label("Open CLSP"))) {
                 OpenEditor(file2);
             }
         } else if (!string.IsNullOrEmpty(clspPath)) {
-            ImGui.TextColored(Colors.Warning, "Chain file not found");
+            ImGui.TextColored(Colors.Warning, UiText.T("Chain file not found"));
         }
     }
 
@@ -166,7 +166,7 @@ public class ChainEditMode : EditModeHandler
                     }
                     clspComp?.SetOverrideFile(file.GetFile<ClspFile>());
                 } else {
-                    ImGui.TextColored(Colors.Warning, "CLSP file not found");
+                    ImGui.TextColored(Colors.Warning, UiText.T("CLSP file not found"));
                 }
             } else {
                 clspComp?.ClearOverrideFile();

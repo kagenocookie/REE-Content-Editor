@@ -26,9 +26,9 @@ public class MessageDataUIHandler : IObjectUIHandler, IObjectUIInstantiator
         var data = context.Get<MessageData?>();
 
         if (data == null) {
-            ImGui.Text("No translations for " + context.label);
+            ImGui.Text(UiText.T("No translations for ") + context.label);
             ImGui.SameLine();
-            if (ImGui.Button("Create message")) {
+            if (ImGui.Button(UiText.Label("Create message"))) {
                 var entity = context.GetOwnerEntity()!;
                 var newData = context.GetWorkspace()!.ResourceManager.CreateEntityResource<MessageData>(entity, field, ResourceState.Active, null);
                 UndoRedo.RecordSet(context, newData);
@@ -39,12 +39,13 @@ public class MessageDataUIHandler : IObjectUIHandler, IObjectUIInstantiator
             var langIndex = Array.IndexOf(LanguageNames, lang);
 
             var w = ImGui.CalcItemWidth();
-            var langWidth = ImGui.CalcTextSize(lang).X + ImGui.GetStyle().FramePadding.X * 2 + 32;
+            var languageLabels = LanguageValues.Select(Lang.TranslateLanguage).ToArray();
+            var langWidth = ImGui.CalcTextSize(languageLabels[langIndex]).X + ImGui.GetStyle().FramePadding.X * 2 + 32;
             var textWidth = w - langWidth - ImGui.GetStyle().FramePadding.X * 2;
 
             ImGui.PushID(context.label);
             ImGui.SetNextItemWidth(langWidth);
-            if (ImGui.Combo("##language", ref langIndex, LanguageNames, LanguageNames.Length)) {
+            if (ImGui.Combo("##language", ref langIndex, languageLabels, languageLabels.Length)) {
                 context.Filter = lang = LanguageNames[langIndex];
             }
             ImGui.SameLine();

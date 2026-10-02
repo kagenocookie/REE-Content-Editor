@@ -14,7 +14,7 @@ public class BoneNameHandler(Func<UIContext, uint>? hashGetter = null, Action<UI
         if (bones != null && bones.GetBones().Any()) {
             var width = ImGui.CalcItemWidth();
             var forceRefreshList = ImGui.Button($"{AppIcons.SI_Update}");
-            ImguiHelpers.Tooltip("Refresh list"u8);
+            ImguiHelpers.Tooltip(UiText.Utf8("Refresh list"));
             var spacing = ImGui.GetStyle().ItemSpacing.X;
             width -= ImGui.CalcTextSize($"{AppIcons.SI_Update}").X + ImGui.GetStyle().FramePadding.X * 2 + spacing;
 
@@ -48,7 +48,7 @@ public class BoneNameHandler(Func<UIContext, uint>? hashGetter = null, Action<UI
         if (hashGetter != null && hashSetter != null) {
             var hash = hashGetter.Invoke(context);
             var oldHash = hash;
-            if (ImGui.InputScalar($"{context.label} Hash", ImGuiDataType.U32, &hash)) {
+            if (ImGui.InputScalar(UiText.FormatLabel($"{context.label} Hash"), ImGuiDataType.U32, &hash)) {
                 UndoRedo.RecordSet(context, bones?.FindBoneByHash(hash)?.name ?? "");
                 if (hashSetter != null) {
                     var newHash = hash;
@@ -73,7 +73,7 @@ public class BoneHashHandler : IObjectUIHandler
         if (bones != null && bones.GetBones().Any()) {
             var width = ImGui.CalcItemWidth();
             var forceRefreshList = ImGui.Button($"{AppIcons.SI_Update}");
-            ImguiHelpers.Tooltip("Refresh list"u8);
+            ImguiHelpers.Tooltip(UiText.Utf8("Refresh list"));
             var spacing = ImGui.GetStyle().ItemSpacing.X;
             width -= ImGui.CalcTextSize($"{AppIcons.SI_Update}").X + ImGui.GetStyle().FramePadding.X * 2 + spacing;
 

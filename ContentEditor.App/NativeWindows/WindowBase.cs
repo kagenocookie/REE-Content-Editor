@@ -323,10 +323,10 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
                 isLastEditor ? Lang.General.FileClose_KeptOpenMessage.String : Lang.General.FileClose_MultipleEditorsMessage.String,
                 ("Disable This Warning", () => {
                     AppConfig.Instance.DisableFileCloseWarning.Set(true);
-                    wnd.Overlays.ShowToast(2f, """
+                    wnd.Overlays.ShowToast(2f, UiText.T("""
                         Warning can be re-enabled from settings anytime.
                         You can still manually force close files from the menu.
-                        """);
+                        """));
                 }),
                 ("Close File", () => {
                     wnd.Workspace.ResourceManager.CloseFile(file);
@@ -378,7 +378,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
                 try {
                     int count = workspace.SaveModifiedFiles(this);
                     if (count > 0) {
-                        Overlays.ShowTooltip($"Saved {count} files!", 1);
+                        Overlays.ShowTooltip(UiText.F($"Saved {count} files!"), 1);
                     }
                 } finally {
                     SaveInProgress = false;

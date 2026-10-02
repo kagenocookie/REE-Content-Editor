@@ -12,7 +12,7 @@ public class ListFileGeneratorTask(ContentWorkspace workspace) : IBackgroundTask
 {
     private FileListGenerator generator = new FileListGenerator(workspace.Env.Config.GamePath, workspace.Platform);
 
-    public override string ToString() => $"Generating File List";
+    public override string ToString() => UiText.T("Generating File List");
 
     public string? Status => generator.Phase.ToString();
 
@@ -76,7 +76,7 @@ public class ListFileGeneratorTaskWindow : BaseWindowHandler
     public override void OnIMGUI()
     {
         if (MainLoop.Instance.BackgroundTasks.HasPendingTask<ListFileGeneratorTask>()) {
-            ImGui.TextColored(Colors.Note, "List file generation is in progress. Please wait for it to finish or restart Content Editor to cancel it.");
+            ImGui.TextColored(Colors.Note, UiText.T("List file generation is in progress. Please wait for it to finish or restart Content Editor to cancel it."));
             return;
         }
         if (context.children.Count == 0) {
@@ -86,7 +86,7 @@ public class ListFileGeneratorTaskWindow : BaseWindowHandler
             context.options |= UIOptions.DisableUndoRedo;
         }
         context.ShowChildrenUI();
-        if (ImGui.TreeNode("File format version overrides")) {
+        if (ImGui.TreeNode(UiText.Label("File format version overrides"))) {
             for (int i = 0; i < formatOverrides.Count; i++) {
                 (KnownFileFormats fmt, int version) = formatOverrides[i];
                 ImGui.PushID((int)fmt);
@@ -101,23 +101,23 @@ public class ListFileGeneratorTaskWindow : BaseWindowHandler
                 ImGui.SameLine();
                 var autoguess = version == -1;
                 if (version == -1) {
-                    if (ImGui.Checkbox("Force auto-detect"u8, ref autoguess)) {
+                    if (ImGui.Checkbox(UiText.LabelUtf8("Force auto-detect"), ref autoguess)) {
                         formatOverrides[i] = (fmt, 0);
                     }
                 } else {
-                    if (ImGui.Checkbox("Force auto-detect"u8, ref autoguess)) {
+                    if (ImGui.Checkbox(UiText.LabelUtf8("Force auto-detect"), ref autoguess)) {
                         formatOverrides[i] = (fmt, -1);
                     }
-                    if (ImGui.InputInt("Version Override"u8, ref version)) {
+                    if (ImGui.InputInt(UiText.LabelUtf8("Version Override"), ref version)) {
                         formatOverrides[i] = (fmt, version);
                     }
                 }
                 ImGui.PopID();
             }
             ImGui.Separator();
-            ImguiHelpers.FilterableCSharpEnumCombo("New override format"u8, ref _pendingFormat, ref formatFilter);
+            ImguiHelpers.FilterableCSharpEnumCombo(UiText.LabelUtf8("New override format"), ref _pendingFormat, ref formatFilter);
             if (_pendingFormat != KnownFileFormats.Unknown && !formatOverrides.Any(fo => fo.Item1 == _pendingFormat)) {
-                if (ImGui.Button("Add")) {
+                if (ImGui.Button(UiText.Label("Add"))) {
                     var exts = workspace.Env.GetFileExtensionsForFormat(_pendingFormat);
                     if (exts.Any() && workspace.Env.TryGetFileExtensionVersion(exts.First(), out var curv)) {
                         formatOverrides.Add((_pendingFormat, curv));
@@ -128,7 +128,7 @@ public class ListFileGeneratorTaskWindow : BaseWindowHandler
             }
             ImGui.TreePop();
         }
-        if (ImGui.Button("Generate")) {
+        if (ImGui.Button(UiText.Label("Generate"))) {
             MainLoop.Instance.BackgroundTasks.Queue(new ListFileGeneratorTask(workspace) {
                 Flags = options,
                 IncludeOtherGameLists = includeOtherGameLists,
@@ -138,7 +138,7 @@ public class ListFileGeneratorTaskWindow : BaseWindowHandler
             EditorWindow.CurrentWindow?.CloseSubwindow(this);
         }
         ImGui.SameLine();
-        if (ImGui.Button("Cancel")) {
+        if (ImGui.Button(UiText.Label("Cancel"))) {
             EditorWindow.CurrentWindow?.CloseSubwindow(this);
         }
     }

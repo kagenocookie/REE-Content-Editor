@@ -148,19 +148,19 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
 
         public void OnIMGUI(SequenceBlock sequence)
         {
-            var changed = ImGui.DragInt2("Count X/Y", ref x, 0.025f, 1, 20);
+            var changed = ImGui.DragInt2(UiText.Label("Count X/Y"), ref x, 0.025f, 1, 20);
 
-            changed |= ImGui.DragFloat2("Margin Top/Left", ref topLeftMargin, 0.001f, 0, 1);
-            changed |= ImGui.DragFloat2("Margin Bottom/Right", ref botRightMargin, 0.001f, 0, 1);
-            changed |= ImGui.DragFloat2("Item Padding", ref padding, 0.001f, 0, 0.4999f);
+            changed |= ImGui.DragFloat2(UiText.Label("Margin Top/Left"), ref topLeftMargin, 0.001f, 0, 1);
+            changed |= ImGui.DragFloat2(UiText.Label("Margin Bottom/Right"), ref botRightMargin, 0.001f, 0, 1);
+            changed |= ImGui.DragFloat2(UiText.Label("Item Padding"), ref padding, 0.001f, 0, 0.4999f);
             changed |= ImguiHelpers.InlineRadioGroup(RowColMajor, FalseTrue, ref columnMajor);
-            ImguiHelpers.Tooltip("Order: RowMajor fills left-to-right then top-to-bottom. ColumnMajor fills top-to-bottom then left-to-right.");
-            ImGui.Checkbox("Automatically re-arrange", ref autoRearrange);
+            ImguiHelpers.Tooltip(UiText.T("Order: RowMajor fills left-to-right then top-to-bottom. ColumnMajor fills top-to-bottom then left-to-right."));
+            ImGui.Checkbox(UiText.Label("Automatically re-arrange"), ref autoRearrange);
 
-            if (autoRearrange ? changed : ImguiHelpers.SameLine() && ImGui.Button("Re-arrange")) {
+            if (autoRearrange ? changed : ImguiHelpers.SameLine() && ImGui.Button(UiText.Label("Re-arrange"))) {
                 Rearrange(sequence);
             }
-            if (ImguiHelpers.SameLine() && ImGui.Button("Reset")) {
+            if (ImguiHelpers.SameLine() && ImGui.Button(UiText.Label("Reset"))) {
                 Infer(sequence);
             }
         }
@@ -205,21 +205,21 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         var seqCtx = context.GetChildByTarget(sequence) ?? context.AddChild($"Sequence {selectedSequenceIndex}", sequence);
 
         ImGui.BeginTabBar($"Sequence##{selectedSequenceIndex}");
-        if (ImGui.BeginTabItem("Overview")) {
+        if (ImGui.BeginTabItem(UiText.Label("Overview"))) {
             ShowOverview(sequence);
-            ImGui.SeparatorText("Grid Arrangement");
+            ImGui.SeparatorText(UiText.T("Grid Arrangement"));
             ShowArrangement(sequence, seqCtx);
             ImGui.EndTabItem();
         }
 
-        if (ImGui.BeginTabItem("Individual Patterns"u8)) {
+        if (ImGui.BeginTabItem(UiText.LabelUtf8("Individual Patterns"))) {
             ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconSecondary);
             if (ImGui.Button($"{AppIcons.SI_GenericAdd}")) {
                 UndoRedo.RecordListAdd(context, sequence.patterns, new UvsPattern());
                 sequence.patternCount = sequence.patterns.Count;
             }
             ImGui.PopStyleColor();
-            ImguiHelpers.Tooltip("Add pattern");
+            ImguiHelpers.Tooltip(UiText.T("Add pattern"));
             ImGui.Separator();
 
             int patId = 0;
@@ -241,7 +241,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
             var texPath = File.Textures[texId].path;
             var tex = GetOrLoadTexture(texPath);
             if (tex == null) {
-                ImGui.TextColored(Colors.Warning, "Could not find texture " + texPath);
+                ImGui.TextColored(Colors.Warning, UiText.T("Could not find texture ") + texPath);
             } else {
                 var maxwidth = ImGui.GetWindowSize().X - ImGui.GetCursorPosX() - 40;
                 var scale = (maxwidth / tex.Width);
@@ -310,14 +310,14 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
             selectedPattern = null;
             Handle.Modified = true;
         }
-        ImguiHelpers.Tooltip("New Sequence"u8);
+        ImguiHelpers.Tooltip(UiText.Utf8("New Sequence"));
         ImguiHelpers.SameLine();
         ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
         if (selectedSequence != null) {
             if (ImGui.Button($"{AppIcons.SI_GenericDelete2}")) {
                 EditorWindow.CurrentWindow!.AddSubwindow(new ConfirmationDialog(
-                    "Deleting sequence",
-                    "Are you sure you wish to delete the sequence " + selectedSequenceIndex + "?",
+                    UiText.T("Deleting sequence"),
+                    UiText.T("Are you sure you wish to delete the sequence ") + selectedSequenceIndex + "?",
                     context.GetWindow() ?? throw new Exception("Missing parent window"),
                     () => {
                         UndoRedo.RecordListRemove(context, File.Sequences, selectedSequence);
@@ -331,7 +331,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
             }
         }
         ImGui.PopStyleColor();
-        ImguiHelpers.Tooltip("Delete Sequence"u8);
+        ImguiHelpers.Tooltip(UiText.Utf8("Delete Sequence"));
         ImGui.SameLine();
         ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
@@ -340,12 +340,12 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
                 EditorWindow.CurrentWindow?.AddSubwindow(new TextureViewer(workspace, texHandle));
             }
         }
-        ImguiHelpers.Tooltip($"Open Texture - {texPath}");
+        ImguiHelpers.Tooltip(UiText.F($"Open Texture - {texPath}"));
     }
 
     private unsafe void ShowTimeline(SequenceBlock sequence)
     {
-        ImGui.SeparatorText("Timeline");
+        ImGui.SeparatorText(UiText.T("Timeline"));
         int frameCount = sequence.patternCount;
         if (frameCount > 0) {
             animationFrame = Math.Clamp(animationFrame, 0, frameCount - 1);
@@ -360,21 +360,21 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
             if (shouldAnimate && selectedPattern == null) {
                 selectedPattern = sequence.patterns[0];
             }
-            ImguiHelpers.Tooltip("Animate"u8);
+            ImguiHelpers.Tooltip(UiText.Utf8("Animate"));
             ImGui.SameLine();
             if (ImGui.Button($"{AppIcons.Previous}") || ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_UVS_PrevPattern.Get().IsPressed()) {
                 animationFrame = (animationFrame - 1 + frameCount) % frameCount;
                 shouldAnimate = false;
             }
-            ImguiHelpers.Tooltip("Previous pattern"u8);
+            ImguiHelpers.Tooltip(UiText.Utf8("Previous pattern"));
             ImGui.SameLine();
             if (ImGui.Button($"{AppIcons.Next}") || ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_UVS_NextPattern.Get().IsPressed()) {
                 animationFrame = (animationFrame + 1) % frameCount;
                 shouldAnimate = false;
             }
-            ImguiHelpers.Tooltip("Next pattern"u8);
+            ImguiHelpers.Tooltip(UiText.Utf8("Next pattern"));
             ImGui.SameLine();
-            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - 75 - ImGui.CalcTextSize("FPS").X - ImGui.GetStyle().FramePadding.X * 3);
+            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - 75 - ImGui.CalcTextSize(UiText.T("FPS")).X - ImGui.GetStyle().FramePadding.X * 3);
             if (ImGui.SliderInt("##Frame", ref animationFrame, 0, frameCount - 1)) {
                 shouldAnimate = false;
             }
@@ -388,7 +388,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
             }
             ImGui.SameLine();
             ImGui.SetNextItemWidth(75f);
-            if (ImGui.BeginCombo("FPS", fpsOptions[selectedFpsIDX].ToString())) {
+            if (ImGui.BeginCombo(UiText.Label("FPS"), fpsOptions[selectedFpsIDX].ToString())) {
                 for (int i = 0; i < fpsOptions.Length; i++) {
                     bool isSelected = i == selectedFpsIDX;
                     if (ImGui.Selectable(fpsOptions[i].ToString(), isSelected)) {
@@ -440,7 +440,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
                 }
                 ImGui.SetDragDropPayload("PATTERN"u8, null, 0);
                 ImGui.BeginTooltip();
-                ImGui.Text($"Pattern {dragPatternIDX}");
+                ImGui.Text(UiText.F($"Pattern {dragPatternIDX}"));
                 ImGui.EndTooltip();
                 ImGui.EndDragDropSource();
             }
@@ -482,7 +482,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         ImGui.Spacing();
         ImGui.SetNextWindowSizeConstraints(new Vector2(ImGui.GetContentRegionAvail().X / 2, ImGui.GetContentRegionAvail().Y), new Vector2(ImGui.GetContentRegionAvail().X / 2, ImGui.GetContentRegionAvail().Y));
         ImGui.BeginChild("PatternPreview");
-        ImGui.SeparatorText("Preview");
+        ImGui.SeparatorText(UiText.T("Preview"));
         if (sequence.patterns.Count > 0) {
             var texPath = File.Textures[sequence.patterns[0].textureIndex].path;
             var tex = GetOrLoadTexture(texPath);
@@ -498,7 +498,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
     private void ShowSelectedPattern()
     {
         ImGui.BeginChild("PatternSelect");
-        ImGui.SeparatorText("Selected Pattern");
+        ImGui.SeparatorText(UiText.T("Selected Pattern"));
         ImGui.Text(selectedPattern?.ToString());
         ShowPatternEdit(selectedPattern!);
         ImGui.EndChild();
@@ -561,20 +561,20 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
 
         var tex = GetOrLoadTexture(texPath);
         if (tex == null) {
-            ImGui.TextColored(Colors.Danger, "Could not find texture");
+            ImGui.TextColored(Colors.Danger, UiText.T("Could not find texture"));
         } else {
             var backup = (pattern.left, pattern.right);
-            if (ImGui.DragFloatRange2("Left Right", ref pattern.left, ref pattern.right, 0.01f, 0, 1)) {
+            if (ImGui.DragFloatRange2(UiText.Label("Left Right"), ref pattern.left, ref pattern.right, 0.01f, 0, 1)) {
                 UndoRedo.RecordCallbackSetter(context, pattern, backup, (pattern.left, pattern.right), static (p, vals) => (p.left, p.right) = vals, $"Pattern {pattern.GetHashCode()} LR");
                 Handle.Modified = true;
             }
             backup = (pattern.top, pattern.bottom);
-            if (ImGui.DragFloatRange2("Top Bottom", ref pattern.top, ref pattern.bottom, 0.01f, 0, 1)) {
+            if (ImGui.DragFloatRange2(UiText.Label("Top Bottom"), ref pattern.top, ref pattern.bottom, 0.01f, 0, 1)) {
                 UndoRedo.RecordCallbackSetter(context, pattern, backup, (pattern.top, pattern.bottom), static (p, vals) => (p.top, p.bottom) = vals, $"Pattern {pattern.GetHashCode()} TB");
                 Handle.Modified = true;
             }
             float drag = 0;
-            if (ImGui.DragFloat("Move X", ref drag, 0.001f)) {
+            if (ImGui.DragFloat(UiText.Label("Move X"), ref drag, 0.001f)) {
                 var span = pattern.right - pattern.left;
                 backup = (pattern.left, pattern.right);
                 pattern.left = Math.Min(1 - span, Math.Clamp(pattern.left + drag, 0, 1));
@@ -583,7 +583,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
                 Handle.Modified = true;
             }
             drag = 0;
-            if (ImGui.DragFloat("Move Y", ref drag, 0.001f)) {
+            if (ImGui.DragFloat(UiText.Label("Move Y"), ref drag, 0.001f)) {
                 var span = pattern.bottom - pattern.top;
                 backup = (pattern.top, pattern.bottom);
                 pattern.top = Math.Min(1 - span, Math.Clamp(pattern.top + drag, 0, 1));

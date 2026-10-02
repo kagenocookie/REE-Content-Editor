@@ -63,7 +63,7 @@ public class GpucEditMode : EditModeHandler
         filePicker.ShowUI();
 
         if (Target is GpuCloth component && !string.IsNullOrEmpty(component.Resource)) {
-            if (ImGui.Button("Use Stored Chain File") || string.IsNullOrEmpty(filePath)) {
+            if (ImGui.Button(UiText.Label("Use Stored Chain File")) || string.IsNullOrEmpty(filePath)) {
                 AppConfig.Settings.RecentCloth.AddRecent(Scene.Workspace.Game, filePath);
                 filePath = component.Resource;
             }
@@ -78,11 +78,11 @@ public class GpucEditMode : EditModeHandler
         }
 
         if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(filePath, out var file)) {
-            if (ImGui.Button("Open File")) {
+            if (ImGui.Button(UiText.Label("Open File"))) {
                 OpenEditor(file);
             }
         } else if (!string.IsNullOrEmpty(filePath)) {
-            ImGui.TextColored(Colors.Warning, "File not found");
+            ImGui.TextColored(Colors.Warning, UiText.T("File not found"));
         }
     }
 
