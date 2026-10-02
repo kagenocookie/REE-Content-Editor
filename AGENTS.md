@@ -29,6 +29,7 @@
 - Git with initialized submodules; .NET 10 SDK.
 - Windows application target: net10.0-windows; .NET 10 Desktop Runtime.
 - Package versions remain in project files; localization introduces no new packages.
+- The upstream merge pins the editor's RE-Engine-Lib submodule to `61f0cceeb81aca706b033f61b924d434a7d69297`; keep this gitlink independent of the newer standalone sibling reference checkout.
 
 ## For AI Agents
 - Preserve upstream history; origin is the user's cn fork and upstream is the original repository.

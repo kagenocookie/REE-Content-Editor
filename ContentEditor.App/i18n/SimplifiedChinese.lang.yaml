@@ -38,7 +38,7 @@ Home.Scenes_New: '{0} 新建场景'
 Home.Hint_SearchRecentFiles: '{0} 搜索最近打开的文件'
 Home.Button_OpenFile: '打开文件'
 Home.Button_SupportDev: '{0} 支持开发'
-Home.Tooltip_BrowseFiles: '浏览游戏文件'
+Home.Tooltip_BrowseFiles: "浏览文件"
 Home.Tooltip_ThemeEditor: '主题编辑器'
 Home.Tooltip_Settings: '设置'
 Home.Tooltip_GitHub: 'GitHub'
@@ -176,7 +176,7 @@ Settings.Group_Theme: '主题'
 Settings.Group_Global: '全局'
 Settings.Group_Pak: 'PAK 浏览器'
 Settings.Group_Scene: '场景'
-Settings.Group_Mesh: '3D 控制'
+Settings.Group_Mesh: "网格查看器"
 Settings.Group_Texture: '纹理查看器'
 Settings.Group_UVS: 'UVS 编辑器'
 Settings.Group_Resident: '生化危机'
@@ -447,8 +447,6 @@ MacroShelf.MenuItem_OpenMacroInTextEditor: "在文本编辑器中打开宏脚本
 MacroShelf.Error_InvalidLuaPath: "Lua 文件必须位于用户 Lua 文件夹内！"
 MacroShelf.Confirm_DeleteMacroFile: "确定要删除宏 {0} 吗？"
 Material.ConfirmDeleteBookmarks: "确定要删除 {0} 的所有材质参数书签吗？"
-MeshViewer.Title_Editor: "编辑器"
-MeshViewer.Editor_Objects: "对象"
 MeshViewer.Editor_Submeshes: "子网格"
 MeshViewer.Editor_NoSubmeshes: "没有可用的子网格。"
 MeshViewer.Editor_ModeObject: "对象"
@@ -468,7 +466,6 @@ MeshViewer.Editor_StayOnTop: "保持置顶"
 MeshViewer.Display_Default: "默认"
 MeshViewer.Display_Solid: "实体"
 MeshViewer.Display_Wireframe: "线框"
-MeshViewer.Title_Animations: "{0} 动画"
 MeshViewer.Error_MaterialCountMismatch: "网格材质数量与 MDF2 不一致，游戏中的纹理将显示异常。\n请确保两者数量一致。"
 MeshViewer.Error_MaterialNotFound: "网格引用了所选 MDF2 中不存在的材质名称。\n对应子网格在游戏中将不可见。"
 MeshViewer.BlendImportSettings: "Blend 文件导入设置"
@@ -678,3 +675,43 @@ Tools.IconList: "图标列表"
 Tools.DumpTranslations: "导出翻译"
 Tools.DumpLuaTypes: "导出编辑器 Lua 类型"
 UVS.PatternLabel: "图案 {0}"
+Buttons.AddWithIcon: "{0} 添加"
+MeshViewer.Menu_Editor: "编辑器"
+MeshViewer.Menu_Camera: "{0} 摄像机"
+MeshViewer.Menu_Rendering: "{0} 渲染："
+MeshViewer.Menu_Material: "{0} 材质"
+MeshViewer.Menu_RCOL: "{0} RCOL"
+MeshViewer.Menu_Chain: "{0} 链物理"
+MeshViewer.Menu_IO: "{0} 导入 / 导出"
+MeshViewer.Tab_OutlinerModels: "{0} 模型"
+MeshViewer.Tab_OutlinerAnimations: "{0} 动画"
+MeshViewer.Tooltip_OutlinerExpand: "展开大纲视图"
+MeshViewer.Tooltip_OutlinerCollapse: "折叠大纲视图"
+MeshViewer.Tooltip_OutlinerGroupExpand: "展开分组"
+MeshViewer.Tooltip_OutlinerGroupCollapse: "折叠分组"
+MeshViewer.Tooltip_OutlinerHoverHighlight: "切换悬停高亮"
+MeshViewer.Tooltip_OutlinerMeshInfo: "网格信息"
+MeshViewer.Tooltip_CollectionSave: "保存集合"
+MeshViewer.Tooltip_CollectionLoad: "加载集合"
+MeshViewer.Tooltip_CollectionClear: "移除所有附加网格"
+MeshViewer.Button_OutlinerMeshCollection: "{0} 网格集合"
+MeshViewer.Separator_Objects: "对象"
+MeshViewer.Separator_Render: "渲染模式"
+MeshViewer.Separator_TextureDisplay: "纹理显示"
+MeshViewer.Separator_AddMesh: "添加网格"
+MeshViewer.MenuItem_MeshCollectionRemove: "{0} 移除"
+MeshViewer.MenuItem_MeshCollectionInfo: "{0} 信息"
+MeshViewer.MenuItem_MeshCollectionTransform: "{0} 变换"
+MeshViewer.MenuItem_MeshCollectionSkeleton: "{0} 骨架"
+MeshViewer.MenuItem_MeshCollectionOpenNewWin: "{0} 在独立窗口中打开"
+MeshViewer.DisplayTex_HighRes: "高分辨率"
+MeshViewer.DisplayTex_LowRes: "低分辨率"
+MeshViewer.Warning_CantOpenMeshFromCollections: "外部网格文件无法直接在网格集合中打开。\n请单独打开并先转换为 .mesh。"
+MeshViewer.Warning_CantResolveMeshPath: "无法从给定路径解析 .mesh 文件。\n请重新检查文件路径是否正确，以及网格文件是否有效。"
+MeshViewer.Warning_CantResolveStreamingMeshPath: "无法从给定路径解析 .mesh 文件。\n请重新检查文件路径是否正确，以及网格文件是否有效。\n如果网格包含流式文件，请确保两者均已解压到相互匹配的文件路径。"
+MeshViewer.NoMeshLoaded: "未加载网格"
+Settings.Group_Camera: "摄像机"
+Settings.ShowMeshViewerOutlinerOnLeftSide.Text: "在左侧显示大纲视图"
+Settings.ShowMeshViewerOutlinerOnLeftSide.Tooltip: "是否将大纲视图显示在网格查看器左侧，而非右侧。"
+Settings.AlwaysIncludeBundleInPublish.Text: "发布时包含 bundle.json"
+Settings.AlwaysIncludeBundleInPublish.Tooltip: "是否在发布的模组输出中包含原始 bundle.json 文件。\n使用模组通常不需要此文件，但当游戏补丁更新了资源文件时，\n它可以帮助用户自动重新应用实际改动。\nbundle.json 文件将放在 content/installed/ 文件夹中。"

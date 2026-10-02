@@ -131,7 +131,14 @@ void ExecutePatcher()
     patcher.LoadIniConfig("content_patcher.ini");
     patcher.LoadIniConfig($"configs/{game}/game.ini");
     patcher.LoadConfig(cliSettings);
-    patcher.Execute();
+    patcher.Execute(new PatchParameters() {
+        OutputFilepath = "", // empty = take game folder
+        OutputType = PatchOutputType.GamePatch,
+        ReloadBundles = true,
+        AllowSymlinks = false,
+        IncludePatchMetadataJson = true,
+        ExportAsPak = false,
+    });
     Logger.Info($"Patching finished in {sw.Elapsed.TotalSeconds} s");
     if (launchAfterPatch) {
         Logger.Info($"Attempting to launch game...");

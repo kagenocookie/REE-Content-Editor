@@ -2,6 +2,7 @@ using ContentEditor.App.Graphics;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
+using ContentPatcher;
 using ReeLib;
 using System.Globalization;
 using System.Numerics;
@@ -118,17 +119,17 @@ public class BundleManagementUI : IWindowHandler
         ImguiHelpers.ToggleButton(Lang.Bundles.ShowLoadOrder.ToString(), ref isShowLoadOrder, Colors.IconActive);
         ImGui.SameLine();
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_PatchLooseFiles,[ Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary])) {
-            EditorWindow.CurrentWindow?.ApplyContentPatches(null);
+            EditorWindow.CurrentWindow?.ApplyContentPatches(PatchOutputType.GamePatch, false);
         }
         ImguiHelpers.Tooltip(Lang.Bundles.ApplyPatchesLoose);
         ImGui.SameLine();
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_PatchPakFile, [ Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary])) {
-            EditorWindow.CurrentWindow?.ApplyContentPatches("pak");
+            EditorWindow.CurrentWindow?.ApplyContentPatches(PatchOutputType.GamePatch, true);
         }
         ImguiHelpers.Tooltip(Lang.Bundles.ApplyPatchesPak);
         ImGui.SameLine();
         if (ImGui.Button($"{AppIcons.SI_PatchTo}")) {
-            PlatformUtils.ShowFolderDialog((path) => EditorWindow.CurrentWindow?.ApplyContentPatches(path), EditorWindow.CurrentWindow?.Workspace.Env.Config.GamePath);
+            PlatformUtils.ShowFolderDialog((path) => EditorWindow.CurrentWindow?.ApplyContentPatches(PatchOutputType.GamePatch, false, path), EditorWindow.CurrentWindow?.Workspace.Env.Config.GamePath);
         }
         ImguiHelpers.Tooltip(Lang.Bundles.PatchTo);
         ImGui.SameLine();

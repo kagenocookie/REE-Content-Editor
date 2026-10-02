@@ -63,7 +63,7 @@ public static partial class Lang
 
         public static readonly FixedString Button_OpenFile = "Open File";
         public static readonly IconString Button_SupportDev = new IconString("{0} Support Development", AppIcons.SI_GenericHeart);
-        public static readonly FixedString Tooltip_BrowseFiles = "Browse Game Files";
+        public static readonly FixedString Tooltip_BrowseFiles = "Browse Files";
         public static readonly FixedString Tooltip_ThemeEditor = "Theme Editor";
         public static readonly FixedString Tooltip_Settings = "Settings";
         public static readonly FixedString Tooltip_GitHub = "GitHub";

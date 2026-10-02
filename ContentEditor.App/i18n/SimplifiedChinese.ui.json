@@ -1332,5 +1332,12 @@
    "Background Tasks": "后台任务",
    "Go into the Tools > Settings menu and configure the game(s) you wish to edit": "进入“工具 > 设置”菜单，配置要编辑的游戏",
    "Guide": "指南",
-   "<empty>": "<空>"
+   "<empty>": "<空>",
+  "Display_MeshViewer": "网格查看器",
+  "Hotkeys_Camera": "摄像机",
+  "Objects": "对象",
+  "Selection Mode:": "选择模式：",
+  "Submesh {0}": "子网格 {0}",
+  "Submesh {0} | {1}": "子网格 {0} | {1}",
+  "{0} Group {1}": "{0} 分组 {1}"
 }

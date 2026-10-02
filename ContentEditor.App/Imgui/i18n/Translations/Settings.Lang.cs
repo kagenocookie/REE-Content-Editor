@@ -45,8 +45,9 @@ public static partial class Lang
         public static readonly FixedString Group_Theme = "Theme";
         public static readonly FixedString Group_Global = "Global";
         public static readonly FixedString Group_Pak = "Pak Browser";
+        public static readonly FixedString Group_Camera = "Camera";
         public static readonly FixedString Group_Scene = "Scene";
-        public static readonly FixedString Group_Mesh = "3D Controls";
+        public static readonly FixedString Group_Mesh = "Mesh Viewer";
         public static readonly FixedString Group_Texture = "Texture Viewer";
         public static readonly FixedString Group_UVS = "UVS Editor";
         public static readonly FixedString Group_Resident = "Resident Evil";
@@ -116,6 +117,7 @@ public static partial class Lang
         public static readonly TextTooltip MaxFPSBackground = new TextTooltip("Max FPS in background", "The maximum FPS when the editor window is not focused.");
         public static readonly TextTooltip ClockFormat = new TextTooltip("12-hour Clock", "Switch the time format from 24-hour to 12-hour clock.");
         public static readonly TextTooltip UseFullscreenAnimPlayback = new TextTooltip("Fullscreen Animation Playback Overlay", "Whether to keep the animation playback overlay in the top-right corner of the Mesh Viewer or make it fullscreen.");
+        public static readonly TextTooltip ShowMeshViewerOutlinerOnLeftSide = new TextTooltip("Show Outliner on Left Side", "Whether to display the Outliner on the left side instead of the right side of the Mesh Viewer.");
         public static readonly TextTooltip ExpandSettings = new TextTooltip("Auto-expand Settings", "Whether the setting groups should be expanded by default.");
         public static readonly TextTooltip PrettyFieldLabels = new TextTooltip("Simplify field labels", "Whether to simplify field labels instead of showing the raw field names (e.g. \"Target Object\" instead of \"_TargetObject\").");
         public static readonly TextTooltip AutoCloseFiles = new TextTooltip("Auto close files", "Whether to automatically close down files after their last editor window is closed when there's no unsaved changes.\nIf disabled, files will always stay open until explicitly closed through the menu.\nExperimental. Might cause issues with some files.");
@@ -124,6 +126,12 @@ public static partial class Lang
         public static readonly TextTooltip PauseAnimPlayerOnSeek = new TextTooltip("Pause Animation Player on seek", "Whether to pause the animation player while seeking with the slider.");
         public static readonly TextTooltip BundleDefaultSaveFullPath = new TextTooltip("Save bundle files with full path", "When checked, will always default to saving with the full relative path instead of the root bundle folder when adding new files to the active bundle.");
         public static readonly TextTooltip MaxUndoSteps = new TextTooltip("Max undo steps", "The maximum number of steps you can undo. Higher number means a bit higher memory usage after longer sessions.");
+        public static readonly TextTooltip AlwaysIncludeBundleInPublish = new TextTooltip("Include bundle.json when publishing", """
+            Whether your original bundle.json files should be included in published mod output.
+            This is usually not needed for using mods, but might help users be able to auto-patch
+            the actual changes made in cases where the files get updated in newer patches.
+            The bundle.json file will be placed in the content/installed/ folder.
+            """);
         public static readonly TextTooltip CustomBundleBasePath = new TextTooltip("Base Bundle File Path", """
             The default base path added to every custom file when saving a new file to bundle.
             Accepts replace parameters for {AUTHOR} or {BUNDLE_NAME}

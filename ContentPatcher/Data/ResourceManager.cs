@@ -339,7 +339,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
 
         if (fieldResource.FilePath == null) {
             // ignore - there's no file here
-        } else if (openFiles.TryGetValue(fieldResource.FilePath, out var file)) {
+        } else if (TryResolveGameFile(fieldResource.FilePath, out var file)) {
             file.Modified = true;
         } else {
             throw new Exception("New resource file should've been opened, wtf?");

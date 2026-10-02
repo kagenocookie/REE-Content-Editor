@@ -45,8 +45,15 @@ dotnet run --project tools/LocalizationAudit -c Release -- . ./build/localizatio
 - 用户人工验收反馈大部分界面汉化正常。之后补充的通用控件、复制提示和后台任务文案经过静态检查、测试和编译，未再进行窗口操作。
 - Windows Release 验收时发布到 `build/zh-CN/ContentEditor.App.exe`。该生成目录已在 2026-09-08 工作区迁移清理时移除；新电脑请按上方命令重新构建后运行。
 
+## 上游同步验收（2026-10-02）
+
+- 合并上游 `e63b6ae1`，保留网格查看器新的对象/动画大纲视图布局，并将迁移后的控件接回汉化层。
+- 新增 40 个注册翻译项，移除 3 个上游已废弃的键，补充 7 个 UI 文案模板；716 个注册项和 1266 个 UI 模板的审计缺失均为 0。
+- Windows Release 构建及 16 项本地化测试通过；未进行本次合并后的交互界面人工验收。
+- 全量测试为 21/22 通过：同步测试用合成 RSZ 注册表以满足新版 RE-Engine-Lib 的 `via.Prefab` 必需类查询；仍失败的 `ResourceManager_BundleFileLoadFailure_RecoversFromBaseFileAndDiff` 与上方 2026-09-07 记录的是同一既有问题。
+
 ## Git 远程
 
 - `origin`: https://github.com/yequ172672/REE-Content-Editor-cn.git
 - `upstream`: https://github.com/kagenocookie/REE-Content-Editor
-- 本地 `master` 跟踪 `origin/master`。保留原始历史及子模块固定版本。
+- 当前汉化分支为 `yequ/complete-simplified-chinese-localization`，跟踪 origin 的同名分支。保留原始历史及子模块固定版本。

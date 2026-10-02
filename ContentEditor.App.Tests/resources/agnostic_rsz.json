@@ -65,5 +65,13 @@
             { "name": "Resource", "type": "Resource", "size": 4, "align": 4, "original_type": "via.physics.RequestSetColliderResourceHolder" }
         ],
         "name": "via.physics.RequestSetCollider.RequestSetGroup"
+    },
+    "9": {
+        "crc": "9",
+        "fields": [
+            { "name": "Standby", "type": "Bool", "size": 1, "align": 1 },
+            { "name": "Path", "type": "String", "size": 4, "align": 4 }
+        ],
+        "name": "via.Prefab"
     }
 }

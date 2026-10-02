@@ -47,7 +47,7 @@ Some files may not fully work for RE ENGINE games marked with an asterisk. Due t
 
 ## Setup - Windows
 - Install the .NET Desktop Runtime 10 or newer (https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
-- Download the latest [release](https://github.com/kagenocookie/REE-Content-Editor/releases) or [debug](https://github.com/kagenocookie/REE-Content-Editor/actions) build `ContentEditor-win64.zip` (a GitHub account is required to download the debug builds)
+- Download the latest [release](https://github.com/kagenocookie/REE-Content-Editor/releases) or [debug](https://github.com/kagenocookie/REE-Content-Editor/actions?query=branch%3Amaster) build `ContentEditor-win64.zip` (a GitHub account is required to download the debug builds)
 - Launch `ContentEditor.App.exe`
 - Usage guides are available on [the wiki](https://github.com/kagenocookie/REE-Content-Editor/wiki), these will be updated as new features are added and improved
 
