@@ -65,11 +65,11 @@ classes:
   app.SuddenQuestContextData:
     to_string: "Event context data {_SerialNum}"
     fields:
-      _SerialNum: { readOnly: true }
+      _SerialNum: { read_only: true }
   app.DomainQueryGenerateTable.DomainQueryGenetateTableElement:
     to_string: "Generate table {_RequestID:enum(app.DomainQueryGenerateRequestID)}"
     fields:
-      _RequestID: { readOnly: true }
+      _RequestID: { read_only: true }
   app.SuddenQuestSelectData.SelectData:
     to_string: "SelectData {_Key:entity(EventContext)}"
     fields:

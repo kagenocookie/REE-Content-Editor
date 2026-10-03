@@ -150,8 +150,8 @@ classes:
   app.FacewearSwapItem:
     to_string: "{class_shortname} {_Style:enum(app.FacewearStyle)} {_Gender:enum(app.Gender)}"
     fields:
-      _Style: { readOnly: true }
-      _Gender: { readOnly: true }
+      _Style: { read_only: true }
+      _Gender: { read_only: true }
       _MeshID: { enum: FacewearMesh, label: Mesh }
       _SkinID: { enum: FacewearSkin, label: Skin }
       _PartsEnable: { default: 1072694271 }

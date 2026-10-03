@@ -138,8 +138,8 @@ classes:
   app.MantleSwapItem:
     to_string: "{class_shortname} {_MantleStyle:enum(app.MantleStyle)} {_Gender:enum(app.Gender)}"
     fields:
-      _MantleStyle: { readOnly: true }
-      _Gender: { readOnly: true }
+      _MantleStyle: { read_only: true }
+      _Gender: { read_only: true }
       _MeshID: { enum: MantleMesh, label: Mesh }
       _SkinID: { enum: MantleSkin, label: Skin }
       _PartsEnable: { default: 15363 }

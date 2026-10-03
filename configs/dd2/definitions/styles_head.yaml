@@ -131,13 +131,13 @@ classes:
   app.HeadMeshSwapItem:
     to_string: "{class_shortname} {_Species:enum(app.Species)} {_Gender:enum(app.Gender)}"
     fields:
-      _Species: { readOnly: true }
-      _Gender: { readOnly: true }
-      _HeadStyle: { readOnly: true }
+      _Species: { read_only: true }
+      _Gender: { read_only: true }
+      _HeadStyle: { read_only: true }
       _MeshID: { enum: HeadMesh }
   app.HeadSkinSwapItem:
     to_string: "{class_shortname} {_Species:enum(app.Species)} {_Gender:enum(app.Gender)}"
     fields:
-      _Species: { readOnly: true }
-      _Gender: { readOnly: true }
+      _Species: { read_only: true }
+      _Gender: { read_only: true }
       _SkinID: { enum: HeadSkin }

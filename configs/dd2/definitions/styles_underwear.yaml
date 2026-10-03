@@ -85,7 +85,7 @@ classes:
   app.UnderwearSwapItem:
     to_string: "{class_shortname} {_Style:enum(app.UnderwearStyle)} {_Gender:enum(app.Gender)}"
     fields:
-      _Style: { readOnly: true }
-      _Gender: { readOnly: true }
+      _Style: { read_only: true }
+      _Gender: { read_only: true }
       _MeshID: { enum: UnderwearMesh, label: Mesh }
       _SkinID: { enum: UnderwearSkin, label: Skin }

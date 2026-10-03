@@ -241,8 +241,8 @@ classes:
   app.PantsSwapItem:
     to_string: "{class_shortname} {_PantsStyle:enum(app.PantsStyle)} {_Gender:enum(app.Gender)}"
     fields:
-      _PantsStyle: { readOnly: true }
-      _Gender: { readOnly: true }
+      _PantsStyle: { read_only: true }
+      _Gender: { read_only: true }
       _LgMeshID: { enum: PantsLgMesh, label: Leg Mesh }
       _LgSkinID: { enum: PantsLgSkin, label: Leg Skin }
       _LgSubMeshID: { enum: PantsLgMesh, label: Leg Sub Mesh }

@@ -86,6 +86,6 @@ classes:
   app.HairSwapItem:
     to_string: "{class_shortname} {_HairStyle:enum(app.HairStyle)}"
     fields:
-      _HairStyle: { readOnly: true }
+      _HairStyle: { read_only: true }
       _MeshID: { enum: HairMesh, label: Mesh }
       _SkinID: { enum: HairSkin, label: Skin }

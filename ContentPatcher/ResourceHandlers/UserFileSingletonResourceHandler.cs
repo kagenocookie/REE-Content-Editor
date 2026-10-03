@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using ReeLib;
+using ReeLib.Common;
 
 namespace ContentPatcher;
 
@@ -9,7 +10,7 @@ public class UserFileSingletonResourceHandler : ResourceHandler, IResourceHandle
     public static ResourceHandler Deserialize(ResourceConfig resource, ResourceConfigSerialized data, ContentWorkspace workspace)
     {
         return new UserFileSingletonResourceHandler() {
-            Files = [data.SingleFile],
+            Files = data.TargetFiles.ToList(),
             Config = resource
         };
     }
@@ -18,11 +19,20 @@ public class UserFileSingletonResourceHandler : ResourceHandler, IResourceHandle
 
     public override void ReadResources(ContentWorkspace workspace, Dictionary<long, IContentResource> dict)
     {
-        var filepath = Files[0];
-        var userfile = workspace.ResourceManager.GetFileContents<UserFile>(filepath);
+        foreach (var filepath in Files) {
+            var userfile = workspace.ResourceManager.GetFileContents<UserFile>(filepath);
 
-        var instance = userfile.Instance!;
-        dict[0] = new RSZObjectResource(Config, instance, filepath);
+            var instance = userfile.Instance!;
+            long id;
+            if (Files.Count == 1) {
+                id = 0;
+            } else if (Config.IDGenerator != null) {
+                id = Config.IDGenerator.GetID(instance);
+            } else {
+                id = MurMur3HashUtils.GetHashLower(filepath);
+            }
+            dict[id] = new RSZObjectResource(Config, instance, filepath);
+        }
     }
 
     public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data, ResourceEntity? entity)

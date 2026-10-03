@@ -18,3 +18,13 @@ classes:
     to_string: "Ch230TalkData Voice={_Voice}"
   app.NpcTalkForbiddenData:
     to_string: "NpcTalkForbiddenData {_CharaID}"
+  app.TalkEventDialogueUserData.DefaultSegment:
+    to_string: "Talk Segment {_SegmentName}"
+    auto_expand: false
+  app.TalkEventDialogueUserData.ChoiceSegment:
+    to_string: "Choice Segment {_SegmentName}"
+    auto_expand: false
+  app.TalkEventDialogueUserData.Dialogue:
+    to_string: "Dialogue [{_SpeakerId:enum(app.CharacterID)}]: {_MsgId:translate()}"
+  app.TalkEventDialogueCatalog.DialoguePack:
+    to_string: "DialoguePack {_QuestId:enum(app.QuestDefine.ID)}"

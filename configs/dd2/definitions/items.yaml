@@ -182,7 +182,7 @@ entities:
             tooltip: Enter a name for the weapon ID. This should be unique across all weapons.
             initial: "{id:enum(app.WeaponID)}"
             diffable: false
-            readOnly: true
+            read_only: true
             unique_enum: app.WeaponID
     runtime_mapping:
       runtime_type: weapon
@@ -225,7 +225,7 @@ classes:
   app.ItemDataParam:
     to_string: "Item Data {_Id}"
     fields:
-      _Id: { readOnly: true }
+      _Id: { read_only: true }
       _ModelId: { enum: WorldModel }
       _Attr: { enum: app.ItemAttrBits }
       _FakeItemId: { enum: ItemData }
@@ -233,16 +233,16 @@ classes:
       _UseAttr: { enum: app.ItemUseAttrBits }
   app.ItemWeaponParam:
     fields:
-      _Id: { readOnly: true }
+      _Id: { read_only: true }
       _ModelId: { enum: WorldModel }
       _Attr: { enum: app.ItemAttrBits }
       _Job: { enum: ce.ItemJobFlags }
       _WeaponId: { enum: Weapon }
   app.ItemArmorParam:
     fields:
-      _Id: { readOnly: true }
+      _Id: { read_only: true }
       _ModelId: { enum: WorldModel }
-      _EquipCategory: { readOnly: true } # read-only to prevent mismatched object types
+      _EquipCategory: { read_only: true } # read-only to prevent mismatched object types
       _Attr: { enum: app.ItemAttrBits }
       _Job: { enum: ce.ItemJobFlags }
       _StyleNo:
@@ -259,14 +259,14 @@ classes:
     to_string: ArmorEnhanceParam {_Type:enum(app.EnhanceType)} {_EnhanceNo}
     fields:
       _Type: { enum: app.EnhanceType }
-      _ItemId: { enum: ItemData, readOnly: true }
+      _ItemId: { enum: ItemData, read_only: true }
       _NeedItemId0: { enum: ItemData }
       _NeedItemId1: { enum: ItemData }
   app.WeaponEnhanceParam:
     to_string: WeaponEnhanceParam {_Type:enum(app.EnhanceType)} {_EnhanceNo}
     fields:
       _Type: { enum: app.EnhanceType }
-      _ItemId: { enum: ItemData, readOnly: true }
+      _ItemId: { enum: ItemData, read_only: true }
       _NeedItemId0: { enum: ItemData }
       _NeedItemId1: { enum: ItemData }
   app.ItemMixParam:
@@ -280,7 +280,7 @@ classes:
       _Num: { default: 1 }
   app.ItemMixMaterialParam:
     fields:
-      _ItemID: { enum: ItemData, readOnly: true }
+      _ItemID: { enum: ItemData, read_only: true }
   app.ItemMixMaterialParam.CombineData:
     fields:
       _PairList: { label: Items, enum: ItemData, tooltip: Combining with any item from this list will create the combine item }

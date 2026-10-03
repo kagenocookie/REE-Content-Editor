@@ -178,11 +178,11 @@ classes:
   app.charaedit.ch000.EditDataTable.Data:
     to_string: "EditDataTable Character={_CharacterID:enum(app.CharacterID)}"
     fields:
-      _CharacterID: { readOnly: true }
+      _CharacterID: { read_only: true }
   app.CharacterData:
     to_string: "{ID:enum_name(app.CharacterID)} {NameID:translate()}"
     fields:
-      ID: { readOnly: true }
+      ID: { read_only: true }
       Present: { enum: ItemData }
       _SubSkillPresent: { enum: ItemData }
       _ItemSteal: { enum: ItemData }

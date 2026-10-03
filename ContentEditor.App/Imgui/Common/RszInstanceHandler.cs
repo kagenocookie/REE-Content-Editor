@@ -431,7 +431,7 @@ public class InstancePickerHandler<T>(bool allowNull, Func<UIContext, bool, IEnu
 
 public class NestedRszInstanceHandler : IObjectUIHandler
 {
-    public bool ForceDefaultClose { get; set; }
+    public bool? ForceAutoExpand { get; set; }
     private bool _wasInit = false;
     private readonly string? classname;
 
@@ -482,7 +482,7 @@ public class NestedRszInstanceHandler : IObjectUIHandler
             // no point in showing it in the UI - at least until we add subclass selection
             return;
         }
-        if (!ForceDefaultClose && instance.Fields.Length <= AppConfig.Instance.AutoExpandFieldsCount) {
+        if (ForceAutoExpand == true || ForceAutoExpand == null && instance.Fields.Length <= AppConfig.Instance.AutoExpandFieldsCount) {
             ImGui.SetNextItemOpen(true, ImGuiCond.FirstUseEver);
         }
         var show = ShowTree(context, instance);
@@ -543,8 +543,15 @@ public class ArrayRSZHandler : BaseListHandler
     {
         var ctx = WindowHandlerFactory.CreateListElementContext(context, elementIndex);
         WindowHandlerFactory.CreateRSZFieldElementHandler(ctx, _field);
-        if (list.Count > 300 && ctx.uiHandler is NestedRszInstanceHandler lazy) {
-            lazy.ForceDefaultClose = true;
+        if (ctx.uiHandler is NestedRszInstanceHandler lazy) {
+            if (list.Count > 300) {
+                lazy.ForceAutoExpand = false;
+            } else {
+                var ccfg = context.GetWorkspace()?.Config.GetClassConfig(ctx.Get<RszInstance>().RszClass.name);
+                if (ccfg != null && ccfg.ForceAutoExpand != null) {
+                    lazy.ForceAutoExpand = ccfg.ForceAutoExpand.Value;
+                }
+            }
         }
         return ctx;
     }

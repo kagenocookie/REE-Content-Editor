@@ -141,9 +141,9 @@ For any spawn related data editing, my [anatomically accurate map](https://kagen
 #### Custom entities:
 - Full custom item support (the [runtime Content Editor](https://github.com/kagenocookie/dd2-content-editor) is also required for custom icon display and style lookup import)
 - Shop modifications
-- Weather parameters
+- Weather parameters and schedules
 - NPC appearance and costume parameters
-- Events
+- Events (sudden quests)
 - Quest data (partial)
 - Job and skill metadata
 

@@ -142,6 +142,10 @@
           "flags_enum": {
             "description": "Force override the IsFlags setting (represents multiple bit-masked values) for an enum. It's usually auto-detected correctly but on the off chance, this can be used there.",
             "type": "boolean"
+          },
+          "auto_expand": {
+            "description": "Force override the auto-expand setting for this class in the UI.",
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -164,8 +168,12 @@
           "description": "Enum to use as fallback for translation when GUID translation fails.",
           "type": "string"
         },
-        "readOnly": {
+        "read_only": {
           "description": "Whether this field should be read-only in the UI.",
+          "type": "boolean"
+        },
+        "auto_expand": {
+          "description": "Whether this field should automatically expand (applicable to arrays).",
           "type": "boolean"
         },
         "tooltip": {
@@ -467,7 +475,7 @@
           "enum": ["string-input", "id-enum-input"]
         },
         "field": {
-          "description": "The field name to store this action's data in",
+          "description": "The field name to store this action's data in the dialog's JSON data. Does not have to match an entity's field.",
           "type": "string"
         }
       },

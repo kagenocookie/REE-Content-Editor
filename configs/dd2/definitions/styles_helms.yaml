@@ -214,8 +214,8 @@ classes:
   app.HelmSwapItem:
     to_string: "{class_shortname} {_HelmStyle:enum(app.HelmStyle)} {_Gender:enum(app.Gender)}"
     fields:
-      _HelmStyle: { readOnly: true }
-      _Gender: { readOnly: true }
+      _HelmStyle: { read_only: true }
+      _Gender: { read_only: true }
       _MeshID: { enum: HelmMesh }
       _SkinID: { enum: HelmSkin }
       _SubMeshID: { enum: HelmMesh }

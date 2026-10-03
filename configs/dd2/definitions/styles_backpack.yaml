@@ -116,8 +116,8 @@ classes:
   app.BackpackSwapItem:
     to_string: "{class_shortname} {_BackpackStyle:enum(app.BackpackStyle)} {_Gender:enum(app.Gender)}"
     fields:
-      _BackpackStyle: { readOnly: true }
-      _Gender: { readOnly: true }
+      _BackpackStyle: { read_only: true }
+      _Gender: { read_only: true }
       _MeshID: { enum: BackpackMesh, label: Mesh }
       _SkinID: { enum: BackpackSkin, label: Skin }
       _PartsEnable: { default: 3 }

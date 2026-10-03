@@ -41,5 +41,5 @@ classes:
   app.TattooSwapItem:
     to_string: "{class_shortname} {_Style:enum(app.TattooStyle)}"
     fields:
-      _Style: { readOnly: true }
+      _Style: { read_only: true }
       _TextureID: { enum: TattooTexture }

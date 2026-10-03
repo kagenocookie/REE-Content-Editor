@@ -226,6 +226,7 @@ public class PatchConfig(string filepath)
                 runtimeConfig.StringFormatter = new StringFormatter(config.To_String, fmt);
             }
 
+            runtimeConfig.ForceAutoExpand = config.AutoExpand;
             if (config.IsFlagsEnum != null) {
                 var desc = workspace.Env.TypeCache.GetEnumDescriptor(cls);
                 desc.IsFlags = config.IsFlagsEnum.Value;

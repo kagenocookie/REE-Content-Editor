@@ -479,6 +479,10 @@ public static class WindowHandlerFactory
     public static IObjectUIHandler CreateRSZFieldHandler(UIContext context, RszField field)
     {
         if (field.array) {
+            var fieldConfig = context.GetWorkspace()?.Config.GetClassFieldConfig((context.parent?.GetRaw() as RszInstance)?.RszClass.name ?? "", field.name);
+            if (fieldConfig != null && fieldConfig.AutoExpand) {
+                return context.uiHandler = new ArrayRSZHandler(field) { AutoExpand = true };
+            }
             return context.uiHandler = new ArrayRSZHandler(field);
         }
         return CreateRSZFieldElementHandler(context, field);
@@ -845,6 +849,12 @@ public static class WindowHandlerFactory
             }
         }
 
+        if (context.uiHandler is NestedRszInstanceHandler lazy) {
+            var ccfg = ws?.Config.GetClassConfig(instance.RszClass.name);
+            if (ccfg?.ForceAutoExpand != null) {
+                lazy.ForceAutoExpand = ccfg.ForceAutoExpand.Value;
+            }
+        }
         AddRszInstanceFieldChildren(instance, context, 0);
     }
 

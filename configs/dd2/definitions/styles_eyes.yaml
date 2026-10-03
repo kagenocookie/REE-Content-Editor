@@ -91,12 +91,12 @@ classes:
   app.EyeLeftSwapItem:
     to_string: "{class_shortname} {_EyeStyle:enum(app.EyeStyle)}"
     fields:
-      _EyeStyle: { readOnly: true }
+      _EyeStyle: { read_only: true }
       _TextureID: { enum: EyeTexture }
       _ParallaxID: { enum: EyeParallax }
   app.EyeRightSwapItem:
     to_string: "{class_shortname} {_EyeStyle:enum(app.EyeStyle)}"
     fields:
-      _EyeStyle: { readOnly: true }
+      _EyeStyle: { read_only: true }
       _TextureID: { enum: EyeTexture }
       _ParallaxID: { enum: EyeParallax }

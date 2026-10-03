@@ -41,5 +41,5 @@ classes:
   app.ScarSwapItem:
     to_string: "{class_shortname} {_Style:enum(app.ScarStyle)}"
     fields:
-      _Style: { readOnly: true }
+      _Style: { read_only: true }
       _TextureID: { enum: ScarTexture }

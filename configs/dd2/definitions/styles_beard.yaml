@@ -95,7 +95,7 @@ classes:
   app.BeardSwapItem:
     to_string: "{class_shortname} {_BeardStyle:enum(app.BeardStyle)}"
     fields:
-      _BeardStyle: { readOnly: true }
+      _BeardStyle: { read_only: true }
       _MeshID: { enum: BeardMesh }
       _SkinID: { enum: BeardSkin }
       _TextureID: { enum: BeardTexture }

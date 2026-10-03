@@ -14,14 +14,17 @@ public class ClassConfig
 
 
     public StringFormatter? StringFormatter { get; set; }
+    public bool? ForceAutoExpand { get; set; }
 }
 
-[YamlObject]
+[YamlObject(NamingConvention.SnakeCase)]
 public partial class ClassConfigSerialized
 {
     public Dictionary<string, ClassFieldConfig>? Fields { get; set; }
     [YamlMember("to_string")]
     public string? To_String { get; set; }
+
+    public bool? AutoExpand { get; set; }
 
     [YamlMember("flags_enum")]
     public bool? IsFlagsEnum { get; set; }
@@ -62,7 +65,7 @@ public partial class ClassConfigSerialized
     }
 }
 
-[YamlObject]
+[YamlObject(NamingConvention.SnakeCase)]
 public partial class ClassFieldConfig
 {
     public string? Enum { get; set; }
@@ -71,6 +74,7 @@ public partial class ClassFieldConfig
     public string? TranslateGuid { get; set; }
     public string? TranslateFallbackEnum { get; set; }
     public string? Handler { get; set; }
+    public bool AutoExpand { get; set; }
     public bool ReadOnly { get; set; }
 
     [YamlMember("default")]

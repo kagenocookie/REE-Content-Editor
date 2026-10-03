@@ -1,10 +1,13 @@
 # TODO natives/stm/appsystem/ai/situation/generateparameter/rootquestsituationparam.user.2
 # TODO integrate quest scene resource -- natives/stm/appsystem/scene/quest.scn.20
-# TODO integrate title from linked quest log resource into label
 
 entities:
   quests.quest_data:
     to_string: "Quest {id}: {quest_log?._Resource?.file?._Title?:translate()}"
+    enums:
+      - name: app.QuestDefine.ID
+        format: "qu{id:D06}"
+        primary: true
     zero_entity:
       id: -1
     fields:
@@ -48,6 +51,12 @@ entities:
         type: object-catalog
         file: AppSystem/Catalog/MainContents/UserData/QuestLogCatalog.user
         classname: app.QuestLogCatalog.Item
+    - name: talk_events
+      resource:
+        id: [_QuestId]
+        type: item-list-catalog
+        classname: app.TalkEventDialogueCatalog.DialoguePack
+        file: Event/TalkEvent/TalkEventDialogueCatalog.user
 
 classes:
   app.QuestContextData.ContextData:
@@ -80,4 +89,4 @@ classes:
   app.QuestVariable:
     to_string: "Variable {_SerialNumber} ({_NameHash}): {_Variable.class_shortname}"
   app.QuestAfterStoryData.CheckVariable:
-    to_string: "qu{_Condition._QuestID}.[{_Condition._NameHash}] {_Condition._CompareType:enum(app.CompareType)} {_Condition._ValueType:enum(app.QuestVariableBase.ValueTypeEnum)} {_Condition._IntValue}/{_Condition._BoolValue}"
+    to_string: "qu{_Condition._QuestID:D06}.[{_Condition._NameHash}] {_Condition._CompareType:enum(app.CompareType)} {_Condition._ValueType:enum(app.QuestVariableBase.ValueTypeEnum)} {_Condition._IntValue}/{_Condition._BoolValue}"

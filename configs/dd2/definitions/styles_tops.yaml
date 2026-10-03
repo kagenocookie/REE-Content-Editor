@@ -413,8 +413,8 @@ classes:
   app.TopsSwapItem:
     to_string: "{class_shortname} {_TopsStyle:enum(app.TopsStyle)} {_Gender:enum(app.Gender)}"
     fields:
-      _TopsStyle: { readOnly: true }
-      _Gender: { readOnly: true }
+      _TopsStyle: { read_only: true }
+      _Gender: { read_only: true }
       _BdMeshID: { enum: TopsBdMesh, label: Body Mesh }
       _BdSkinID: { enum: TopsBdSkin, label: Body Skin }
       _BdSubMeshID: { enum: TopsBdMesh, label: Body Sub Mesh }
