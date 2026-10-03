@@ -202,7 +202,11 @@ public class BundleManagementUI : IWindowHandler
 
                 ImGui.SameLine();
                 if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderOpenFileExplorer, [Colors.IconSecondary, Colors.IconPrimary ])) {
-                    FileSystemUtils.ShowFileInExplorer(bundleManager.ResolvePathToBundleFile(selectedBundle!, ""));
+                    if (Directory.Exists(selectedBundle!.StoragePath)) {
+                        FileSystemUtils.ShowFileInExplorer(selectedBundle.StoragePath);
+                    } else if (File.Exists(selectedBundle.RuntimeBundle?.StoragePath)) {
+                        FileSystemUtils.ShowFileInExplorer(selectedBundle.RuntimeBundle.StoragePath);
+                    }
                 }
                 ImguiHelpers.Tooltip(Lang.Bundles.OpenCurrentBundleFolder);
 
