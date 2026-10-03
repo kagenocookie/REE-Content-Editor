@@ -344,7 +344,7 @@ public class PatchConfig(string filepath)
             PrimaryEnum = entity.Enums?.FirstOrDefault(e => e.primary),
             // Enums = Enums?.Where(e => !e.primary).ToArray(),
             Enums = entity.Enums?.ToArray(),
-            ZeroEntity = entity.ZeroEntity,
+            SourceConfig = entity,
         };
         if (entity.To_String != null) {
             config.StringFormatter = new StringFormatter(entity.To_String, FormatterSettings.CreateFullEntityFormatter(config, workspace));
@@ -432,7 +432,6 @@ public class PatchConfig(string filepath)
             field.Condition = EntityPropertyAnyCondition.Deserialize(data.multiConditionsAny, field.name);
         }
         field.IsRequired = data.isRequired;
-        field.IsNotStandaloneValue = data.isNotStandalone;
         return field;
     }
 
@@ -445,7 +444,6 @@ public class PatchConfig(string filepath)
 public partial class SerializedPatchConfig
 {
     public Dictionary<string, EntityConfigSerialized>? Entities { get; set; }
-    // public Dictionary<string, CustomTypeConfigSerialized>? Types { get; set; }
     public Dictionary<string, ClassConfigSerialized>? Classes { get; set; }
     public Dictionary<string, ResourceConfigSerialized>? Resources { get; set; }
 }

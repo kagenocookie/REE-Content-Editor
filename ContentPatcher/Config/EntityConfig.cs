@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using ContentEditor;
 using ContentEditor.Core;
 using ContentEditor.Editor;
 using ContentPatcher.StringFormatting;
@@ -19,8 +20,11 @@ public class EntityConfig(string name)
     public EntityField[] DisplayFieldsOrder { get; set; } = [];
     public EntityEnumInfo? PrimaryEnum { get; init; }
     public EntityEnumInfo[]? Enums { get; init; }
-    public ZeroEntity? ZeroEntity { get; set; }
+    public List<IObjectUIHandler>? BeforeCreate { get; set; }
+    public ZeroEntity? ZeroEntity => SourceConfig.ZeroEntity;
     public StringFormatter? StringFormatter { get; set; }
+
+    public required EntityConfigSerialized SourceConfig { get; init; }
 
     public bool AllowCreateEmpty { get; set; }
     public bool AllowTemplates { get; set; }
@@ -47,6 +51,7 @@ public partial class EntityConfigSerialized
     public string? PrimaryField { get; set; }
 
     public ZeroEntity? ZeroEntity { get; set; }
+    public List<Dictionary<string, object>>? BeforeCreate { get; set; }
 
     public bool? AllowCreateEmpty { get; set; }
     public bool? AllowTemplates { get; set; }
@@ -78,8 +83,7 @@ public partial class EntityFieldConfig
     [YamlMember("required")]
     public bool isRequired;
     public string? displayAfter;
-    [YamlMember("not_standalone")]
-    public bool isNotStandalone;
+    public string? displayType;
 
     public EntityProperty? fieldId;
 
@@ -145,6 +149,9 @@ public partial class EntityEnumInfo
         if (string.IsNullOrEmpty(curLabel)) {
             var valueJson = JsonSerializer.SerializeToElement(value);
             curLabel = GetFormattedLabel(entity);
+            if (string.IsNullOrEmpty(curLabel)) {
+                return;
+            }
             desc.AddValue(curLabel, valueJson);
         }
         desc.SetDisplayLabel(curLabel, entity.Label);

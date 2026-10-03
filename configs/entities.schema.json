@@ -48,6 +48,13 @@
             },
             "required": ["id"]
           },
+          "before_create": {
+            "description": "List of user actions / inputs required before creating a new instance of an entity, whether via duplication, a template or a completely blank one.",
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/entityBeforeCreateAction"
+            }
+          },
           "allow_templates": {
             "description": "Allow management and creation of this entity type through templates.",
             "type": "boolean"
@@ -224,24 +231,27 @@
           "type": "object",
           "properties": {
             "field": {
-              "description": "Field name in the entity.",
+              "description": "Entity field name to fetch the value from.",
               "type": "string"
             },
             "path": {
-              "description": "Path within the resource object for ID lookup.",
+              "description": "Path within the target field or entity to use for the ID.",
               "type": "string"
             },
-            "value": {
-              "description": "Literal value to use as ID when no field is specified.",
-              "type": ["string", "integer", "boolean", "number"]
+            "format": {
+              "description": "Custom format to execute on top of the fetched value.",
+              "type": "string"
             }
           },
-          "required": ["field", "path"],
           "additionalProperties": false
         },
         "required": {
           "description": "Whether this field is required when creating a new entity. If required, it will be auto-created for every new entity.",
           "type": "boolean"
+        },
+        "display_type": {
+          "description": "Force a specific UI display type.",
+          "type": "string"
         },
         "display_after": {
           "description": "Field name to wait for before displaying this field in the UI. Used for conditional field ordering.",
@@ -360,14 +370,6 @@
           "description": "The file format type to use for this resource when applicable. Matches RE-Engine-Lib's KnownFileFormats enum in camelCase.",
           "type": "string"
         },
-        "parent_resource": {
-          "description": "The parent resource type. Denotes that this resource relies on another resource existing and inherits its ID from the parent.",
-          "type": "string"
-        },
-        "not_standalone": {
-          "description": "If true, resource will be hidden from the Resources window and can only be edited through an entity.",
-          "type": "boolean"
-        },
         "enums": {
           "description": "Custom enum definitions for this resource type.",
           "type": "array",
@@ -397,12 +399,8 @@
           "description": "Regex pattern for generating translation keys from field values.",
           "type": "string"
         },
-        "regexDescription": {
+        "regex_description": {
           "description": "Tooltip explaining the regex pattern for string fields.",
-          "type": "string"
-        },
-        "regexDescriptionFormat": {
-          "description": "SmartFormat string for customizing regexDescription. Uses {params} placeholder.",
           "type": "string"
         },
         "tooltip": {
@@ -457,6 +455,23 @@
           "required": ["field"]
         }
       },
+      "additionalProperties": true
+    },
+    "entityBeforeCreateAction": {
+      "description": "User action to require when creating an entity.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "Type of action",
+          "type": "string",
+          "enum": ["string-input"]
+        },
+        "field": {
+          "description": "The target entity field name when applicable",
+          "type": "string"
+        }
+      },
+      "required": ["type"],
       "additionalProperties": true
     },
     "enumInfo": {

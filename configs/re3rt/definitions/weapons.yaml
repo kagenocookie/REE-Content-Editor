@@ -43,7 +43,7 @@ entities:
           type: string
           params:
             regex: "^WP[0-9_]{4}$"
-            regexDescription: "Example: WP0123"
+            regex_description: "Example: WP0123"
             tooltip: Enter a code name for the weapon. This should be unique across all weapons and is used for enum entries.
             initial: "{id:enum(offline.EquipmentDefine.WeaponType)}"
         display_after: start

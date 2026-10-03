@@ -19,5 +19,6 @@ public static partial class Lang
         public static readonly FixedString OpenInNewWindow = "Open entity in separate window";
         public static readonly FixedString EntityNotFound = "Selected entity could not be found";
         public static readonly FixedString ShowActiveBundleOnly = "Show only active bundle entities";
+        public static readonly FixedString NewEntityInputTitle = "New Entity Data Setup";
     }
 }

@@ -1,5 +1,7 @@
 using System.Numerics;
+using System.Text.Json.Nodes;
 using ContentEditor.App.ImguiHandling;
+using ContentEditor.App.Widgets;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
@@ -51,6 +53,15 @@ public class EntitySelection : IWindowHandler
         set => data.SetPersistentData("selectedEntity", value);
     }
 
+    private class CreateData(EntityConfig config, JsonObject data, string type, UIContext parentContext)
+    {
+        public DynamicInputHandler? handler = WindowHandlerFactory.CreateNewEntityDynamicInputs(config, data, parentContext);
+        public JsonObject data = data;
+        public string type = type;
+    }
+
+    private CreateData? createData;
+
     public void OnWindow() => this.ShowDefaultWindow(context);
     public void OnIMGUI()
     {
@@ -83,29 +94,26 @@ public class EntitySelection : IWindowHandler
         if (canCreate) {
             ImGui.BeginDisabled(workspace.CurrentBundle == null || selected == null);
             if (ImGui.Button($"{AppIcons.SI_Copy}") && selected != null) {
-                selected = workspace.ResourceManager.CreateEntity(selected.Type, selected.ToJson(workspace.Env));
-                data.Context.children.Clear();
-                SelectedEntityId = selected.Id;
-                showCreateSettings = false;
-                if (data.Context.GetChildByValue<string>() == null) {
-                    data.Context.AddChild(Lang.Buttons.Rename, selected.Label);
-                }
+                var baseJson = selected.GetDataJson(workspace.Env);
+                // var handler = WindowHandlerFactory.CreateNewEntityDynamicInputs(selected.Config, baseJson);
+                createData = new CreateData(selected.Config, baseJson, selected.Type, data.Context);
             }
             ImguiHelpers.Tooltip(Lang.Buttons.Duplicate);
             ImGui.EndDisabled();
             ImGui.SameLine();
-        }
 
-        bool doCreate = false;
-        if (canCreate && entityConfig != null) {
-            if (entityConfig.AllowTemplates) {
-                ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericAdd}", ref showCreateSettings, Colors.IconActive);
-            } else {
-                showCreateSettings = false;
-                doCreate = ImGui.Button($"{AppIcons.SI_GenericAdd}");
+            if (entityConfig != null) {
+                if (entityConfig.AllowTemplates) {
+                    ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericAdd}", ref showCreateSettings, Colors.IconActive);
+                } else {
+                    showCreateSettings = false;
+                    if (ImGui.Button($"{AppIcons.SI_GenericAdd}")) {
+                        createData = new CreateData(entityConfig, new JsonObject(), entityType, data.Context);
+                    }
+                }
+                ImguiHelpers.Tooltip(Lang.Buttons.Create);
+                ImGui.SameLine();
             }
-            ImguiHelpers.Tooltip(Lang.Buttons.Create);
-            ImGui.SameLine();
         }
 
         if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
@@ -119,7 +127,6 @@ public class EntitySelection : IWindowHandler
         if (ImguiHelpers.FilterableEntityCombo(Lang.Entities.Entity, instances, ref selectedId, ref data.Context.Filter)) {
             SelectedEntityId = selectedId;
             // note: we can clear children safely, any changes are still stored in the resource manager
-            // just gotta figure out how to keep those changes tracked in bundle
             data.Context.ClearChildren();
             selected = selectedId == -1 ? null : workspace.ResourceManager.GetActiveEntityInstance(entityType, selectedId);
         }
@@ -178,27 +185,36 @@ public class EntitySelection : IWindowHandler
 
             if (selectedCreateTemplate == null) {
                 using var _ = ImguiHelpers.Disabled(!entityConfig.AllowCreateEmpty);
-                doCreate = ImGui.Button(Lang.Buttons.CreateWithIcon) && entityConfig.AllowCreateEmpty;
+                if (ImGui.Button(Lang.Buttons.CreateWithIcon) && entityConfig.AllowCreateEmpty) {
+                    createData = new CreateData(entityConfig, new JsonObject(), entityType, data.Context);
+                }
                 if (!entityConfig.AllowCreateEmpty && entityConfig.AllowTemplates) {
                     ImGui.SameLine();
                     ImGui.TextColored(Colors.Note, Lang.Entities.EntityCreateBlankDisallowed);
                 }
             } else {
-                doCreate = entityConfig.AllowTemplates && ImGui.Button(Lang.Buttons.CreateWithIcon);
+                if (entityConfig.AllowTemplates && ImGui.Button(Lang.Buttons.CreateWithIcon)) {
+                    createData = new CreateData(entityConfig, selectedCreateTemplate.Data, entityType, data.Context);
+                }
             }
 
             ImguiHelpers.EndRect();
             ImGui.Spacing();
         }
 
-        if (doCreate) {
-            selected = workspace.ResourceManager.CreateEntity(entityType, selectedCreateTemplate?.Data ?? new System.Text.Json.Nodes.JsonObject());
-            SelectedEntityId = selected.Id;
-            workspace.CurrentBundle!.RecordEntity(selected);
-            data.Context.ClearChildren();
-            showCreateSettings = false;
-            if (data.Context.GetChildByValue<string>() == null) {
-                data.Context.AddChild(Lang.Buttons.Rename, selected.Label);
+        if (createData != null) {
+            var dlgResult = createData.handler?.ShowDialog();
+            if (dlgResult == null || dlgResult == DialogBase.DialogResult.Confirm) {
+                selected = workspace.ResourceManager.CreateEntity(createData.type, createData.data);
+                data.Context.ClearChildren();
+                SelectedEntityId = selected.Id;
+                showCreateSettings = false;
+                if (data.Context.GetChildByValue<string>() == null) {
+                    data.Context.AddChild(Lang.Buttons.Rename, selected.Label);
+                }
+            }
+            if (dlgResult == null || dlgResult != DialogBase.DialogResult.None) {
+                createData = null;
             }
         }
 

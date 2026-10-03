@@ -13,6 +13,10 @@ public interface IContentResource
     /// Path to the file containing this resource. Can be null in case it's a resource without a file (e.g. arbitrary entity strings).
     /// </summary>
     string? FileResourcePath { get; }
+    /// <summary>
+    /// Make a clone of this resource. Used to make an active version of a base resource (for diffing / partial patching),
+    /// and when duplicating an existing resource.
+    /// </summary>
     IContentResource Clone();
     JsonNode ToJson(Workspace env);
 }

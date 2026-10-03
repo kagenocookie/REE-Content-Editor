@@ -1,3 +1,4 @@
+using ContentEditor.Core;
 using ContentPatcher;
 
 namespace ContentEditor.App.ImguiHandling.EntityResources;
@@ -31,6 +32,7 @@ public class EntityStringFieldHandler : IObjectUIHandler
         }
 
         var text = data.Text;
+        using var _ = ImguiHelpers.Disabled(field.Field.config.GetParam<bool>("readOnly", false));
         if (ImGui.InputText(context.label, ref text, 512)) {
             data.Text = text;
             context.Changed = true;

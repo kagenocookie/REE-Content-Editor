@@ -49,8 +49,6 @@ public partial class ResourceConfigSerialized
     [YamlMember("custom_id_range")]
     public long[]? CustomIDRange { get; set; }
 
-    public string? ParentResource { get; set; }
-
     public string Type { get; set; } = "";
     public string? File { get; set; }
     public string[]? Files { get; set; }

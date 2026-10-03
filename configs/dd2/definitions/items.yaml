@@ -154,6 +154,9 @@ entities:
     to_string: 'Weapon {id:enum(app.WeaponID)} (#{id}): {id:reverseLookupEntity(ItemData|\{data?._WeaponId@ItemWeaponParam\}|\{label\}|Unknown item)}'
     zero_entity:
       id: 0
+    before_create:
+    - type: string-input
+      field: name
     fields:
       - name: data
         label: Data
@@ -163,6 +166,10 @@ entities:
           type: object-catalog
           classname: app.WeaponCatalogData.Data
           file: AppSystem/Catalog/MainContents/Userdata/WeaponCatalogData.user
+          params:
+            duplicate_assets_on_create: true
+            id_props:
+            - "app.Weapon:ID"
       - name: name
         label: Weapon ID name
         required: true
@@ -170,19 +177,13 @@ entities:
         resource:
           type: string
           params:
-            regex: "^wp[0-9_]+$"
-            regexDescription: "Example: wp00_000"
+            regex: "^wp[0-9_]{2,}_[0-9_]{2,}$"
+            regex_description: "Example: wp00_000_00"
             tooltip: Enter a name for the weapon ID. This should be unique across all weapons.
             initial: "{id:enum(app.WeaponID)}"
             diffable: false
-      - name: prefab
-        label: Weapon prefab
-        required: true
-        field_type: resource_link
-        resource:
-          resource_type: prefab
-          params:
-            path: "{data?.Prefab?.Path}"
+            readOnly: true
+            unique_enum: app.WeaponID
     runtime_mapping:
       runtime_type: weapon
       to_desktop:

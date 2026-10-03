@@ -25,7 +25,7 @@ public class StringCustomField : CustomEntityFieldHandler<StringResource>, IDiff
             Regex = new Regex(pattern);
         }
 
-        RegexDescription = data.GetParam<string>("regexDescription");
+        RegexDescription = data.GetParam<string>("regex_description");
         Tooltip = data.GetParam<string>("tooltip");
         initialFormatString = data.GetParam<string>("initial");
         allowDiff = data.GetParam<bool>("diffable", true);
@@ -48,11 +48,6 @@ public class StringCustomField : CustomEntityFieldHandler<StringResource>, IDiff
             entity.Set(Field.name, currentResource = new StringResource(Field.Config, data.GetValue<string>()));
         }
         return currentResource;
-    }
-
-    public IEnumerable<KeyValuePair<long, IContentResource>> FetchInstances(ResourceManager workspace)
-    {
-        return Field.Config.Type == null ? [] : workspace.GetResourceInstances(Field.Config.Type);
     }
 
     public override StringResource? FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)

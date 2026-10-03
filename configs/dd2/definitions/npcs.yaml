@@ -57,7 +57,7 @@ entities:
           params:
             diffable: false
             regex: "^ch3[0-9_]{5}$"
-            regexDescription: "Example: ch302345"
+            regex_description: "Example: ch302345"
             tooltip: Enter a code name for the NPC. This should be unique across all characters, used for translation keys and file names.
             initial: "{id:enum_name(app.CharacterID)}"
       - name: displayName

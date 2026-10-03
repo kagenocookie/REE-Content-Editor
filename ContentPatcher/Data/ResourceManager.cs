@@ -724,7 +724,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             entity.Set(primaryField.name, primaryResource);
         }
         // update the enums now in case any of the other fields depend on it
-        // it also means that primary enums must rely only on id/primary fields
+        // if the name relies on a non-primary/id field, it'll get retried later
         data.config.PrimaryEnum?.UpdateEnum(workspace, entity);
 
         foreach (var field in data.config.Fields) {
@@ -753,6 +753,8 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
         if (activeBundle != null) {
             activeBundle.Entities.Add(entity);
         }
+        // retry enum update in case the values changed now
+        data.config.PrimaryEnum?.UpdateEnum(workspace, entity);
         return entity;
     }
 

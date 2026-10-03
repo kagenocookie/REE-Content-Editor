@@ -2,10 +2,13 @@ using System.Collections;
 using System.Collections.ObjectModel;
 using System.Numerics;
 using System.Reflection;
+using System.Text.Json.Nodes;
 using ContentEditor.App.FileLoaders;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.ImguiHandling.Chain;
 using ContentEditor.App.ImguiHandling.Mdf2;
+using ContentEditor.App.Widgets;
+using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentEditor.Editor;
 using ContentPatcher;
@@ -96,6 +99,7 @@ public static class WindowHandlerFactory
     private static readonly Dictionary<RszClass, Func<IObjectUIHandler>> classHandlers = new();
     private static readonly Dictionary<string, Func<IObjectUIHandler>> customHandlers = new();
     private static readonly Dictionary<Type, Func<UIContext, object>> instantiators = new();
+    private static readonly Dictionary<string, Func<IObjectUIHandler>> inputHandlers = new();
 
     static WindowHandlerFactory()
     {
@@ -166,6 +170,8 @@ public static class WindowHandlerFactory
 
         var types = typeof(WindowHandlerFactory).Assembly.GetTypes();
         foreach (var type in types) {
+            if (type.IsInterface) continue;
+
             if (type.GetCustomAttribute<RszContextActionAttribute>() != null) {
                 foreach (var method in type.GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)) {
                     var actions = method.GetCustomAttributes<RszContextActionAttribute>();
@@ -223,7 +229,57 @@ public static class WindowHandlerFactory
                     customHandlers[attr.Name] = () => (IObjectUIHandler)Activator.CreateInstance(type)!;
                 }
             }
+
+            if (type.IsAssignableTo(typeof(IDialogInputComponent))) {
+                var attr = type.GetCustomAttribute<DialogInputExtensionAttribute>();
+                if (attr != null) {
+                    inputHandlers[attr.Name] = () => (IDialogInputComponent)Activator.CreateInstance(type)!;
+                }
+            }
         }
+    }
+
+    public static DynamicInputHandler? CreateNewEntityDynamicInputs(EntityConfig entity, JsonObject? initialData, UIContext rootContext)
+    {
+        if (!(entity.SourceConfig.BeforeCreate?.Count > 0)) {
+            return null;
+        }
+
+        if (entity.BeforeCreate == null) {
+            entity.BeforeCreate = new List<IObjectUIHandler>();
+            foreach (var src in entity.SourceConfig.BeforeCreate) {
+                var type = src.GetValueOrDefault("type") as string;
+                var fieldName = src.GetValueOrDefault("field") as string;
+                if (string.IsNullOrEmpty(type) || string.IsNullOrEmpty(fieldName) || !entity.HasField(fieldName)) {
+                    Logger.Warn($"Missing type or field for beforeCreate item in entity type {entity}");
+                    continue;
+                }
+                var field = entity.GetField(fieldName)!;
+
+                if (!inputHandlers.TryGetValue(type, out var hhf)) {
+                    Logger.Warn($"Unknown input handler type {type} for beforeCreate item in entity type {entity}");
+                    continue;
+                }
+
+                var handler = (IDialogInputComponent)hhf.Invoke();
+                handler.Init(src, entity, field);
+                entity.BeforeCreate.Add(handler);
+            }
+        }
+        if (entity.BeforeCreate.Count == 0) return null;
+
+        initialData ??= new JsonObject();
+        var window = EditorWindow.CurrentWindow;
+        var ctx = rootContext.GetChildByValue(initialData) ?? rootContext.AddChild($"New {entity.Name}", initialData);
+        var inputHandler = new DynamicInputHandler(ctx, initialData);
+        foreach (var bc in entity.BeforeCreate) {
+            var inputExt = (IDialogInputComponent)bc;
+            ctx.AddChild<JsonObject, JsonNode>(inputExt.FieldName.PrettyPrint(), initialData, inputExt,
+                getter: data => data![inputExt.FieldName],
+                setter: (data, v) => data[inputExt.FieldName] = v);
+        }
+        if (ctx.children.Count == 0) return null;
+        return inputHandler;
     }
 
     public static void InitClassConfig(ContentWorkspace workspace, ClassConfig config)
@@ -915,6 +971,15 @@ public static class WindowHandlerFactory
 
         if (resource == null) {
             return;
+        }
+
+        if (!string.IsNullOrEmpty(entityField.config.displayType)) {
+            if (customHandlers.TryGetValue(entityField.config.displayType, out var handleFunc)) {
+                context.uiHandler = handleFunc.Invoke();
+                return;
+            } else {
+                Logger.Warn($"Unknown UI Handler type {entityField.config.displayType} for field {entityField}");
+            }
         }
 
         context.uiHandler = CreateUIHandler(resource, resource.GetType());

@@ -31,12 +31,6 @@ public sealed class EntityField
     /// </summary>
     public bool IsRequired { get; set; }
 
-    /// <summary>
-    /// Whether the field can, by its own, be considered enough to create an entity.
-    /// If true, the value will be ignored if we haven't already found another important main field for this ID.
-    /// </summary>
-    public bool IsNotStandaloneValue { get; set; }
-
     public EntityProperty? IdField { get; set; }
 
     public long GetIDForEntity(ResourceEntity entity)

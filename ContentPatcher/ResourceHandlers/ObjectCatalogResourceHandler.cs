@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Json.Nodes;
 using ContentEditor;
 using ReeLib;
+using ReeLib.Common;
 
 namespace ContentPatcher;
 
@@ -67,7 +68,67 @@ public class ObjectCatalogResourceHandler : ResourceHandler, IResourceHandlerSta
         if (Config.Filter is ISettable settable) {
             settable.Set(res);
         }
+
+        if (Config.OriginalConfig?.GetParam<bool>("duplicate_assets_on_create") == true) {
+            var instances = (res as RSZObjectListResource)?.Instances ?? [((RSZObjectResource)res).Instance];
+            DuplicateAssets(workspace, instances, id);
+        }
+
         return res;
+    }
+
+    private void DuplicateAssets(ContentWorkspace workspace, List<RszInstance> instances, long id)
+    {
+        var clonedAssets = new Dictionary<string, string>(PakHashedPathComparer.Instance);
+        foreach (var inst in instances) {
+            foreach (var obj in inst.GetChildren()) {
+                for (int i = 0; i < obj.Fields.Length; i++) {
+                    var f = obj.Fields[i];
+                    if (f.type is not RszFieldType.Resource and not RszFieldType.String) continue;
+                    if (f.type == RszFieldType.String) {
+                        if (obj.RszClass.name != "via.Prefab" && obj.RszClass.name != "via.Folder") {
+                            continue;
+                        }
+                    }
+
+                    var path = obj.Values[i] as string;
+                    if (string.IsNullOrEmpty(path)) continue;
+
+                    if (clonedAssets.TryGetValue(path, out var newFilePath)) {
+                        obj.Values[i] = newFilePath;
+                        continue;
+                    }
+
+                    if (!workspace.ResourceManager.TryResolveGameFile(path, out var handle)) {
+                        Logger.Warn($"Failed to open original file for duplication: {path}");
+                        continue;
+                    }
+
+                    newFilePath = $"CustomFile/{Config.Type}/{handle.Format.format}_{id}_{clonedAssets.Count.ToString("D02")}{Path.GetExtension(path)}";
+                    obj.Values[i] = clonedAssets[path] = newFilePath;
+
+                    newFilePath = workspace.Env.AppendFileVersion(newFilePath);
+                    if (workspace.CurrentBundle != null) {
+                        var bundleFilepath = Path.Combine(workspace.CurrentBundle.StoragePath, newFilePath);
+                        handle.Save(workspace, bundleFilepath);
+                        workspace.CurrentBundle.AddResource(newFilePath, newFilePath, true);
+                        if (workspace.ResourceManager.TryResolveGameFile(bundleFilepath, out var newFile)) {
+                            newFile.Modified = true;
+                            if (newFile.Loader is IFilePropertyContainer propfile && Config.OriginalConfig?.TryGetParam<List<object>>("id_props", out var idprops) == true) {
+                                foreach (var idPropPath in idprops) {
+                                    propfile.Set(newFile, idPropPath.ToString()!, id);
+                                }
+                            }
+                        }
+                    } else {
+                        var newFile = workspace.ResourceManager.CreateNewFile(handle.Format.format, newFilePath);
+                        if (newFile != null) {
+                            handle.CopyContentsTo(newFile, workspace);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public override void ReadResources(ContentWorkspace workspace, Dictionary<long, IContentResource> dict)

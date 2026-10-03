@@ -23,7 +23,7 @@ entities:
           type: string
           params:
             regex: "^wp[0-9_]+$"
-            regexDescription: "Example: wp6000"
+            regex_description: "Example: wp6000"
             tooltip: Enter a code name for the weapon. This should be unique across all weapons and is used for enum entries.
             initial: "{id:enum(#chainsaw.WeaponID)}"
         display_after: start
