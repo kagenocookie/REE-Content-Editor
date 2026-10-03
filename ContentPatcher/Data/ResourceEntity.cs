@@ -58,6 +58,25 @@ public class ResourceEntity : Entity
         return FieldValues.GetValueOrDefault(handler.Field.name) as T;
     }
 
+    public object? GetProperty(string propertyPath)
+    {
+        var d = propertyPath.IndexOf('.');
+        if (d == -1) {
+            if (propertyPath == "id") return Id;
+
+            return Get(propertyPath);
+        }
+
+        var f = Get(propertyPath.Substring(0, d));
+        if (f == null) return null;
+
+        if (f is IPropertyContainer props) {
+            return props.Get(propertyPath.Substring(d + 1));
+        }
+
+        return null;
+    }
+
     public long GetFieldId(string field)
     {
         var fieldCfg = Config.GetField(field);

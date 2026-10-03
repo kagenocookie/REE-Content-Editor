@@ -2,7 +2,7 @@ entities:
   items.styles.mantle.MantleStyle:
     primary_field: data
     id_field: styleNo
-    to_string: "Mantle Style {id}: {data._MantleStyle:enum(app.MantleStyle)}"
+    to_string: "Mantle Style {id:D03}: {:findEntity(ItemData|data._StyleNo=id|data._EquipCategory=5):{label}|Unknown Item}"
     display_name: Style
     enums:
     - name: app.MantleStyle

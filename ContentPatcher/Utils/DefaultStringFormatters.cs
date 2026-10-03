@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using ContentEditor;
 using ContentEditor.Editor;
 using ReeLib;
 using ReeLib.Common;
@@ -85,7 +86,7 @@ public static class FormatterSettings
     {
         formatter.AddExtensions(new RszFieldStringFormatterSource(workspace));
         formatter.AddExtensions(new TranslateGuidFormatter(workspace.Messages), new EnumLabelFormatter(workspace.Env), new EnumNameFormatter(workspace.Env), new TranslateFormattedString(workspace.Messages), new EntityLabelFormatter(workspace));
-        formatter.AddExtensions(new EntityReverseLookupFormatter(workspace));
+        formatter.AddExtensions(new FindEntityFormatter(workspace));
         return formatter;
     }
 }
@@ -497,9 +498,9 @@ public class StringHashFormatter : IFormatter
     }
 }
 
-public class EntityReverseLookupFormatter(ContentWorkspace env) : IFormatter
+public class FindEntityFormatter(ContentWorkspace workspace) : IFormatter
 {
-    public string Name { get; set; } = "reverseLookupEntity";
+    public string Name { get; set; } = "findEntity";
     public bool CanAutoDetect { get; set; } = false;
     private Dictionary<string, (StringFormatter entityFmt, StringFormatter resultFmt)> LookupFormatters = new();
 
@@ -510,31 +511,48 @@ public class EntityReverseLookupFormatter(ContentWorkspace env) : IFormatter
         }
 
         var opts = formattingInfo.FormatterOptions.Split('|', StringSplitOptions.TrimEntries|StringSplitOptions.RemoveEmptyEntries);
-        if (opts.Length is < 2 or > 4) {
-            return true;
+        if (opts.Length < 2) {
+            return false;
         }
 
         var entityType = opts[0];
-        var path = opts[1];
-        var resultFormat = opts.Length > 2 ? opts[2] : "{label}";
-        var fallbackString = opts.Length > 3 ? opts[3] : "";
-        if (!LookupFormatters.TryGetValue(path, out var formatters)) {
-            var settings = FormatterSettings.CreateFullEntityFormatter(env.Config.GetEntityConfig(entityType)!, env);
-            LookupFormatters[path] = formatters = (new StringFormatter(path, settings), new StringFormatter(resultFormat, settings));
-        }
-        var valueStr = Convert.ToString(formattingInfo.CurrentValue, CultureInfo.InvariantCulture)!;
-
-        var instances = env.ResourceManager.GetEntityInstances(entityType);
-        foreach (var entity in instances) {
-            // NOTE: should we cache the results somewhere for faster lookups?
-            var entityVal = formatters.entityFmt.GetString(entity.Value);
-            if (valueStr.Equals(entityVal, StringComparison.InvariantCultureIgnoreCase)) {
-                formattingInfo.Write(formatters.resultFmt.GetString(entity.Value));
+        var entities = workspace.ResourceManager.GetEntityInstances(entityType);
+        for (int i = 1; i < opts.Length; i++) {
+            var filter = opts[i];
+            var eq = filter.IndexOf('=');
+            if (eq == -1) {
+                Logger.Error($"Invalid findEntity filter {filter}");
                 return true;
             }
+
+            var prop = filter.Substring(0, eq);
+            var valueStr = filter.Substring(eq + 1);
+            var value = formattingInfo.CurrentValue switch {
+                ResourceEntity e => e.GetProperty(valueStr) ?? valueStr,
+                _ => valueStr,
+            };
+            entities = entities.Where(e => {
+                var propVal = e.Value.GetProperty(prop);
+                if (propVal == null) return valueStr == null || valueStr == "null";
+
+                return Convert.ChangeType(value, propVal.GetType()).Equals(propVal);
+            });
         }
 
-        formattingInfo.Write(fallbackString);
+        var match = entities.FirstOrDefault().Value;
+        var formats = formattingInfo.Format?.Split('|');
+        if (match == null) {
+            if (formats?.Count >= 2) {
+                formattingInfo.FormatAsChild(formats[1], formattingInfo.CurrentValue);
+            } else {
+                formattingInfo.Write("");
+            }
+        } else if (formats?.Count >= 1) {
+            formattingInfo.FormatAsChild(formats[0], match);
+        } else {
+            formattingInfo.Write(match?.ToString() ?? "");
+        }
+
         return true;
     }
 }

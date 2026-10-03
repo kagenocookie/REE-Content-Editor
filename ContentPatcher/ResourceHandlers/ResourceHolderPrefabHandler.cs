@@ -213,7 +213,7 @@ public class ResourceHolderPrefabHandler : ResourceHandler, IResourceHandlerStat
                 path = path.NormalizeFilepath();
                 var fs = workspace.Env.FindSingleFile(path, out var resolvedPath, Workspace.FileSourceType.Loose);
                 if (fs == null) {
-                    Logger.Warn($"Could not locate {Config} source file {path}. Make sure it's an active loose file in the game's natives/ dir.");
+                    Logger.Warn($"Could not locate {Config} source file {path} during file path migration. Make sure it's an active loose file in the game's natives/ dir.");
                     return pfbRes;
                 }
                 try {

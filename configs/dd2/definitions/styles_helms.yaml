@@ -2,7 +2,7 @@ entities:
   items.styles.helms.HelmStyle:
     primary_field: data
     id_field: styleNo
-    to_string: "Helm Style {id}: {data._HelmStyle:enum(app.HelmStyle)}"
+    to_string: "Helm Style {id:D03}: {:findEntity(ItemData|data._StyleNo=id|data._EquipCategory=2):{label}|Unknown Item}"
     display_name: Style
     enums:
     - name: app.HelmStyle

@@ -150,8 +150,8 @@ entities:
     enums:
     - name: app.WeaponID
       format: "{name}"
-      primary: true # denotes that the entity label should override this enum's corresponding display labels (entity id == enum value)
-    to_string: 'Weapon {id:enum(app.WeaponID)} (#{id}): {id:reverseLookupEntity(ItemData|\{data?._WeaponId@ItemWeaponParam\}|\{label\}|Unknown item)}'
+      primary: true
+    to_string: 'Weapon {id:enum(app.WeaponID)} (#{id}): {:findEntity(ItemData|data._WeaponId=id):{label}|Unknown Item}'
     zero_entity:
       id: 0
     before_create:
