@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using ContentEditor;
 using ContentEditor.App.FileLoaders;
@@ -707,7 +708,12 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
         var primaryField = data.config.PrimaryField;
         var idField = data.config.IDField;
 
-        var primaryId = GetRandomUniqueResourceID(resources[primaryField.Config.Type], ResourceState.Active);
+        long primaryId = -1;
+        if (initialData?.TryGetValue("newId", out var newIdJson) == true && newIdJson != null) {
+            primaryId = newIdJson.AsValue().Deserialize<long>();
+        }
+        if (primaryId == -1) primaryId = GetRandomUniqueResourceID(resources[primaryField.Config.Type], ResourceState.Active);
+
         var primaryResource = CreateResourceInternal(primaryId, primaryField.Config, ResourceState.Active, null, initialData?.GetValueOrDefault(primaryField.name));
         ResourceEntity entity;
         if (idField != null && idField != primaryField) {
@@ -768,6 +774,19 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             return data.instances!;
         }
         return [];
+    }
+
+    public bool EntityExists(string type, long entityId)
+    {
+        if (entities.TryGetValue(type, out var data)) {
+            if (data.instances == null) {
+                LoadEntities(type, data);
+            }
+
+            return data.instances!.TryGetValue(entityId, out _);
+        }
+
+        return false;
     }
 
     public ResourceEntity? GetActiveEntityInstance(string type, long entityId)

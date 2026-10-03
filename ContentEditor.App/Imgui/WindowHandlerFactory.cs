@@ -250,18 +250,19 @@ public static class WindowHandlerFactory
             foreach (var src in entity.SourceConfig.BeforeCreate) {
                 var type = src.GetValueOrDefault("type") as string;
                 var fieldName = src.GetValueOrDefault("field") as string;
-                if (string.IsNullOrEmpty(type) || string.IsNullOrEmpty(fieldName) || !entity.HasField(fieldName)) {
+                if (string.IsNullOrEmpty(type) || string.IsNullOrEmpty(fieldName)) {
                     Logger.Warn($"Missing type or field for beforeCreate item in entity type {entity}");
                     continue;
                 }
-                var field = entity.GetField(fieldName)!;
 
                 if (!inputHandlers.TryGetValue(type, out var hhf)) {
                     Logger.Warn($"Unknown input handler type {type} for beforeCreate item in entity type {entity}");
                     continue;
                 }
 
+                var field = string.IsNullOrEmpty(fieldName) ? null : entity.GetField(fieldName);
                 var handler = (IDialogInputComponent)hhf.Invoke();
+                handler.FieldName = fieldName;
                 handler.Init(src, entity, field);
                 entity.BeforeCreate.Add(handler);
             }

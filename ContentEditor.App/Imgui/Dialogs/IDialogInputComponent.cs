@@ -8,7 +8,7 @@ namespace ContentEditor.App;
 /// </summary>
 public interface IDialogInputComponent : IObjectUIHandler
 {
-    string FieldName { get; }
+    string FieldName { get; set; }
 
     void Init(Dictionary<string, object> args, EntityConfig? entity, EntityField? field);
     bool IsValid(UIContext context, JsonObject data);

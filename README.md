@@ -139,7 +139,7 @@ Field scene streaming is supported through the `natives/stm/appdata/maincontents
 For any spawn related data editing, my [anatomically accurate map](https://kagenocookie.github.io/dd2map/) can be used as a reference for grid cells and positions
 
 #### Custom entities:
-- Full custom item support (the [ingame Content Editor](https://github.com/kagenocookie/dd2-content-editor) is also required for custom icon display)
+- Full custom item support (the [runtime Content Editor](https://github.com/kagenocookie/dd2-content-editor) is also required for custom icon display and style lookup import)
 - Shop modifications
 - Weather parameters
 - NPC appearance and costume parameters

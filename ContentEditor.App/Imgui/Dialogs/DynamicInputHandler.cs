@@ -10,10 +10,11 @@ public class DynamicInputHandler(UIContext context, JsonObject initialData) : Co
 
     protected override bool Show()
     {
-        context.ShowChildrenUI();
-        var isValid = context.children
-            .Select(c => c.uiHandler as IDialogInputComponent!)
-            .All(c => c == null || c.IsValid(context, Data));
+        for (int i = 0; i < context.children.Count; i++) {
+            ImGui.PushID(i);
+            context.children[i].ShowUI();
+            ImGui.PopID();
+        }
 
         return false;
     }

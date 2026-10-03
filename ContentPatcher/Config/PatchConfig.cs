@@ -392,7 +392,8 @@ public class PatchConfig(string filepath)
         }
         config.IDField = config.Fields.FirstOrDefault(f => f.name == entity.IDField)!;
         config.IDField ??= config.PrimaryField;
-        config.AllowCreateEmpty = entity.AllowCreateEmpty ?? (config.IDField.Config.CustomIDRange != null);
+        config.AllowCreateEmpty = entity.AllowCreateEmpty
+            ?? (config.IDField.Config.CustomIDRange != null || true == entity.BeforeCreate?.Any(bc => bc.GetValueOrDefault("field") as string == "newId"));
         config.AllowTemplates = entity.AllowTemplates ?? config.AllowCreateEmpty;
         config.RequireRuntimeBundle = entity.RequireRuntimeBundle;
         config.PrimaryField.IsRequired = true;

@@ -177,7 +177,7 @@ public class UIContext
         Action<UIContext, object?> boxedSetter = setter == null ? NotImplementedSetter :  (ctx, val) => {
             setter.Invoke((TTarget)ctx.target!, (TValue?)val);
         };
-        return AddChild(label, instance, handler, boxedGetter, boxedSetter);
+        return AddChild(label, instance, handler, boxedGetter, boxedSetter, options);
     }
     public UIContext AddChildContextSetter<TTarget, TValue>(TranslatableBase label, TTarget? instance, IObjectUIHandler? handler = null, Func<TTarget?, TValue?>? getter = null, Action<UIContext, TTarget, TValue?>? setter = null)
     {

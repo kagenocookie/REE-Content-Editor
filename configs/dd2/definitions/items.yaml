@@ -192,6 +192,10 @@ entities:
         data.Prefab.Path: prefab._Item
   items.WeaponOffset:
     to_string: "Weapon Offset {id:enum(app.WeaponID)}"
+    before_create:
+    - type: id-enum-input
+      classname: app.WeaponID
+      field: newId
     fields:
     - name: data
       required: true

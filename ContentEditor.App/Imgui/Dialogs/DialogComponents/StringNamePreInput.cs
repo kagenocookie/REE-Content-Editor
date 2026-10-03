@@ -7,7 +7,7 @@ namespace ContentEditor.App;
 [DialogInputExtension("string-input")]
 public class StringNamePreInput : IDialogInputComponent
 {
-    public string FieldName => this.field?.name ?? "";
+    public string FieldName { get; set; } = "";
 
     private EntityConfig? config;
     private EntityField? field;
