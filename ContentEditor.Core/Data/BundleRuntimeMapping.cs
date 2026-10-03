@@ -167,7 +167,7 @@ public class BundleRuntimeMapping
         return false;
     }
 
-    private static JsonNode? GetNodeByPath(JsonNode? node, string path)
+    public static JsonNode? GetNodeByPath(JsonNode? node, string path)
     {
         if (string.IsNullOrEmpty(path)) return node;
 
@@ -188,7 +188,7 @@ public class BundleRuntimeMapping
         return null;
     }
 
-    private static void SetNodeByPath(JsonNode node, string path, JsonNode? value, bool isRuntime)
+    public static void SetNodeByPath(JsonNode node, string path, JsonNode? value, bool isRuntime)
     {
         if (node is not JsonObject obj) {
             Logger.Error("Only object paths are currently supported");

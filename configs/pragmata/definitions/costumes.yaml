@@ -9,13 +9,12 @@ entities:
           classname: app.Costume.Closet
           field: _Closets
           params:
-            nonUniqueIds: true
             nested: false
           files:
-          - natives/stm/singletonuserdata/catalog/costumecataloguserdata_1st_maincontents.user.3
-          - natives/stm/singletonuserdata/catalog/costumecataloguserdata_2nd_maincontents.user.3
-          - natives/stm/singletonuserdata/catalog/dlc/costumecataloguserdata_dlc0001.user.3
-          - natives/stm/singletonuserdata/catalog/dlc/costumecataloguserdata_dlc0002.user.3
+          - SingletonUserData/Catalog/CostumeCatalogUserData_1st_maincontents.user
+          - SingletonUserData/Catalog/CostumeCatalogUserData_2nd_maincontents.user
+          - SingletonUserData/Catalog/DLC/CostumeCatalogUserData_DLC0001.user
+          - SingletonUserData/Catalog/DLC/CostumeCatalogUserData_DLC0002.user
 
 classes:
   app.Costume.Closet:

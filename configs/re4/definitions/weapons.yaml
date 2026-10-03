@@ -1,4 +1,6 @@
-# TODO do we need these? natives/stm/_chainsaw/appsystem/ui/userdata/gamestatsuserdata.user.2, natives/stm/_anotherorder/appsystem/ui/userdata/gamestatsuserdata_ao.user.2
+# TODO do we need these?
+#  _chainsaw/AppSystem/ui/userdata/gamestatsuserdata.user
+#  _anotherorder/AppSystem/ui/userdata/gamestatsuserdata_ao.user
 
 entities:
   weapon:
@@ -7,6 +9,9 @@ entities:
       format: "{name}"
       primary: true
     to_string: "Weapon {name} {displayName}"
+    before_create:
+    - type: string-input
+      field: name
     fields:
       - name: data
         label: Data
@@ -14,8 +19,9 @@ entities:
         resource:
           id: [_WeaponID]
           type: object-catalog
+          custom_id_range: [8000, 9999999]
           classname: chainsaw.WeaponCatalogUserData.Data
-          file: natives/stm/_chainsaw/appsystem/weapon/weaponcataloguserdata_1st.user.2
+          file: _chainsaw/AppSystem/Weapon/WeaponCatalogUserData_1st.user
       - name: name
         label: Weapon code name
         required: true
@@ -26,13 +32,14 @@ entities:
             regex_description: "Example: wp6000"
             tooltip: Enter a code name for the weapon. This should be unique across all weapons and is used for enum entries.
             initial: "{id:enum(#chainsaw.WeaponID)}"
+            unique_enum: chainsaw.WeaponID
         display_after: start
       - name: displayName
         required: true
         field_type: keyed_message
         resource:
           type: msg
-          file: natives/stm/_chainsaw/message/mes_main_item/ch_mes_main_item_name.msg.22
+          file: _chainsaw/message/mes_main_item/ch_mes_main_item_name.msg
           params:
             key_format: "CH_Mes_Main_WEAPON_NAME_{name:upper()}_00_0_000"
         display_after: name
@@ -42,7 +49,7 @@ entities:
           id: [_WeaponID]
           type: object-catalog
           classname: chainsaw.WeaponEquipParamCatalogUserData.Data
-          file: natives/stm/_anotherorder/appsystem/weapon/weaponequipparamcataloguserdata_ao.user.2
+          file: _anotherorder/AppSystem/Weapon/WeaponEquipParamCatalogUserData_ao.user
           params:
             nested: true
       - name: upgrades
@@ -51,15 +58,7 @@ entities:
           id: [_WeaponID]
           type: object-catalog
           classname: chainsaw.WeaponDetailCustomUserdata.WeaponDetailStage
-          file: natives/stm/_anotherorder/appsystem/weaponcustom/weapondetailcustomuserdata_ao.user.2
-      - name: prefab
-        label: Weapon prefab
-        required: true
-        field_type: resource_link
-        resource:
-          resource_type: prefab
-          params:
-            path: "{data?._Prefab?.Path}"
+          file: _anotherorder/AppSystem/weaponcustom/weapondetailcustomuserdata_ao.user.2
 
 classes:
   chainsaw.WeaponCatalogUserData.Data:

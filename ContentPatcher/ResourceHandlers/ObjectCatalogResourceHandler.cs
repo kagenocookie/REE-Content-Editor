@@ -56,14 +56,17 @@ public class ObjectCatalogResourceHandler : ResourceHandler, IResourceHandlerSta
         }
 
         var idField = idgen.Fields[0];
-        var castId = id.SafeBoxedID(idField.Field.type);
+        if (idField.Field.type != RszFieldType.String) {
+            // for string-based IDs, the entity config should've required a string input which would've written the ID string there already
+            var castId = id.SafeBoxedID(idField.Field.type);
 
-        if (res is RSZObjectListResource list) {
-            foreach (var item in list.Instances) {
-                idField.Set(item, castId);
+            if (res is RSZObjectListResource list) {
+                foreach (var item in list.Instances) {
+                    idField.Set(item, castId);
+                }
+            } else if (res is RSZObjectResource inst) {
+                idField.Set(inst.Instance, castId);
             }
-        } else if (res is RSZObjectResource inst) {
-            idField.Set(inst.Instance, castId);
         }
         if (Config.Filter is ISettable settable) {
             settable.Set(res);

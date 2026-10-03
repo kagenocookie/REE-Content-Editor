@@ -10,6 +10,9 @@ entities:
       format: "{name}"
       primary: true
     to_string: "Weapon {name} {displayName}"
+    before_create:
+    - type: string-input
+      field: name
     fields:
       # - name: data
       #   type: object
@@ -23,10 +26,12 @@ entities:
         resource:
           type: object-catalog
           id: [_Type]
+          custom_id_range: [1000, 9999999]
           classname: app.ropeway.WeaponPrefabUserData.WeaponParam
           file: SectionRoot/UserData/System/Equipment/WeaponPrefabUserData_Catalog_1st.user
           params:
             nested: false
+            duplicate_assets_on_create: true
       - name: name
         label: Weapon code name
         required: true
@@ -37,6 +42,7 @@ entities:
             regex_description: "Example: WP9000"
             tooltip: Enter a code name for the weapon. This should be unique across all weapons and is used for enum entries.
             initial: "{id:enum(app.ropeway.EquipmentDefine.WeaponType)}"
+            unique_enum: app.ropeway.EquipmentDefine.WeaponType
         display_after: start
       - name: displayName
         required: true
@@ -46,14 +52,6 @@ entities:
           params:
             key_format: "WEAPON_NAME_{name}"
         display_after: name
-      - name: prefab
-        label: Weapon prefab
-        required: true
-        field_type: resource_link
-        resource:
-          resource_type: prefab
-          params:
-            path: "{catalog?.Prefab?.Path}"
 
 classes:
   app.ropeway.WeaponPrefabUserData.WeaponParam:

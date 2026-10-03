@@ -1,31 +1,34 @@
 # character/it/prefab_resourceitem/ri3115/ri3115_inventory.pfb
 
 entities:
-  weapon:
+  Item:
     enums:
     - name: offline.EquipmentDefine.WeaponType
-      format: "{name}"
       primary: true
-    to_string: "Weapon {id}: {data.Basic.NameMessageID:translate()}"
+    to_string: "Item {data.ItemID} {id}: {weaponSpec?.Basic?.NameMessageID:translate()}"
     fields:
-      - name: data
-        label: Data
-        required: true
-        resource:
-          id: [ItemID]
-          type: object-catalog
-          file: natives/stm/singletonuserdatas/playerweaponspecificationdata.user.2
-          params:
-            nested: false
-      - name: prefab
-        label: Weapon prefab
-        required: true
-        field_type: resource_link
-        resource:
-          resource_type: prefab
-          params:
-            path: "{catalog?.Prefab?.Path}"
+    - name: data
+      required: true
+      resource:
+        type: object-catalog
+        id: [ItemIDHash]
+        classname: app.InventoryItemPrefabHolder.Unit
+        custom_id_range: [1000, 999999]
+        file: SingletonUserDatas/inventoryitemprefabholderother.user
+        params:
+          duplicate_assets_on_create: true
+    - name: weaponSpec
+      label: Weapon Spec
+      resource:
+        id: [ItemID]
+        type: object-catalog
+        classname: app.ItemSpecificationData.SpecUnit
+        file: SingletonUserDatas/PlayerWeaponSpecificationData.user
+        params:
+          nested: false
 
 classes:
   app.ItemSpecificationData.SpecUnit:
     to_string: "Item {ItemID}: {Basic.NameMessageID:translate()}"
+  app.InventoryItemPrefabHolder.Unit:
+    to_string: "ItemPrefabHolder {ItemID} [{ItemIDHash}]"

@@ -10,11 +10,12 @@ entities:
   characters.NpcData:
     enums:
     - name: app.CharacterID
-      format: "{name}"
+      format: "{code}"
       primary: true
-    to_string: "NPC {name}: {displayName}"
-    # TODO disallow new npc creation until we support initial string input
-    allow_create_empty: false
+    to_string: "NPC {code}: {name}"
+    before_create:
+    - type: string-input
+      field: code
     fields:
       - name: data
         label: Data
@@ -30,7 +31,6 @@ entities:
           classname: app.CharacterData
       - name: alternativeData
         label: Sub NPC Data
-        required: true
         resource:
           id: [ID]
           type: object-catalog
@@ -48,7 +48,7 @@ entities:
           type: object-catalog
           classname: app.charaedit.ch000.EditDataTable.Data
           file: AppSystem/CharaEdit/ch000/EditDataTable_Npc.user
-      - name: name
+      - name: code
         label: NPC internal code name
         required: true
         display_after: start
@@ -60,23 +60,24 @@ entities:
             regex_description: "Example: ch302345"
             tooltip: Enter a code name for the NPC. This should be unique across all characters, used for translation keys and file names.
             initial: "{id:enum_name(app.CharacterID)}"
-      - name: displayName
+            unique_enum: app.CharacterID
+      - name: name
         label: Name
         required: true
+        display_after: code
+        resource:
+          type: msg
+          file: Message/UI/CharacterName.msg
+          params:
+            key_format: "Mes_{code}"
+      - name: name_sub
+        label: Sub Name
         display_after: name
         resource:
           type: msg
           file: Message/UI/CharacterName.msg
           params:
-            key_format: "Mes_{name}"
-      - name: displayName_sub
-        label: Sub Name
-        display_after: displayName
-        resource:
-          type: msg
-          file: Message/UI/CharacterName.msg
-          params:
-            key_format: "Mes_{name}_X1"
+            key_format: "Mes_{code}_X1"
       - name: scheduleData
         resource:
           type: item-list-catalog
@@ -87,7 +88,7 @@ entities:
       - name: headPreBakeTexture_0
         required: true
         field_id:
-          format: "{name}_0"
+          format: "{code}_0"
         resource:
           type: resource-holder-pfb
           file: AppSystem/CharaEdit/ch000/Catalog/HeadPreBakeTextureCatalog_Npc.user
@@ -96,7 +97,7 @@ entities:
             nested: true
       - name: headPreBakeTexture_1
         field_id:
-          format: "{name}_1"
+          format: "{code}_1"
         resource:
           type: resource-holder-pfb
           file: AppSystem/CharaEdit/ch000/Catalog/HeadPreBakeTextureCatalog_Npc.user
@@ -105,7 +106,7 @@ entities:
             nested: true
       - name: headPreBakeTexture_2
         field_id:
-          format: "{name}_2"
+          format: "{code}_2"
         resource:
           type: resource-holder-pfb
           file: AppSystem/CharaEdit/ch000/Catalog/HeadPreBakeTextureCatalog_Npc.user
@@ -115,7 +116,7 @@ entities:
       - name: bodyPreBakeTexture_0
         required: true
         field_id:
-          format: "{name}_0"
+          format: "{code}_0"
         resource:
           type: resource-holder-pfb
           file: AppSystem/CharaEdit/ch000/Catalog/BodyPreBakeTextureCatalog_Npc.user
@@ -124,7 +125,7 @@ entities:
             nested: true
       - name: bodyPreBakeTexture_1
         field_id:
-          format: "{name}_1"
+          format: "{code}_1"
         resource:
           type: resource-holder-pfb
           file: AppSystem/CharaEdit/ch000/Catalog/BodyPreBakeTextureCatalog_Npc.user
@@ -133,7 +134,7 @@ entities:
             nested: true
       - name: bodyPreBakeTexture_2
         field_id:
-          format: "{name}_2"
+          format: "{code}_2"
         resource:
           type: resource-holder-pfb
           file: AppSystem/CharaEdit/ch000/Catalog/BodyPreBakeTextureCatalog_Npc.user
@@ -149,7 +150,7 @@ entities:
             skipFields: 1
             nested: true
 
-# # -> enum: app.GUITextureLoaderDefine.NPCArtTextureID, enum format "NPCArt_{name}_{variantId}_{costumeId?}"
+# # -> enum: app.GUITextureLoaderDefine.NPCArtTextureID, enum format "NPCArt_{code}_{variantId}_{costumeId?}"
 #       - name: guiNpcTexture
 #         field_id:
 #           field: TODO need to match catalog entry by NPC "index" via app.GUITextureLoaderDefine.NPCArtTextureID enum
@@ -157,7 +158,7 @@ entities:
 #         resource:
 #           type: resource-holder-pfb
 #           file: AppSystem/Gui/UserData/NewTextureHolderData/GUINPCArtTextureHolderData.user
-# # -> enum: app.GUITextureLoaderDefine.NPCThumbnailTextureID, enum format "NPCThumb_{name}_{variantId}_{costumeId?}"
+# # -> enum: app.GUITextureLoaderDefine.NPCThumbnailTextureID, enum format "NPCThumb_{code}_{variantId}_{costumeId?}"
 #       - name: guiNpcThumbnail
 #         field_id:
 #           field:
@@ -165,7 +166,7 @@ entities:
 #         resource:
 #           type: resource-holder-pfb
 #           file: AppSystem/Gui/UserData/NewTextureHolderData/GUINPCThumbnailTextureHolderData.user
-# # -> enum: app.GUITextureLoaderDefine.CorpseThumbTextureID, enum format "CorpseThumb_{name}_{variantId}"
+# # -> enum: app.GUITextureLoaderDefine.CorpseThumbTextureID, enum format "CorpseThumb_{code}_{variantId}"
 #       - name: guiNpcCorpseThumbnail
 #         field_id:
 #           field:

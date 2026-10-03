@@ -1,8 +1,16 @@
 entities:
   items.ItemData:
     to_string: "Item [{data._ItemIDStr}]: {name}"
+    before_create:
+    - type: string-input
+      field: newNameCode
+      regex: it(?:\d\d)_(?:\d\d)_(?:\d\d\d)
+      regex_description: "Format example: it10_00_000"
+      write_to:
+      - data._ItemIDStr
+      - detail_search._IDStr
+      - craft_sound._ItemID
     fields:
-    # TODO: add an easy UI link to the prefab of ItemData
     - name: data
       required: true
       display_after: caption
