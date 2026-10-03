@@ -130,7 +130,8 @@ public class ResourceHolderPrefabHandler : ResourceHandler, IResourceHandlerStat
         var name = $"{resource.ResourceType.Type}_{id}";
         var prefabPath = viaPrefab.Get(RszFieldCache.Prefab.Path);
         if (string.IsNullOrEmpty(prefabPath)) {
-            prefabPath = $"CustomCatalogs/{resource.ResourceType.Type}/{name}.pfb";
+            var bundleNamePrefix = workspace.CurrentBundle == null ? "" : $"{workspace.CurrentBundle.Name}_";
+            prefabPath = $"CustomCatalogs/{resource.ResourceType.Type}/{bundleNamePrefix}{name}.pfb";
             RszFieldCache.Prefab.Path.Set(viaPrefab, prefabPath);
             catFile.Modified = true;
         }

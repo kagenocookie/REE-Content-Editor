@@ -83,6 +83,7 @@ public class ObjectCatalogResourceHandler : ResourceHandler, IResourceHandlerSta
     private void DuplicateAssets(ContentWorkspace workspace, List<RszInstance> instances, long id)
     {
         var clonedAssets = new Dictionary<string, string>(PakHashedPathComparer.Instance);
+        var bundleNamePrefix = workspace.CurrentBundle == null ? "" : $"{workspace.CurrentBundle.Name}_";
         foreach (var inst in instances) {
             foreach (var obj in inst.GetChildren()) {
                 for (int i = 0; i < obj.Fields.Length; i++) {
@@ -107,7 +108,7 @@ public class ObjectCatalogResourceHandler : ResourceHandler, IResourceHandlerSta
                         continue;
                     }
 
-                    newFilePath = $"CustomFile/{Config.Type}/{handle.Format.format}_{id}_{clonedAssets.Count.ToString("D02")}{Path.GetExtension(path)}";
+                    newFilePath = $"CustomFile/{Config.Type}/{bundleNamePrefix}{handle.Format.format}_{id}_{clonedAssets.Count.ToString("D02")}{Path.GetExtension(path)}";
                     obj.Values[i] = clonedAssets[path] = newFilePath;
 
                     newFilePath = workspace.Env.AppendFileVersion(newFilePath);
