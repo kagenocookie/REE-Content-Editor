@@ -30,7 +30,7 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
 
     public RszInstance Instance { get; }
 
-    public SceneFlags SceneFlags { get; set; } = SceneFlags.All;
+    public SceneFlags SceneFlags { get; set; } = SceneFlags.Default;
     public Scene? ChildScene { get; set; }
 
     public bool ShouldDraw => ShouldDrawSelf && Parent?.ShouldDraw != false && Scene?.IsActive != false;
@@ -58,7 +58,7 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
 
     public Folder(string name, Workspace workspace, Scene? scene = null)
     {
-        Instance = RszInstance.CreateInstance(workspace.RszParser, workspace.Classes.Folder);
+        Instance = workspace.CreateRszInstance(workspace.Classes.Folder);
         Name = name;
         Scene = scene;
         ExportInstanceFields();
@@ -71,7 +71,7 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
         IList<ScnPrefabInfo> prefabs,
         Scene? scene = null)
     {
-        Instance = RszInstance.CreateInstance(workspace.RszParser, workspace.Classes.Folder);
+        Instance = workspace.CreateRszInstance(workspace.Classes.Folder);
         Name = name;
         Scene = scene;
         ExportInstanceFields();

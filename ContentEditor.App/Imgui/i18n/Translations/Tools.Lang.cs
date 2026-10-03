@@ -12,6 +12,7 @@ public static partial class Lang
         public static readonly FixedString DataGeneration_RebuildEFX = "Rebuild EFX Data";
         public static readonly FixedString DataGeneration_ExtensionCache = "Generate File Extension Cache";
         public static readonly FixedString DataGeneration_ListFile = "Generate List File";
+        public static readonly FixedString DataGeneration_RSZJson = "Generate RSZ JSON";
         public static readonly FixedString DataGeneration_Bookmarks = "Generate Bookmarks from Entities";
 
         public static readonly FixedString ImguiTestWindow = "IMGUI Test Window";

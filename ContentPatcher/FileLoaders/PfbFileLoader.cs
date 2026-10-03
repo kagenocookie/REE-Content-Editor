@@ -5,7 +5,7 @@ using ReeLib.Pfb;
 
 namespace ContentPatcher;
 
-public class PfbFileLoader : IFileLoader, IFileHandleContentProvider<PfbFile>
+public class PfbFileLoader : IFileLoader, IFileHandleContentProvider<PfbFile>, IFilePropertyContainer
 {
     public bool CanHandleFile(string filepath, REFileFormat format, FileHandle? file) => format.format == KnownFileFormats.Prefab;
 
@@ -35,6 +35,73 @@ public class PfbFileLoader : IFileLoader, IFileHandleContentProvider<PfbFile>
         file.RebuildInfoTables();
         return file.SaveOrWriteTo(handle, outputPath);
     }
+
+    object? IFilePropertyContainer.Get(FileHandle handle, string path) => Get(handle, path);
+    void IFilePropertyContainer.Set(FileHandle handle, string path, object? value) => Set(handle, path, value);
+
+    public static object? Get(FileHandle handle, string path)
+    {
+        var span = path.AsSpan();
+        var go = FindGameObjectByPath(path, handle.GetFile<PfbFile>(), ref span);
+        if (go == null) return null;
+
+        if (span.Length == 0) {
+            return go;
+        }
+
+        var colon = span.IndexOf(':');
+        var compClassname = colon == -1 ? span : span.Slice(0, colon);
+        var component = ((IGameObject)go).FindComponent(compClassname);
+        if (component == null) return null;
+        if (colon == -1) return component;
+
+        return component.GetNestedFieldValue(span.Slice(colon + 1));
+    }
+
+    /// <summary>
+    /// <para>Set a nested pfb value. Path format: {path/to/gameobject}/{component.classname}:{path.to.field}</para>
+    /// <example>
+    /// Path examples:
+    /// <list type="bullet">
+    /// <item>app.Weapon:ID</item>
+    /// <item>./app.Character:Params._ID</item>
+    /// <item>Lantern/Obj/via.render.Mesh:Mesh</item>
+    /// </list>
+    /// </example>
+    /// </summary>
+    public static void Set(FileHandle handle, string path, object? value)
+    {
+        var span = path.AsSpan();
+        var go = FindGameObjectByPath(path, handle.GetFile<PfbFile>(), ref span);
+        if (go == null) return;
+
+        if (span.Length == 0) {
+            throw new NotImplementedException();
+        }
+
+        var colon = span.IndexOf(':');
+        if (colon == -1) {
+            throw new NotImplementedException();
+        }
+
+        var compClassname = span.Slice(0, colon);
+        var component = ((IGameObject)go).FindComponent(compClassname);
+        if (component == null) return;
+
+        component.SetNestedFieldValue(span.Slice(colon + 1), value!);
+    }
+
+    private static PfbGameObject? FindGameObjectByPath(string path, PfbFile pfb, ref ReadOnlySpan<char> remainingSpan)
+    {
+        var slash = path.LastIndexOf('/');
+        remainingSpan = slash == -1 ? path.AsSpan() : path.AsSpan(slash + 1);
+        if (slash == -1 || path.AsSpan(0, slash).SequenceEqual(".")) {
+            return pfb.GameObjects[0];
+        } else {
+            return pfb.GameObjects[0].Find(path.AsSpan(0, slash))!;
+        }
+    }
+
 }
 
 public sealed class PrefabPatcher : RszFilePatcherBase, IDisposable

@@ -91,6 +91,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string Key_Save = "key_save";
         public const string Key_Open = "key_open";
         public const string Key_OpenPakBrowser = "key_open_pak_browser";
+        public const string Key_OpenFileSearch = "key_open_file_search";
         public const string Key_OpenMacroShelf = "key_open_macro_shelf";
         public const string Key_Back = "key_back";
         public const string Key_Close = "key_close";
@@ -393,6 +394,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<KeyBinding> Key_Save = new SettingWrapper<KeyBinding>(Keys.Key_Save, _lock, new KeyBinding(ImGuiKey.S, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_Open = new SettingWrapper<KeyBinding>(Keys.Key_Open, _lock, new KeyBinding(ImGuiKey.O, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_OpenPakBrowser = new SettingWrapper<KeyBinding>(Keys.Key_OpenPakBrowser, _lock, new KeyBinding(ImGuiKey.B, ctrl: true));
+    public readonly SettingWrapper<KeyBinding> Key_OpenFileSearch = new SettingWrapper<KeyBinding>(Keys.Key_OpenFileSearch, _lock, new KeyBinding(ImGuiKey.F, ctrl: true, shift: true));
     public readonly SettingWrapper<KeyBinding> Key_OpenMacroShelf = new SettingWrapper<KeyBinding>(Keys.Key_OpenMacroShelf, _lock, new KeyBinding(ImGuiKey.M, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_Back = new SettingWrapper<KeyBinding>(Keys.Key_Back, _lock, new KeyBinding(ImGuiKey.Backspace));
     public readonly SettingWrapper<KeyBinding> Key_Close = new SettingWrapper<KeyBinding>(Keys.Key_Close, _lock, new KeyBinding(ImGuiKey.W, ctrl: true));
@@ -465,7 +467,7 @@ public class AppConfig : Singleton<AppConfig>
     public Platform GetGamePlatform(GameIdentifier game) => _lock.Read(() => gameConfigs.GetValueOrDefault(game.name)?.platform ?? Platform.Unknown);
     public void SetGamePlatform(GameIdentifier game, Platform platformId) => SetForGameAndSave(game.name, platformId, (cfg, val) => cfg.platform = val);
 
-    public string GetGameUserPath(GameIdentifier game) => Path.Combine(BookmarksFilepath.Get() ?? Path.Combine(AppDataPath, "thumbs"), game.name);
+    public string GetGameUserPath(GameIdentifier game) => Path.Combine(BookmarksFilepath.Get() ?? Path.Combine(AppDataPath, "user"), game.name);
     public string LuaUserPath => Path.Combine(BookmarksFilepath.Get() ?? AppDataPath, "lua");
 
     public bool HasAnyGameConfigured => _lock.Read(() => gameConfigs.Any(g => !string.IsNullOrEmpty(g.Value?.gamepath)));
@@ -610,6 +612,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.Key_Save, instance.Key_Save.value.ToString(), "Keys"),
             (Keys.Key_Open, instance.Key_Open.value.ToString(), "Keys"),
             (Keys.Key_OpenPakBrowser, instance.Key_OpenPakBrowser.value.ToString(), "Keys"),
+            (Keys.Key_OpenFileSearch, instance.Key_OpenFileSearch.value.ToString(), "Keys"),
             (Keys.Key_OpenMacroShelf, instance.Key_OpenMacroShelf.value.ToString(), "Keys"),
             (Keys.Key_Back, instance.Key_Back.value.ToString(), "Keys"),
             (Keys.Key_Close, instance.Key_Close.value.ToString(), "Keys"),
@@ -920,6 +923,7 @@ public class AppConfig : Singleton<AppConfig>
                         case Keys.Key_Save: if (KeyBinding.TryParse(value, out _key)) Key_Save.value = _key; break;
                         case Keys.Key_Open: if (KeyBinding.TryParse(value, out _key)) Key_Open.value = _key; break;
                         case Keys.Key_OpenPakBrowser: if (KeyBinding.TryParse(value, out _key)) Key_OpenPakBrowser.value = _key; break;
+                        case Keys.Key_OpenFileSearch: if (KeyBinding.TryParse(value, out _key)) Key_OpenFileSearch.value = _key; break;
                         case Keys.Key_OpenMacroShelf: if (KeyBinding.TryParse(value, out _key)) Key_OpenMacroShelf.value = _key; break;
                         case Keys.Key_Back: if (KeyBinding.TryParse(value, out _key)) Key_Back.value = _key; break;
                         case Keys.Key_Close: if (KeyBinding.TryParse(value, out _key)) Key_Close.value = _key; break;
@@ -1202,6 +1206,10 @@ public record SceneViewSettings
 public record DevSettings
 {
     public KnownFileFormats LastFileTestFormat { get; set; }
+    public string? PythonPath { get; set; }
+    public string? REFPath { get; set; }
+    public string? ReasyPath { get; set; }
+    public string[]? RefRSZList { get; set; }
 }
 
 public record ChangelogData

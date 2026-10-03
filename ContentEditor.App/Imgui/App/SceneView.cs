@@ -19,6 +19,7 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
 
     private WindowData data = null!;
     protected UIContext context = null!;
+    public UIContext Context => context;
 
     public SceneView(ContentWorkspace workspace, Scene scene)
     {

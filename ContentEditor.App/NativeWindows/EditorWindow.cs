@@ -135,7 +135,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         this.env = env;
 
         var configPath = Path.Combine(AppConfig.Instance.ConfigBasePath, env.Config.Game.name);
-        var patchConfig = this.workspace?.Config ?? new PatchDataContainer(Path.GetFullPath(configPath));
+        var patchConfig = this.workspace?.Config ?? new PatchConfig(Path.GetFullPath(configPath));
 
         var workspace = new ContentWorkspace(env, patchConfig, this.workspace?.BundleManager);
         ChangeWorkspace(workspace, bundle);
@@ -164,12 +164,10 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     private static void SetupTypes(ContentWorkspace workspace)
     {
         foreach (var (name, cfg) in workspace.Config.Classes) {
-            if (cfg.StringFormatter != null) {
-                var cls = workspace.Env.RszParser.GetRSZClass(name);
-                if (cls == null) continue;
+            var cls = workspace.Env.RszParser.GetRSZClass(name);
+            if (cls == null) continue;
 
-                WindowHandlerFactory.SetClassFormatter(cls, cfg.StringFormatter);
-            }
+            WindowHandlerFactory.InitClassConfig(workspace, cfg);
         }
 
         WindowHandlerFactory.SetupTypesForGame(workspace.Game, workspace.Env);
@@ -297,6 +295,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         if (workspace != null && cfg.Key_OpenMacroShelf.Get().IsPressed()) {
             AddUniqueSubwindow(new LuaMacroShelf(workspace));
         }
+        if (workspace != null && cfg.Key_OpenFileSearch.Get().IsPressed()) {
+            AddSubwindow(new FileSearchWindow());
+        }
     }
 
     protected override void SetupMouse(IMouse mouse)
@@ -351,11 +352,11 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
     }
 
-    public void AddFileEditor(FileHandle file)
+    public void AddFileEditor(FileHandle file, UIContext? sourceContext = null)
     {
         if (workspace == null) return;
 
-        var handler = WindowHandlerFactory.CreateFileResourceHandler(workspace, file);
+        var handler = WindowHandlerFactory.CreateFileResourceHandler(workspace, file, sourceContext);
         if (handler != null) {
             if (file.HandleType != FileHandleType.Embedded && file.HandleType != FileHandleType.New) {
                 AppConfig.Settings.RecentFiles.AddRecent(workspace.Game, file.Filepath);
@@ -994,6 +995,10 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     AddSubwindow(new ListFileGeneratorTaskWindow());
                 }
 
+                if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Tools.DataGeneration_RSZJson))) {
+                    AddSubwindow(new RszJsonGeneratorTaskWindow(workspace));
+                }
+
                 if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Tools.DataGeneration_Bookmarks))) {
                     var list = PrefabLister.GenerateFileSets(workspace);
                     if (list != null) {
@@ -1030,7 +1035,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 if (ImGui.MenuItem(Lang.Windows.BundleManager)) {
                     ShowBundleManagement();
                 }
-                if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Windows.FileSearch))) {
+                if (AppImguiHelpers.HotkeyMenuItem(Lang.Windows.FileSearch, AppConfig.Instance.Key_OpenFileSearch.Get())) {
                     AddSubwindow(new FileSearchWindow());
                 }
                 if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Windows.TexturePacker))) {
@@ -1041,7 +1046,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 }
                 if (workspace.Config.Entities.Any()) {
                     if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Windows.Entities))) {
-                        AddSubwindow(new AppContentEditorWindow(workspace));
+                        AddSubwindow(new EntitiesWindow(workspace));
                     }
                 }
                 if (AppImguiHelpers.HotkeyMenuItem(Lang.Windows.MacroShelf, AppConfig.Instance.Key_OpenMacroShelf.Get())) {

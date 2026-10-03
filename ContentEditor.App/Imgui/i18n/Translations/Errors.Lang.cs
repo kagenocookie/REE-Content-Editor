@@ -27,9 +27,15 @@ public static partial class Lang
         public static readonly InterpolatedString<string> FileLoad_NotEditable = "File is not supported for editing:\n{0}";
         public static readonly InterpolatedString<string> FileLoad_UnknownError = "File could not be opened or is not supported:\n{0}";
         public static readonly InterpolatedString<string> ExeNotFound = "Game executable not found at: {0}";
+        public static readonly InterpolatedString<string> EnumNotFound = "Enum not found: {0}";
+
+        public static readonly FixedString MissingWorkspace = "Failed to access game configuration or workspace UI data";
+        public static readonly FixedString MissingEntityContext = "Failed to access entity context and/or game configuration or workspace UI data";
 
         public static readonly FixedString PatchFailed = "Failed to execute patcher";
         public static readonly FixedString PatchRevertFailed = "Failed to revert patches";
+
+        public static readonly FixedString MustBeUnique = "Value must be unique";
 
         public static readonly FixedString OpenedInExternalEditor_Title = "Opened in external editor";
         public static readonly FixedString OpenedInExternalEditor_Text = "The file has been opened in the configured eternal editor.";

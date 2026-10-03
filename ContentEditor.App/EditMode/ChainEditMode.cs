@@ -28,32 +28,6 @@ public class ChainEditMode : EditModeHandler
         }
     }
 
-    public void OpenEditor(string filepath)
-    {
-        if (!(Target is RequestSetColliderComponent component)) {
-            return;
-        }
-        if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(filepath, out var file)) {
-            OpenEditor(file);
-        }
-    }
-
-    public void OpenEditor(FileHandle file)
-    {
-        if (!(Target is Chain component)) {
-            return;
-        }
-        if (file.Format.format == KnownFileFormats.Chain) {
-            EditorWindow.CurrentWindow!.AddSubwindow(PrimaryEditor = new ChainEditor(Scene.Workspace, file, component));
-        } else if (file.Format.format == KnownFileFormats.Chain2) {
-            EditorWindow.CurrentWindow!.AddSubwindow(PrimaryEditor = new Chain2Editor(Scene.Workspace, file, component));
-        } else if (file.Format.format == KnownFileFormats.CollisionShapePreset) {
-            EditorWindow.CurrentWindow!.AddSubwindow(new ClspEditor(Scene.Workspace, file, component));
-        } else {
-            return;
-        }
-    }
-
     public override void DrawMainUI()
     {
         if (context == null) {
@@ -113,23 +87,6 @@ public class ChainEditMode : EditModeHandler
         ImGui.SameLine();
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FileType_CLSPNew, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary], null, "New CLSP")) {
             filePath = Scene.Workspace.ResourceManager.CreateNewFile(KnownFileFormats.CollisionShapePreset)!.Filepath;
-        }
-
-        if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(filePath, out var file)) {
-            if (ImGui.Button("Open Chain")) {
-                OpenEditor(file);
-            }
-        } else if (!string.IsNullOrEmpty(filePath)) {
-            ImGui.TextColored(Colors.Warning, "Chain file not found");
-        }
-
-        if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(clspPath, out var file2)) {
-            if (file != null) ImGui.SameLine();
-            if (ImGui.Button("Open CLSP")) {
-                OpenEditor(file2);
-            }
-        } else if (!string.IsNullOrEmpty(clspPath)) {
-            ImGui.TextColored(Colors.Warning, "Chain file not found");
         }
     }
 

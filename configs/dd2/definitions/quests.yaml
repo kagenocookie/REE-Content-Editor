@@ -1,73 +1,74 @@
 # TODO natives/stm/appsystem/ai/situation/generateparameter/rootquestsituationparam.user.2
 # TODO integrate quest scene resource -- natives/stm/appsystem/scene/quest.scn.20
-# TODO integrate title from linked quest log resource into label
 
 entities:
   quests.quest_data:
+    to_string: "Quest {id}: {quest_log?._Resource?.file?._Title?:translate()}"
+    enums:
+      - name: app.QuestDefine.ID
+        format: "qu{id:D06}"
+        primary: true
+    zero_entity:
+      id: -1
     fields:
-      context:
-        type: object
-        label: Context Data
-        required: true
-        param:
-          classname: app.QuestContextData.ContextData
-          nested: false
-      variables:
-        type: object
-        label: Variable Data
-        param:
-          classname: app.QuestContextData.VariableData
-      deliver:
-        type: object
-        label: Deliver Data
-        param:
-          classname: app.QuestContextData.DeliverData
-      after_story:
-        type: object
-        label: After Story Data
-        param:
-          classname: app.QuestContextData.AfterStoryData
-      quest_log:
-        type: object
-        label: Quest Logs
-        param:
-          classname: app.QuestLogCatalog.Item
+    - name: context
+      label: Context Data
+      required: true
+      resource:
+        id: [_IDValue]
+        type: object-catalog
+        file: AppSystem/Quest/UserData/QuestContext.user
+        field: ContextDataArray
+        classname: app.QuestContextData.ContextData
+    - name: variables
+      label: Variable Data
+      resource:
+        id: [_IDValue]
+        type: object-catalog
+        file: AppSystem/Quest/UserData/QuestContext.user
+        field: VariableDataArray
+        classname: app.QuestContextData.VariableData
+    - name: deliver
+      label: Deliver Data
+      resource:
+        id: [_IDValue]
+        type: object-catalog
+        file: AppSystem/Quest/UserData/QuestContext.user
+        field: DeliverDataArray
+        classname: app.QuestContextData.DeliverData
+    - name: after_story
+      label: After Story Data
+      resource:
+        id: [_IDValue]
+        type: object-catalog
+        file: AppSystem/Quest/UserData/QuestContext.user
+        field: AfterStoryDataArray
+        classname: app.QuestContextData.AfterStoryData
+    - name: quest_log
+      label: Quest Logs
+      resource:
+        id: [_Id]
+        type: object-catalog
+        file: AppSystem/Catalog/MainContents/UserData/QuestLogCatalog.user
+        classname: app.QuestLogCatalog.Item
+    - name: talk_events
+      resource:
+        id: [_QuestId]
+        type: item-list-catalog
+        classname: app.TalkEventDialogueCatalog.DialoguePack
+        file: Event/TalkEvent/TalkEventDialogueCatalog.user
 
 classes:
   app.QuestContextData.ContextData:
-    id: [_IDValue]
     to_string: "Quest context {_IDValue}"
-    patcher:
-      type: array-file
-      file: natives/stm/appsystem/quest/userdata/questcontext.user.2
-      field: ContextDataArray
   app.QuestContextData.VariableData:
-    id: [_IDValue]
     to_string: "Quest variables {_IDValue}"
-    patcher:
-      type: array-file
-      file: natives/stm/appsystem/quest/userdata/questcontext.user.2
-      field: VariableDataArray
   app.QuestContextData.DeliverData:
-    id: [_IDValue]
     to_string: "Quest deliveries {_IDValue}"
-    patcher:
-      type: array-file
-      file: natives/stm/appsystem/quest/userdata/questcontext.user.2
-      field: DeliverDataArray
   app.QuestContextData.AfterStoryData:
-    id: [_IDValue]
     to_string: "Quest AfterStory {_IDValue}"
-    patcher:
-      type: array-file
-      file: natives/stm/appsystem/quest/userdata/questcontext.user.2
-      field: AfterStoryDataArray
   app.QuestLogCatalog.Item:
-    id: [_Id]
     to_string: "Quest Logs {_Id}"
-    patcher:
-      type: array-file
-      file: natives/stm/appsystem/catalog/maincontents/userdata/questlogcatalog.user.2
 
   app.QuestNpcOverrideData:
     to_string: "QuestNpcOverrideData QuestId={_IDValue}"
@@ -88,4 +89,4 @@ classes:
   app.QuestVariable:
     to_string: "Variable {_SerialNumber} ({_NameHash}): {_Variable.class_shortname}"
   app.QuestAfterStoryData.CheckVariable:
-    to_string: "qu{_Condition._QuestID}.[{_Condition._NameHash}] {_Condition._CompareType:enum(app.CompareType)} {_Condition._ValueType:enum(app.QuestVariableBase.ValueTypeEnum)} {_Condition._IntValue}/{_Condition._BoolValue}"
+    to_string: "qu{_Condition._QuestID:D06}.[{_Condition._NameHash}] {_Condition._CompareType:enum(app.CompareType)} {_Condition._ValueType:enum(app.QuestVariableBase.ValueTypeEnum)} {_Condition._IntValue}/{_Condition._BoolValue}"

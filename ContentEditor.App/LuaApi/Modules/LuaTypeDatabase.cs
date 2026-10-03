@@ -32,7 +32,7 @@ public partial class LuaTypeDatabase(Workspace workspace)
             return null;
         }
 
-        var instance = RszInstance.CreateInstance(workspace.RszParser, cls);
+        var instance = workspace.CreateRszInstance(cls);
         return new LuaRszInstance(instance);
     }
 }

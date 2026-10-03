@@ -3,37 +3,41 @@ using ReeLib;
 
 namespace ContentPatcher;
 
-public class RSZObjectListResource : IContentResource
+public class RSZObjectListResource : IContentResource, IPropertyContainer
 {
-    private string classname;
     private string file;
-    public string ResourceTypeID => classname;
-    public string FilePath => file;
+    public ResourceConfig ResourceType { get; }
+    public string FileResourcePath => file;
 
-    public RSZObjectListResource(string classname, string file)
+    public RSZObjectListResource(ResourceConfig resourceType, string file)
     {
-        this.classname = classname;
+        ResourceType = resourceType;
         this.file = file;
         Instances = [];
     }
 
-    public RSZObjectListResource(RszInstance instance, string file)
-    {
-        Instances = [instance];
-        classname = instance.RszClass.name;
-        this.file = file;
-    }
-
-    private RSZObjectListResource(List<RszInstance> instances, string? classname, string file)
+    public RSZObjectListResource(ResourceConfig resourceType, List<RszInstance> instances, string file)
     {
         Instances = instances;
-        this.classname = classname ?? instances.FirstOrDefault()?.RszClass.name ?? throw new Exception();
+        ResourceType = resourceType;
         this.file = file;
     }
 
     public List<RszInstance> Instances { get; }
 
-    public IContentResource Clone() => new RSZObjectListResource(Instances.Select(i => i.Clone()).ToList(), classname, file);
+    public IContentResource Clone() => new RSZObjectListResource(ResourceType, Instances.Select(i => i.Clone()).ToList(), file);
 
     public JsonNode ToJson(Workspace env) => new JsonArray(Instances.Select(i => i.ToJson(env)).ToArray());
+
+    public object? Get(string path)
+    {
+        return Instances.FirstOrDefault()?.GetNestedFieldValue(path);
+    }
+
+    public void Set(string path, object? value)
+    {
+        foreach (var inst in Instances) {
+            inst.SetNestedFieldValue(path, value ?? RszInstance.NULL);
+        }
+    }
 }

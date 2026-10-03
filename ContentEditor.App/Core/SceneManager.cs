@@ -38,7 +38,7 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
         if (parentScene == null) {
             rootScenes.Add(scene);
             scene.OwnRenderContext.AddDefaultSceneGizmos();
-        } else {
+        } else if (!string.IsNullOrEmpty(resourcePath)) {
             foreach (var scn in parentScene.AllFolders) {
                 if (scn.ScenePath?.Equals(resourcePath, StringComparison.OrdinalIgnoreCase) == true) {
                     scn.ChildScene = scene;

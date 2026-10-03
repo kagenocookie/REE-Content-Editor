@@ -60,7 +60,7 @@ public class MaterialGroupLoader : IFileLoader
         var material = new MaterialGroupWrapper(mdf2);
         material.UpdateMaterialLookups();
 
-        exportCondition ??= (mat, param) => param == mat.AlbedoTexture || param == mat.NormalTexture || param == mat.ATXXTexture;
+        exportCondition ??= (mat, param) => param == mat.AlbedoTexture || param == mat.NormalTexture || param == mat.MapsTexture;
         foreach (var mat in material.Materials) {
             var matPath = Path.Combine(outputFolder, mat.Name);
             foreach (var param in mat.Textures) {

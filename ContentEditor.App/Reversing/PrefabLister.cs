@@ -23,7 +23,7 @@ internal static class PrefabLister
 
     private static List<BookmarkManager.BookmarkEntry> GenerateRE9(ContentWorkspace workspace)
     {
-        var itemEntities = workspace.ResourceManager.GetEntityInstances("item_data");
+        var itemEntities = workspace.ResourceManager.GetEntityInstances("ItemData");
         var items = new List<BookmarkManager.BookmarkEntry>();
         foreach (var (id, item) in itemEntities) {
             var data = item.Get<RSZObjectResource>("data");

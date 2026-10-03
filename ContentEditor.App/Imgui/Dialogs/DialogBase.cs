@@ -2,8 +2,15 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ContentEditor.App.Widgets;
 
-public abstract class DialogBase(string PopupName)
+public abstract class DialogBase(string title)
 {
+    public enum DialogResult
+    {
+        None,
+        Confirm,
+        Cancel,
+    }
+
     private bool isOpen = false;
     protected bool Closable { get; set; } = true;
 
@@ -30,16 +37,18 @@ public abstract class DialogBase(string PopupName)
             TriggerShow();
         }
         if (Closable) {
-            isOpen = ImGui.BeginPopupModal(PopupName, ref isOpen);
+            isOpen = ImGui.BeginPopupModal(title, ref isOpen);
             if (!isOpen) {
                 return true;
             }
 
         } else {
-            isOpen = ImGui.BeginPopupModal(PopupName);
+            isOpen = ImGui.BeginPopupModal(title);
         }
         if (isOpen) {
-            if (Show()) {
+            var close = Show();
+            DrawBelowContent();
+            if (close) {
                 ImGui.CloseCurrentPopup();
                 ImGui.EndPopup();
                 isOpen = false;
@@ -50,9 +59,13 @@ public abstract class DialogBase(string PopupName)
         return false;
     }
 
+    protected virtual void DrawBelowContent()
+    {
+    }
+
     public void TriggerShow()
     {
-        ImGui.OpenPopup(PopupName);
+        ImGui.OpenPopup(title);
         isOpen = true;
     }
 
