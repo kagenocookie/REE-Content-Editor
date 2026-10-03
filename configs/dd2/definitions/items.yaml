@@ -233,7 +233,7 @@ classes:
       _ModelId: { enum: WorldModel }
       _Attr: { enum: app.ItemAttrBits }
       _Job: { enum: ce.ItemJobFlags }
-      _WeaponId: { enum: weapon }
+      _WeaponId: { enum: Weapon }
   app.ItemArmorParam:
     fields:
       _Id: { readOnly: true }

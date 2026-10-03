@@ -159,8 +159,8 @@ public sealed class DD2PartSwapperPreview : IObjectUIHandler
             if (parts.Length == 3) {
                 var cat2 = $"{parts[0]}_{parts[1]}";
                 var cat2I = weaponEnum.GetValue(cat2);
-                offsetSettings = workspace.ResourceManager.GetActiveEntityInstance("WeaponOffset", weaponEnum.GetValue(cat2).GetUInt32())?.Get<RSZObjectResource>("data")?.Instance;
-                offsetSettings ??= workspace.ResourceManager.GetActiveEntityInstance("WeaponOffset", weaponEnum.GetValue(parts[0]).GetUInt32())?.Get<RSZObjectResource>("data")?.Instance;
+                offsetSettings = workspace.ResourceManager.GetActiveEntityInstance("WeaponOffset", weaponEnum.GetValueOrNull(cat2)?.GetUInt32() ?? -1u)?.Get<RSZObjectResource>("data")?.Instance;
+                offsetSettings ??= workspace.ResourceManager.GetActiveEntityInstance("WeaponOffset", weaponEnum.GetValueOrNull(parts[0])?.GetUInt32() ?? -1u)?.Get<RSZObjectResource>("data")?.Instance;
             }
         }
 
