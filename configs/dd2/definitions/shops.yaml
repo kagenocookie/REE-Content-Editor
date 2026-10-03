@@ -18,13 +18,11 @@ classes:
       _ShopNameId: { translate_guid: true, translate_fallback_enum: ShopNameOverrides }
 
   app.ItemShopSellParam:
-    # id: [_ItemId]
-    to_string: "{_ItemId}"
+    to_string: "{_ItemId:entity(ItemData)}"
     fields:
-      _ItemId: { enum: app.ItemIDEnum }
+      _ItemId: { enum: ItemData }
 
   app.ItemShopBuyParam:
-    # id: [_ItemId, _Stock, _ReleaseQuestId]
-    to_string: "{_ItemId} [{_Stock} stock, quest {_ReleaseQuestId}]"
+    to_string: "{_ItemId:entity(ItemData)} [{_Stock} stock, quest {_ReleaseQuestId}]"
     fields:
-      _ItemId: { enum: app.ItemIDEnum }
+      _ItemId: { enum: ItemData }
