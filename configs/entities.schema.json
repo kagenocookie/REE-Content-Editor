@@ -464,10 +464,10 @@
         "type": {
           "description": "Type of action",
           "type": "string",
-          "enum": ["string-input"]
+          "enum": ["string-input", "id-enum-input"]
         },
         "field": {
-          "description": "The target entity field name when applicable",
+          "description": "The field name to store this action's data in",
           "type": "string"
         }
       },

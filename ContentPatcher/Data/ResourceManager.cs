@@ -379,15 +379,33 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
         }
 
         var instanceList = state == ResourceState.Active ? data.activeInstances ?? data.baseInstances! : data.baseInstances!;
+        // try using bundle-defined initial IDs when possible so the IDs are closer together
+        // TODO verify uniqueness with inactive bundles as well?
+        if (activeBundle?.InitialInsertIds?.TryGetValue(data.config.Type, out id) == true) {
+            var maxId = idRange[1];
+            for (; id < maxId; id++) {
+                if (!instanceList.ContainsKey(id)) {
+                    break;
+                }
+            }
+
+            if (id != maxId) {
+                return id;
+            } else {
+                Logger.Error($"Reached max ID for resource type {data.config.Type}");
+            }
+        }
         int attempts = 100;
         do {
             id = Random.Shared.NextInt64(idRange[0], idRange[1]);
-            // TODO verify uniqueness with inactive bundles as well
-            // TODO use bundle-defined initial IDs
             if (attempts-- <= 0) {
                 throw new Exception($"Could not generate a new ID for resource type {data.config}");
             }
         } while (instanceList.ContainsKey(id) == true);
+        if (activeBundle != null) {
+            activeBundle.InitialInsertIds ??= new();
+            activeBundle.InitialInsertIds[data.config.Type] = id;
+        }
         return id;
     }
 
