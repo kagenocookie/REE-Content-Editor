@@ -20,6 +20,8 @@ entities:
     before_create:
     - type: string-input
       field: code
+    allow_create_empty: false
+    allow_templates: true
     fields:
       - name: data
         label: Data

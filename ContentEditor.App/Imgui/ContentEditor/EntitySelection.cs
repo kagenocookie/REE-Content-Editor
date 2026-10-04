@@ -156,16 +156,16 @@ public class EntitySelection : IWindowHandler
                         newTemplateName = "";
                     }
                 }
-                ImGui.SameLine();
-                if (ImGui.Button($"{AppIcons.SI_FolderLink}")) {
-                    FileSystemUtils.ShowFileInExplorer(TemplateManager.GetUserTemplatesFolder(workspace.Game, true));
-                }
-                ImguiHelpers.Tooltip(Lang.Buttons.OpenTemplateFolder);
                 prefix.Dispose();
                 ImGui.InputText(Lang.General.NewTemplateName, ref newTemplateName, 100);
                 ImGui.EndDisabled();
 
                 prefix = ImguiHelpers.InlinePrefix();
+                if (ImGui.Button($"{AppIcons.SI_FolderLink}")) {
+                    FileSystemUtils.ShowFileInExplorer(TemplateManager.GetUserTemplatesFolder(workspace.Game, true));
+                }
+                ImguiHelpers.Tooltip(Lang.Buttons.OpenTemplateFolder);
+                ImGui.SameLine();
                 if (ImGui.Button($"{AppIcons.SI_Update}")) {
                     TemplateManager.Instance.ReloadTemplates(workspace.Game);
                 }
@@ -205,12 +205,17 @@ public class EntitySelection : IWindowHandler
         if (createData != null) {
             var dlgResult = createData.handler?.ShowDialog();
             if (dlgResult == null || dlgResult == DialogBase.DialogResult.Confirm) {
-                selected = workspace.ResourceManager.CreateEntity(createData.type, createData.data);
-                data.Context.ClearChildren();
-                SelectedEntityId = selected.Id;
-                showCreateSettings = false;
-                if (data.Context.GetChildByValue<string>() == null) {
-                    data.Context.AddChild(Lang.Buttons.Rename, selected.Label);
+                try {
+                    selected = workspace.ResourceManager.CreateEntity(createData.type, createData.data);
+                    data.Context.ClearChildren();
+                    SelectedEntityId = selected.Id;
+                    showCreateSettings = false;
+                    if (data.Context.GetChildByValue<string>() == null) {
+                        data.Context.AddChild(Lang.Buttons.Rename, selected.Label);
+                    }
+                } catch (Exception e) {
+                    Logger.Error(e, "Failed to create new entity");
+                    createData = null;
                 }
             }
             if (dlgResult == null || dlgResult != DialogBase.DialogResult.None) {
