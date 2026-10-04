@@ -60,6 +60,21 @@ entities:
         type: object-catalog
         classname: app.CraftRecipeCatalogUserData.CraftSoundCatalogUserData.CatalogData
         file: sound/craftsoundcataloguserdata.user
+    - name: prices
+      resource:
+        type: group
+        classname: app.ShopItemPriceData
+        id: [_ItemID]
+        subtypes:
+          normal:
+            type: object-catalog
+            file: leveldesign/shop/userdata/shopitempriceuserdata.user
+          second:
+            type: object-catalog
+            file: leveldesign/shop/userdata/shopitempriceuserdata_second.user
+          insantity:
+            type: object-catalog
+            file: leveldesign/shop/userdata/shopitempriceuserdata_insanity.user
   items.CraftRecipe:
     to_string: Recipe [{data._RecipeIDStr}] => {data._ProductItems.0._ItemID:translate_fmt(Item_Name_$0)}
     fields:
@@ -95,5 +110,5 @@ classes:
   app.ItemCarryOverSettingUserData.CarryOverItemSetting:
     to_string: "Item Carry Over Settings {_ItemID}"
     # leveldesign/item/userdata/itemcarryoversetting.user
-
-# TODO prices (3 separate files per difficulty) leveldesign/shop/userdata/shopitempriceuserdata.user
+  app.ShopItemPriceData:
+    to_string: "Item Price {_ItemID}"

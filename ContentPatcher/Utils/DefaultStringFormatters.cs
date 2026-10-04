@@ -143,6 +143,18 @@ public class RszFieldStringFormatterSource(ContentWorkspace? workspace) : ISourc
         }
         var fieldIndex = instance.RszClass.IndexOfField(field);
         if (fieldIndex != -1) {
+            if (instance.Values.Length == 0 && instance.RSZUserData != null) {
+                if (workspace != null && !string.IsNullOrEmpty(instance.RSZUserData.Path) && workspace.ResourceManager.TryResolveGameFile(instance.RSZUserData.Path, out var uf)) {
+                    instance = uf.GetFile<UserFile>().Instance;
+                    if (instance == null) {
+                        selectorInfo.Result = null;
+                        return true;
+                    }
+                } else {
+                    selectorInfo.Result = null;
+                    return true;
+                }
+            }
             var value = instance.Values[fieldIndex];
             if (workspace != null && value is RszInstance rszValue && !string.IsNullOrEmpty(rszValue?.RSZUserData?.Path)) {
                 if (workspace.ResourceManager.TryResolveGameFile(rszValue.RSZUserData.Path, out var resolved)) {
