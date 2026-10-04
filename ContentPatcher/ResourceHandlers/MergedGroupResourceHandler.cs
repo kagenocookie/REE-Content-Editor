@@ -35,7 +35,7 @@ public class MergedGroupResourceHandler : ResourceHandler, IResourceHandlerStati
     {
         var sub = DetermineNewSubresourceType(initialData, entity);
         if (sub != null) {
-            return sub.resource.Resource.CreateResource(workspace, id, initialData, entity);
+            return sub.resource.Resource.CreateResource(workspace, id, initialData ?? sub.resource.InitialData, entity);
         }
 
         throw new Exception($"Creating blank resources of type {Config} is not supported");

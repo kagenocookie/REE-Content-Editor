@@ -89,9 +89,8 @@ public sealed class DD2ItemIconUI : IObjectUIHandler
 
                 var texfile = texhandle.GetFile<TexFile>();
                 context.ClearChildren();
-                var (th, tex) = workspace.ResourceManager.GetFileHandleAndContents<TexFile>(workspace.Env.AppendFileVersion(texPath));
-                context.AddChild("texture", texture = new Texture().LoadFromTex(tex));
-                workspace.ResourceManager.CloseFile(th, true);
+                context.AddChild("texture", texture = new Texture().LoadFromTex(texfile));
+                workspace.ResourceManager.CloseFile(texhandle, true);
             }
 
             if (string.IsNullOrEmpty(instance.data.IconTexture) || texture == null) {

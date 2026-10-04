@@ -240,6 +240,7 @@ public class PatchConfig(string filepath)
             CustomIDRange = resCfg.CustomIDRange,
             DisplayName = resCfg.DisplayName ?? resType.GetStringAfterLastDelimiter('.').ToString(),
             OriginalConfig = resCfg,
+            InitialData = resCfg.InitialData == null ? null : JsonSerializer.SerializeToNode(resCfg.InitialData),
         };
 
         if (resCfg.Subtypes?.Count > 0) {

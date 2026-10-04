@@ -361,7 +361,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
         Debug.Assert(baseResource != null);
 
         var id = entity.GetFieldId(field.name);
-        var sub = subresourceType.Resource.CreateResource(workspace, id, null, entity);
+        var sub = subresourceType.Resource.CreateResource(workspace, id, subresourceType.InitialData, entity);
         return sub;
     }
 
@@ -411,7 +411,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
 
     private IContentResource CreateResourceInternal(long resourceId, ResourceConfig resource, ResourceState state, ResourceEntity? entity, JsonNode? initialData)
     {
-        var fieldResource = resource.Resource.CreateResource(workspace, resourceId, initialData, entity);
+        var fieldResource = resource.Resource.CreateResource(workspace, resourceId, initialData ?? resource.InitialData, entity);
         if (fieldResource.FileResourcePath == null) {
             // ignore - there's no file here
         } else if (TryResolveGameFile(fieldResource.FileResourcePath, out var file)) {

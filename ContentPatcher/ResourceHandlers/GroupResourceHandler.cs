@@ -48,7 +48,7 @@ public class GroupResourceHandler : ResourceHandler, IResourceHandlerStatic
 
         foreach (var (type, subconfig) in Config.Subtypes) {
             var subdata = initialData?[type];
-            var subvalue = subconfig.resource.Resource.CreateResource(workspace, id, subdata, entity);
+            var subvalue = subconfig.resource.Resource.CreateResource(workspace, id, subdata ?? subconfig.resource.InitialData, entity);
             group.Set(type, subvalue);
         }
 

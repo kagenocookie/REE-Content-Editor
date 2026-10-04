@@ -392,6 +392,9 @@
             "$ref": "#/definitions/entityCondition"
           }
         },
+        "initial_data": {
+          "description": "The default data to use when creating a new instance of this resource."
+        },
         "params": {
           "description": "Resource configuration parameters.",
           "$ref": "#/definitions/resourceCustomParams"

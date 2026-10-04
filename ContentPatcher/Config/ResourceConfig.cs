@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Nodes;
 using ReeLib;
 using VYaml.Annotations;
 
@@ -16,6 +17,7 @@ public class ResourceConfig(string type)
     public IDGenerator? SubIDGenerator { get; set; }
     public ResourceHandler Resource { get; set; } = null!;
     public IResourceCondition? Filter { get; set; }
+    public JsonNode? InitialData { get; set; }
 
     public Dictionary<string, SubresourceConfig>? Subtypes { get; set; }
 
@@ -48,6 +50,8 @@ public partial class ResourceConfigSerialized
 
     [YamlMember("custom_id_range")]
     public long[]? CustomIDRange { get; set; }
+
+    public object? InitialData { get; set; }
 
     public string Type { get; set; } = "";
     public string? File { get; set; }
