@@ -5,7 +5,7 @@ using ContentPatcher;
 namespace ContentEditor.App;
 
 [ObjectImguiHandler(typeof(GroupedResource))]
-public class GroupedResourceUIHandler : IObjectUIHandler
+public class GroupedResourceEditor : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {

@@ -6,7 +6,7 @@ using ReeLib;
 namespace ContentEditor.App;
 
 [ObjectImguiHandler(typeof(RSZObjectResource))]
-public sealed class ObjectResourceHandler : IObjectUIHandler
+public sealed class ObjectResourceEditor : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {

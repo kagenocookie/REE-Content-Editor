@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Text.Json.Nodes;
 using ContentEditor;
 using ReeLib;
-using ReeLib.Pfb;
 
 namespace ContentPatcher;
 

@@ -1,4 +1,3 @@
-using Assimp;
 using ContentEditor.App.Graphics;
 using ContentPatcher;
 using ReeLib;

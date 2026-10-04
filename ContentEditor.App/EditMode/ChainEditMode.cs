@@ -1,8 +1,6 @@
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.ImguiHandling.Chain;
-using ContentEditor.App.Windowing;
 using ContentEditor.Core;
-using ContentPatcher;
 using ReeLib;
 
 namespace ContentEditor.App;

@@ -5,7 +5,6 @@ using ContentEditor;
 using ContentEditor.Editor;
 using ContentPatcher.StringFormatting;
 using ReeLib;
-using ReeLib.Common;
 
 namespace ContentPatcher;
 

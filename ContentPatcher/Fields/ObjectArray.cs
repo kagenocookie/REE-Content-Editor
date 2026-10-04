@@ -1,6 +1,3 @@
-using System.Text.Json.Nodes;
-using ReeLib;
-
 namespace ContentPatcher;
 
 [ResourceField("objectArray")]

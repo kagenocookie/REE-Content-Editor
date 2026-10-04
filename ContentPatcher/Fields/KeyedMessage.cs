@@ -1,5 +1,4 @@
 using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
 using ContentEditor.Editor;
 using ContentPatcher.StringFormatting;
 using ReeLib.Common;

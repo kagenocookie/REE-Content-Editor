@@ -15,7 +15,6 @@ using ContentEditor.Core;
 using ContentEditor.Reversing;
 using ContentPatcher;
 using ReeLib;
-using ReeLib.Common;
 using ReeLib.Data;
 using ReeLib.Efx;
 using ReeLib.Tools;

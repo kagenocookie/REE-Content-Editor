@@ -7,7 +7,7 @@ using ReeLib.Msg;
 namespace ContentEditor.App;
 
 [ObjectImguiHandler(typeof(MessageData))]
-public class MessageDataUIHandler : IObjectUIHandler
+public class MessageDataResourceEditor : IObjectUIHandler
 {
     private static readonly string[] LanguageNames = Enum.GetNames<Language>();
     private static readonly Language[] LanguageValues = Enum.GetValues<Language>();

@@ -3,8 +3,6 @@ using System.Reflection;
 using Lua;
 using Lua.Runtime;
 using ReeLib;
-using ReeLib.Efx;
-using ReeLib.Motbank;
 
 namespace ContentEditor.App.Lua;
 

@@ -1,5 +1,3 @@
-using ContentEditor.Editor;
-
 namespace ContentPatcher;
 
 [ResourceField("DD2_StylePreview")]

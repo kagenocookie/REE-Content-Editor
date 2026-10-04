@@ -8,7 +8,6 @@ using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
-using ReeLib.Common;
 using ReeLib.Il2cpp;
 using ReeLib.via;
 

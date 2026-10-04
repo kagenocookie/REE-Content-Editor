@@ -1,5 +1,3 @@
-using ContentEditor.Core;
-
 namespace ContentPatcher;
 
 [System.AttributeUsage(System.AttributeTargets.Class, Inherited = false, AllowMultiple = false)]

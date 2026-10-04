@@ -4,7 +4,7 @@ using ContentPatcher;
 namespace ContentEditor.App.ImguiHandling.EntityResources;
 
 [ObjectImguiHandler(typeof(StringResource))]
-public class EntityStringFieldHandler : IObjectUIHandler
+public class EntityStringFieldEditor : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {

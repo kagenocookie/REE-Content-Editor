@@ -6,7 +6,7 @@ using ContentPatcher;
 namespace ContentEditor.App.EntityResources;
 
 [ObjectImguiHandler(typeof(PlaceholderResource<ResourceLinkCustomField>))]
-public class EmbeddedResourceFileHandler : IObjectUIHandler
+public class EmbeddedResourceLinkFieldEditor : IObjectUIHandler
 {
     private FileHandle? file;
 

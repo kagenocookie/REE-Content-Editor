@@ -1,9 +1,6 @@
-using System.Diagnostics;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.ImguiHandling.Rcol;
-using ContentEditor.App.Windowing;
 using ContentEditor.Core;
-using ContentPatcher;
 using ReeLib;
 using ReeLib.Rcol;
 
