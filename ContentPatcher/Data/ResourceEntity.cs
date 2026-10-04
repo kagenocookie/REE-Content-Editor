@@ -196,12 +196,13 @@ public class ResourceEntity : Entity
             var newValue = field.ValueHandler.ApplyValue(workspace, currentValue, data, this, state);
             if (currentValue == null && newValue != null) {
                 if (Config.PrimaryField == field) {
-                    Config.PrimaryEnum?.UpdateEnum(workspace, this);
+                    Config.UpdateEnums(workspace, this, true);
                 }
                 var resourceId = field.GetIDForEntity(this);
                 workspace.ResourceManager.AddResource(field.Config.Type, resourceId, newValue, state);
             }
             Set(name, newValue);
         }
+        Config.UpdateEnums(workspace, this, state == ResourceState.Base);
     }
 }

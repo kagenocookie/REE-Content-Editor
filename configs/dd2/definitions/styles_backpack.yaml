@@ -7,9 +7,10 @@ entities:
     zero_entity:
       id: 0
     enums:
-      - name: app.BackpackStyle
-        format: "Backpack_{id}"
-        primary: true
+    - name: app.BackpackStyle
+      format: "Backpack_{id}"
+      value: "{styleNo.value}"
+      primary: true
     fields:
     - name: DD2_StylePreview
       field_type: DD2_StylePreview

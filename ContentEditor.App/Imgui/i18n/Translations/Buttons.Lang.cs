@@ -36,6 +36,7 @@ public static partial class Lang
         public static readonly FixedString Copy = "Copy";
         public static readonly FixedString Copy_Batch = "Batch copy";
         public static readonly FixedString Copy_Json = "Copy as JSON";
+        public static readonly FixedString Copy_Guid = "Copy GUID";
         public static readonly FixedString Paste = "Paste";
         public static readonly FixedString Paste_Replace = "Paste (replace values)";
         public static readonly FixedString Paste_Hierarchy = "Paste (replace hierarchy)";

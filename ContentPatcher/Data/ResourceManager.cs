@@ -551,6 +551,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             foreach (var entity in newEntities) {
                 entityDict[entity.Id] = entity;
                 entity.Label = data.config.StringFormatter?.GetString(entity) ?? $"{type} {entity.Id}";
+                data.config.UpdateEnums(workspace, entity, true);
             }
         }
 
@@ -570,7 +571,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             }
 
             entity.ApplyDataValues(workspace, ResourceState.Base);
-            data.config.PrimaryEnum?.UpdateEnum(workspace, entity);
+            data.config.UpdateEnums(workspace, entity);
         }
     }
 
@@ -674,7 +675,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             }
             LoadSingleEntityResources(entity, ResourceState.Active);
             entity.ApplyDataValues(workspace, ResourceState.Active);
-            data.config.PrimaryEnum?.UpdateEnum(workspace, entity);
+            data.config.UpdateEnums(workspace, entity);
         }
     }
 
@@ -749,7 +750,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
         }
         // update the enums now in case any of the other fields depend on it
         // if the name relies on a non-primary/id field, it'll get retried later
-        data.config.PrimaryEnum?.UpdateEnum(workspace, entity);
+        data.config.UpdateEnums(workspace, entity);
 
         foreach (var field in data.config.Fields) {
             if (field == primaryField || field == idField) {
@@ -778,7 +779,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             activeBundle.Entities.Add(entity);
         }
         // retry enum update in case the values changed now
-        data.config.PrimaryEnum?.UpdateEnum(workspace, entity);
+        data.config.UpdateEnums(workspace, entity);
         return entity;
     }
 

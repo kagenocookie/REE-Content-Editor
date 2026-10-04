@@ -343,7 +343,6 @@ public class PatchConfig(string filepath)
         var config = new EntityConfig(fullname) {
             Fields = fieldlist.ToArray(),
             DisplayFieldsOrder = displaylist.ToArray(),
-            PrimaryEnum = entity.Enums?.FirstOrDefault(e => e.primary),
             // Enums = Enums?.Where(e => !e.primary).ToArray(),
             Enums = entity.Enums?.ToArray(),
             SourceConfig = entity,

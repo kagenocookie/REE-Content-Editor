@@ -18,7 +18,6 @@ public class EntityConfig(string name)
     public EntityField IDField { get; set; } = null!;
     public EntityField[] Fields { get; set; } = [];
     public EntityField[] DisplayFieldsOrder { get; set; } = [];
-    public EntityEnumInfo? PrimaryEnum { get; init; }
     public EntityEnumInfo[]? Enums { get; init; }
     public List<IObjectUIHandler>? BeforeCreate { get; set; }
     public ZeroEntity? ZeroEntity => SourceConfig.ZeroEntity;
@@ -32,6 +31,16 @@ public class EntityConfig(string name)
 
     public bool HasField(string name) => GetField(name) != null;
     public EntityField? GetField(string name) => Fields.FirstOrDefault(f => f.name == name);
+
+    public void UpdateEnums(ContentWorkspace workspace, ResourceEntity entity, bool primaryOnly = false)
+    {
+        if (Enums == null) return;
+        foreach (var ee in Enums) {
+            if (primaryOnly && !ee.primary) continue;
+
+            ee.UpdateEnum(workspace, entity);
+        }
+    }
 
     public override string ToString() => Name;
 }
@@ -154,6 +163,8 @@ public partial class EntityEnumInfo
             }
             desc.AddValue(curLabel, valueJson);
         }
-        desc.SetDisplayLabel(curLabel, entity.Label);
+        if (primary) {
+            desc.SetDisplayLabel(curLabel, entity.Label);
+        }
     }
 }

@@ -6,6 +6,10 @@
 # natives/stm/appdata/generate/manualset/simpleglobalnpcsettable.user.2
 # natives/stm/appdata/generate/manualset/simpleglobalappendnpcsettable.user.2
 
+# runtime hooks required (not exhaustive):
+# app.CharacterIdClassification getCategoryIDFromMemberID()
+# note also this might be called too early, may need to manually insert data where needed (app.NPCManager)
+
 entities:
   characters.NpcData:
     enums:
@@ -210,3 +214,8 @@ classes:
     to_string: "Costume Data [ID={_CostumeID}] | {_TopsStyle:enum(app.TopsStyle)} {_PantsStyle:enum(app.PantsStyle)}"
   app.charaedit.ch000.AppearanceData:
     to_string: "Appearance Data [ID={_AppearanceID}]"
+    fields:
+      _HeadStyle: { enum: HeadMeshStyle }
+      _SkinStyle: { enum: SkinStyle }
+      _HairStyle: { enum: HairStyle }
+      _BeardStyle: { enum: BeardStyle }

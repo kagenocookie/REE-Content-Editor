@@ -1,4 +1,5 @@
 using ContentEditor.App.ImguiHandling;
+using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib.Msg;
@@ -20,23 +21,27 @@ public class MessageDataUIHandler : IObjectUIHandler
 
         var w = ImGui.CalcItemWidth();
         var langWidth = ImGui.CalcTextSize(selectedLanguage.ToString()).X + ImGui.GetStyle().FramePadding.X * 2 + 32;
-        var textWidth = w - langWidth - ImGui.GetStyle().FramePadding.X * 2;
 
         ImGui.PushID(context.label);
+        using var pfx = ImguiHelpers.InlinePrefix();
+        if (ImGui.Button($"{AppIcons.SI_Copy}")) {
+            EditorWindow.CurrentWindow?.CopyToClipboard(data.Guid.ToString());
+        }
+        ImguiHelpers.Tooltip(Lang.Buttons.Copy_Guid);
+        ImGui.SameLine();
         ImGui.SetNextItemWidth(langWidth);
 
         if (ImguiHelpers.FilterableCSharpEnumCombo<Language>("##language"u8, ref selectedLanguage, ref context.Filter)) {
             context.Filter = "";
         }
-        ImGui.SameLine();
+        pfx.Dispose();
         var msg = data.Get(selectedLanguage) ?? "";
         var multiline = (field.ValueHandler as KeyedMessage)?.multiline ?? false;
         if (multiline) {
-            if (ImGui.InputTextMultiline(context.label, ref msg, 1024, new System.Numerics.Vector2(textWidth, 100))) {
+            if (ImGui.InputTextMultiline(context.label, ref msg, 1024, new System.Numerics.Vector2(0, 100))) {
                 data.Set(selectedLanguage, msg);
             }
         } else {
-            ImGui.SetNextItemWidth(textWidth);
             if (ImGui.InputText(context.label, ref msg, 1024)) {
                 data.Set(selectedLanguage, msg);
             }

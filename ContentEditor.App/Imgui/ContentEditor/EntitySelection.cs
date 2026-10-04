@@ -234,7 +234,7 @@ public class EntitySelection : IWindowHandler
             if (ImGui.Button($"{AppIcons.SI_Save}")) {
                 selected.Label = newName;
                 data.Context.Changed = true;
-                selected.Config.PrimaryEnum?.UpdateEnum(workspace, selected);
+                selected.Config.UpdateEnums(workspace, selected);
                 if (workspace.CurrentBundle != null && workspace.CurrentBundle.RecordEntity(selected) == Bundle.EntityRecordUpdateType.Added) {
                     Logger.Info($"Entity {selected.Label} added to current bundle {workspace.CurrentBundle.Name}");
                 }

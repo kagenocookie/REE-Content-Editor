@@ -35,11 +35,14 @@ public class MsgFileResourceHandler : ResourceHandler, IResourceHandlerStatic
         }
 
         workspace.Diff.ApplyDiff(msgData, data);
+        workspace.Messages.UpdateMessage(msgData);
         return msgData;
     }
 
     public override IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData, ResourceEntity? entity)
     {
+        // ensure we don't reuse the previous guid when creating a new message
+        (initialData as JsonObject)?.Remove(nameof(MessageData.Guid));
         return ApplyResourceData(workspace, null, initialData, entity);
     }
 

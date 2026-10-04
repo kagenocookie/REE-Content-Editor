@@ -7,9 +7,10 @@ entities:
     zero_entity:
       id: 0
     enums:
-      - name: app.FacewearStyle
-        format: "Facewear_{id}"
-        primary: true
+    - name: app.FacewearStyle
+      format: "Facewear_{id}"
+      value: "{styleNo.value}"
+      primary: true
     fields:
     - name: DD2_StylePreview
       field_type: DD2_StylePreview

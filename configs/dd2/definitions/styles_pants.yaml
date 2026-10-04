@@ -7,6 +7,7 @@ entities:
     enums:
     - name: app.PantsStyle
       format: "Pants_{id:D03}"
+      value: "{styleNo.value}"
       primary: true
     fields:
     - name: DD2_StylePreview
