@@ -10,7 +10,6 @@ entities:
         file: AppSystem/CharaEdit/ch000/SwapData/BodyMeshSwapData.user
         params:
           nested: false
-
   charaEdit.body.BodyMesh:
     to_string: "Body Mesh {id} | {mesh._Mesh}"
     fields:
@@ -22,25 +21,23 @@ entities:
         params:
           skipFields: 1
 
-  charaEdit.body.BodySkinStyle:
+  charaEdit.body.HeadMeshStyle:
     primary_field: data
-    to_string: "Body Skin {id:enum(app.SkinStyle)}"
+    to_string: "Head Mesh {data._HeadStyle:enum(app.HeadStyle)}"
     enums:
-    - name: app.SkinStyle
-      format: "Body_{id}"
+    - name: app.HeadStyle
+      format: "Style_{id:D03}"
       primary: true
     fields:
     - name: data
-      # display_after: styleNo
-      # field_id: { field: styleNo, path: value }
       resource:
         type: group
-        id: [_SkinStyle]
+        id: [_HeadStyle]
         custom_id_range: [10000, 10000000]
-        classname: app.BodySkinSwapItem
+        classname: app.HeadMeshSwapItem
         subtypes:
           humanMale:
-            file: AppSystem/CharaEdit/ch000/SwapData/BodySkinSwapData.user
+            file: AppSystem/CharaEdit/ch000/SwapData/HeadMeshSwapData.user
             type: object-catalog
             filter:
             - property: _Gender
@@ -48,7 +45,7 @@ entities:
             - property: _Species
               equals: 2501532887
           humanFemale:
-            file: AppSystem/CharaEdit/ch000/SwapData/BodySkinSwapData.user
+            file: AppSystem/CharaEdit/ch000/SwapData/HeadMeshSwapData.user
             type: object-catalog
             filter:
             - property: _Gender
@@ -56,7 +53,7 @@ entities:
             - property: _Species
               equals: 2501532887
           beastMale:
-            file: AppSystem/CharaEdit/ch000/SwapData/BodySkinSwapData.user
+            file: AppSystem/CharaEdit/ch000/SwapData/HeadMeshSwapData.user
             type: object-catalog
             filter:
             - property: _Gender
@@ -64,13 +61,132 @@ entities:
             - property: _Species
               equals: 3666037007
           beastFemale:
-            file: AppSystem/CharaEdit/ch000/SwapData/BodySkinSwapData.user
+            file: AppSystem/CharaEdit/ch000/SwapData/HeadMeshSwapData.user
             type: object-catalog
             filter:
             - property: _Gender
               equals: 1910070090
             - property: _Species
               equals: 3666037007
+  charaEdit.body.HeadMesh:
+    to_string: "Head Mesh {id} | {mesh._Mesh}"
+    allow_templates: false
+    fields:
+    - name: mesh
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/HeadMeshCatalog.user
+        type: resource-holder-pfb
+        params:
+          skipFields: 1
+
+  charaEdit.body.SkinStyle:
+    to_string: "Skin {id:enum(app.SkinStyle)}"
+    enums:
+    - name: app.SkinStyle
+      format: "Skin_{id}"
+      primary: true
+    fields:
+      # note: the entity system assumes "one" primary field and if it's not present, nothing else is fetched
+      # in this case we have multiple independent groups where some are human only, some are beastren only
+      # a group "merges" the subgroup data into one ID so this way we can store all separate body types in one
+      # while still keeping the 1:1 rule intact
+    - name: data
+      label: ""
+      resource:
+        type: group
+        custom_id_range: [10000, 10000000]
+        params:
+          border: false
+        subtypes:
+          humanMale:
+            type: group
+            id: [_SkinStyle]
+            classname: app.BodySkinSwapItem
+            required: false
+            subtypes:
+              body:
+                file: AppSystem/CharaEdit/ch000/SwapData/BodySkinSwapData.user
+                type: object-catalog
+                filter:
+                - property: _Gender
+                  equals: 2776536455
+                - property: _Species
+                  equals: 2501532887
+              head:
+                file: AppSystem/CharaEdit/ch000/SwapData/HeadSkinSwapData.user
+                type: object-catalog
+                filter:
+                - property: _Gender
+                  equals: 2776536455
+                - property: _Species
+                  equals: 2501532887
+          humanFemale:
+            type: group
+            id: [_SkinStyle]
+            classname: app.BodySkinSwapItem
+            required: false
+            subtypes:
+              body:
+                file: AppSystem/CharaEdit/ch000/SwapData/BodySkinSwapData.user
+                type: object-catalog
+                filter:
+                - property: _Gender
+                  equals: 1910070090
+                - property: _Species
+                  equals: 2501532887
+              head:
+                file: AppSystem/CharaEdit/ch000/SwapData/HeadSkinSwapData.user
+                type: object-catalog
+                filter:
+                - property: _Gender
+                  equals: 1910070090
+                - property: _Species
+                  equals: 2501532887
+          beastMale:
+            type: group
+            id: [_SkinStyle]
+            classname: app.BodySkinSwapItem
+            required: false
+            subtypes:
+              body:
+                file: AppSystem/CharaEdit/ch000/SwapData/BodySkinSwapData.user
+                type: object-catalog
+                filter:
+                - property: _Gender
+                  equals: 2776536455
+                - property: _Species
+                  equals: 3666037007
+              head:
+                file: AppSystem/CharaEdit/ch000/SwapData/HeadSkinSwapData.user
+                type: object-catalog
+                filter:
+                - property: _Gender
+                  equals: 2776536455
+                - property: _Species
+                  equals: 3666037007
+          beastFemale:
+            type: group
+            id: [_SkinStyle]
+            classname: app.BodySkinSwapItem
+            required: false
+            subtypes:
+              body:
+                file: AppSystem/CharaEdit/ch000/SwapData/BodySkinSwapData.user
+                type: object-catalog
+                filter:
+                - property: _Gender
+                  equals: 1910070090
+                - property: _Species
+                  equals: 3666037007
+              head:
+                file: AppSystem/CharaEdit/ch000/SwapData/HeadSkinSwapData.user
+                type: object-catalog
+                filter:
+                - property: _Gender
+                  equals: 1910070090
+                - property: _Species
+                  equals: 3666037007
 
   charaEdit.body.BodySkin:
     to_string: "BodySkin {id:enum(app.CharacterEditDefine.BodySkinID)} | {skin._Material}"
@@ -95,6 +211,30 @@ entities:
       to_both:
         skin: Skin
 
+  charaEdit.body.HeadSkin:
+    to_string: "HeadSkin {id:enum(app.CharacterEditDefine.HeadSkinID)} | {skin._Material}"
+    allow_templates: false
+    enums:
+    - name: app.CharacterEditDefine.HeadSkinID
+      format: "head_{id}"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: skin
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/HeadSkinCatalog_Main.user
+        custom_id_range: [10000, 10000000]
+        type: resource-holder-pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: HeadSkin
+      to_both:
+        skin: Skin
+
 classes:
   app.BodyMeshSwapItem:
     to_string: "{class_shortname} {_Species:enum(app.Species)} {_Gender:enum(app.Gender)}"
@@ -102,9 +242,22 @@ classes:
       _Species: { read_only: true }
       _Gender: { read_only: true }
       _MeshID: { enum: BodyMesh }
-  app.BodySkinSwapItem:
+  app.HeadMeshSwapItem:
     to_string: "{class_shortname} {_Species:enum(app.Species)} {_Gender:enum(app.Gender)}"
     fields:
       _Species: { read_only: true }
       _Gender: { read_only: true }
+      _HeadStyle: { read_only: true }
+      _MeshID: { enum: HeadMesh }
+  app.BodySkinSwapItem:
+    to_string: "{class_shortname} {_Species:enum(app.Species)} {_Gender:enum(app.Gender)} {_SkinStyle:enum(app.SkinStyle)}"
+    fields:
+      _Species: { read_only: true }
+      _Gender: { read_only: true }
       _SkinID: { enum: BodySkin }
+  app.HeadSkinSwapItem:
+    to_string: "{class_shortname} {_Species:enum(app.Species)} {_Gender:enum(app.Gender)}"
+    fields:
+      _Species: { read_only: true }
+      _Gender: { read_only: true }
+      _SkinID: { enum: HeadSkin }

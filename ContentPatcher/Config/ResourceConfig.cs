@@ -21,6 +21,17 @@ public class ResourceConfig(string type)
 
     public Dictionary<string, SubresourceConfig>? Subtypes { get; set; }
 
+    public bool ContainsSubResource(ResourceConfig sub)
+    {
+        if (Subtypes == null) return false;
+        foreach (var (k, s) in Subtypes) {
+            if (s.resource == sub) return true;
+            if (s.resource.ContainsSubResource(sub)) return true;
+        }
+
+        return false;
+    }
+
     public IDGenerator IDGeneratorRequired => IDGenerator ?? throw new NotImplementedException($"Missing ID setting for resource {Type}");
     public RszClass RszClassRequired => RszClass ?? throw new NotImplementedException($"Missing required classname for resource {Type}");
 
@@ -34,6 +45,8 @@ public class ResourceConfig(string type)
 
 public record SubresourceConfig(ResourceConfig resource, IEntityCondition? condition)
 {
+    public bool IsRequired { get; set; } = true;
+
     public static implicit operator ResourceConfig(SubresourceConfig c) => c.resource;
 }
 
@@ -113,6 +126,7 @@ public partial class ResourceConfigSerialized
 public partial class SubResourceConfigSerialized : ResourceConfigSerialized
 {
     public EntityFieldConditionData[]? when;
+    public bool? required;
 }
 
 [YamlObject(NamingConvention.SnakeCase)]

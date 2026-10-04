@@ -257,7 +257,7 @@ public class PatchConfig(string filepath)
                 if (subConfig.when != null) {
                     subcondition = EntityPropertyAllCondition.Deserialize(subConfig.when, "");
                 }
-                cfg.Subtypes[subType] = new (sub, subcondition);
+                cfg.Subtypes[subType] = new (sub, subcondition) { IsRequired = subConfig.required ?? true };
             }
         }
 

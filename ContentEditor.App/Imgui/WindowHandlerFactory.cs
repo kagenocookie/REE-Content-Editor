@@ -953,7 +953,8 @@ public static class WindowHandlerFactory
                 continue;
             }
 
-            var child = context.AddChild(field.label, entity,
+            var label = !string.IsNullOrEmpty(field.label) ? field.label : $"##{field.name}";
+            var child = context.AddChild(label, entity,
                 getter: (ctx) => ((ResourceEntity)ctx.target!).Get(field.name),
                 setter: (ctx, val) => workspace.ResourceManager.UpdateEntityField((ResourceEntity)ctx.target!, field.name, val as IContentResource));
             SetupEntityResourceContent(child, field);
@@ -969,7 +970,7 @@ public static class WindowHandlerFactory
         if (resourceId == -1) {
             resourceId = (resource as IAddressableContentResource)?.ID ?? -1;
         }
-        if (subtype != null && entityField.Config.Subtypes?.Any(kv => kv.Value.resource == subtype) != true) {
+        if (subtype != null && !entityField.Config.ContainsSubResource(subtype)) {
             Logger.Warn($"Potentially wrong sub resource given for entity {entity} field {entityField}");
         }
 

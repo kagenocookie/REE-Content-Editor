@@ -11,15 +11,21 @@ public class GroupedResourceUIHandler : IObjectUIHandler
     {
         var group = context.Get<GroupedResource>();
         var nested = group.ResourceType.OriginalConfig?.GetParam<bool>("nested", false) == true;
+        var border = group.ResourceType.OriginalConfig?.GetParam<bool>("border", true) == true;
         if (nested) {
             if (!ImGui.TreeNode(context.label)) {
                 return;
             }
         } else {
-            ImguiHelpers.BeginRect();
-            ImGui.Text(context.label);
-            ImGui.Spacing();
+            if (border) {
+                ImguiHelpers.BeginRect();
+            }
+            if (!context._label.StartsWith("##")) {
+                ImGui.Text(context.label);
+                ImGui.Spacing();
+            }
         }
+        var field = context.GetEntityField()!;
         foreach (var (type, res) in group.Resources) {
             ImGui.PushID(type);
             var subres = group.Get(type);
@@ -31,8 +37,7 @@ public class GroupedResourceUIHandler : IObjectUIHandler
                 if (ImGui.Button(Lang.Buttons.Create)) {
                     var workspace = context.GetWorkspace();
                     var entity = context.GetOwnerEntity();
-                    var field = context.GetEntityField();
-                    if (workspace == null || entity == null || field == null) {
+                    if (workspace == null || entity == null) {
                         Logger.Error(Lang.Errors.MissingEntityContext);
                         ImGui.PopID();
                         continue;
@@ -46,12 +51,29 @@ public class GroupedResourceUIHandler : IObjectUIHandler
                 ImGui.PopID();
                 continue;
             }
+
             var child = context.GetChildByValue(subres);
+            var subtype = group.ResourceType.Subtypes![type];
             if (child == null) {
-                var field = context.GetEntityField()!;
-                var subtype = group.ResourceType.Subtypes![type];
                 child = context.AddChildContextSetter<GroupedResource, IContentResource?>(type.PrettyPrint(), group, getter: (c) => c!.Get(type), setter: (c, g, v) => g.Set(type, v));
                 WindowHandlerFactory.SetupEntityResourceContent(child, field, subtype);
+            }
+
+            if (!subtype.IsRequired) {
+                using var pfb = ImguiHelpers.InlinePrefix();
+                if (ImGui.Button($"{AppIcons.SI_GenericDelete}")) {
+                    var workspace = context.GetWorkspace();
+                    // note: the way it's set up right now, this doesn't handle nested group resources as force dnull, since the subgroup itself does not have a resource path
+                    // a full fix with the current NulledResource method would mean going down the hierarchy and marking only the leaf resources as null but keeping the intermediate groups
+                    // keeping it as is for now because there's not much usecase for forced deletion anyway
+                    var nullItem = string.IsNullOrEmpty(subres.FileResourcePath) ? null : new NulledResource(subres.ResourceType, subres.FileResourcePath);
+                    UndoRedo.RecordCallbackSetter(context, group, subres, nullItem, (g, v) => g.Set(type, v));
+                    UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context);
+                    ImGui.PopID();
+                    continue;
+                }
+
+                ImguiHelpers.Tooltip(Lang.Buttons.Delete);
             }
             child.ShowUI();
             ImGui.PopID();
@@ -59,7 +81,9 @@ public class GroupedResourceUIHandler : IObjectUIHandler
         if (nested) {
             ImGui.TreePop();
         } else {
-            ImguiHelpers.EndRect();
+            if (border) {
+                ImguiHelpers.EndRect();
+            }
             ImGui.Spacing();
         }
     }

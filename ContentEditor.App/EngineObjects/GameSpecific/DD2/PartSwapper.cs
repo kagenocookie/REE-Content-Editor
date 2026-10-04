@@ -116,7 +116,7 @@ public class PartSwapper(GameObject gameObject, RszInstance data) : BaseMultiMes
             return;
         }
 
-        var skinId = (uint?)GetEntitySwapItem_GenderSpecies("BodySkinStyle__data", skinStyle, gender, species)?.GetFieldValue("_SkinID") ?? 0u;
+        var skinId = (uint?)GetEntitySwapItem_Skin("SkinStyle__data", skinStyle, gender, species, "body")?.GetFieldValue("_SkinID") ?? 0u;
         if (!GameObject.IsSerialized) {
             var meshComp = GameObject.GetComponent<MeshComponent>();
             if (meshComp == null) {
@@ -134,7 +134,7 @@ public class PartSwapper(GameObject gameObject, RszInstance data) : BaseMultiMes
     private void UpdateHeadMesh(uint gender, uint species, uint headStyle, uint skinStyle)
     {
         var meshId = (uint?)GetEntitySwapItem_GenderSpecies("HeadMeshStyle__data", headStyle, gender, species)?.GetFieldValue("_MeshID") ?? 0u;
-        var skinId = (uint?)GetEntitySwapItem_GenderSpecies("HeadSkinStyle__data", skinStyle, gender, species)?.GetFieldValue("_SkinID") ?? 0u;
+        var skinId = (uint?)GetEntitySwapItem_Skin("SkinStyle__data", skinStyle, gender, species, "head")?.GetFieldValue("_SkinID") ?? 0u;
 
         var mesh = GetMeshOrNull("HeadMesh", meshId);
         if (mesh == null) return;
@@ -362,6 +362,32 @@ public class PartSwapper(GameObject gameObject, RszInstance data) : BaseMultiMes
         }
 
         return null;
+    }
+
+    private RszInstance? GetEntitySwapItem_Skin(string swapDataResourceType, uint styleHash, uint gender, uint species, string skinType)
+    {
+        if (styleHash == 0) return null;
+
+        var subtype = (gender, species) switch {
+            (Gender_Male, Species_Human) => "humanMale",
+            (Gender_Female, Species_Human) => "humanFemale",
+            (Gender_Male, Species_Beast) => "beastMale",
+            (Gender_Female, Species_Beast) => "beastFemale",
+            _ => "",
+        };
+        if (string.IsNullOrEmpty(subtype)) return null;
+
+        var data = Workspace.ResourceManager.GetActiveResourceInstance(swapDataResourceType, styleHash);
+
+        if (data is not GroupedResource group) {
+            return null;
+        }
+
+        if (group.Get(subtype) is not GroupedResource group2) {
+            return null;
+        }
+
+        return (group2.Get(skinType) as RSZObjectResource)?.Instance;
     }
 
     private string? GetMeshOrNull(string meshEntity, uint meshId, string meshField = "mesh")

@@ -392,6 +392,10 @@
             "$ref": "#/definitions/entityCondition"
           }
         },
+        "required": {
+          "description": "Mark this resource as a required group subresource. Only used by subresources.",
+          "type": "boolean"
+        },
         "initial_data": {
           "description": "The default data to use when creating a new instance of this resource."
         },

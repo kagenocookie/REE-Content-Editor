@@ -3,6 +3,10 @@ entities:
     primary_field: data
     to_string: "Hair {data._HairStyle:enum(app.HairStyle)} [#{id}]"
     display_name: Style
+    enums:
+    - name: app.HairStyle
+      format: "Style_{id:D03}"
+      primary: true
     fields:
     - name: DD2_StylePreview
       field_type: DD2_StylePreview
