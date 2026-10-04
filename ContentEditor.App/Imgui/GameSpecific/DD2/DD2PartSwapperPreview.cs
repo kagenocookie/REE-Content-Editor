@@ -9,7 +9,6 @@ namespace ContentEditor.App.DD2;
 [ObjectImguiHandler(typeof(PlaceholderResource<PartSwapperPreview>))]
 public sealed class DD2PartSwapperPreview : IObjectUIHandler
 {
-    private string? selectedSubtype;
     private string? swapDataJson;
 
     public void OnIMGUI(UIContext context)
@@ -50,9 +49,8 @@ public sealed class DD2PartSwapperPreview : IObjectUIHandler
             var fieldData = entity.Get("data");
             var data = fieldData;
             if (data is GroupedResource grp) {
-                selectedSubtype ??= grp.Resources.FirstOrDefault().Key;
-
-                data = selectedSubtype == null ? null : grp.Get(selectedSubtype);
+                var subtype = grp.Resources.FirstOrDefault(x => x.Value != null).Key;
+                data = subtype == null ? null : grp.Get(subtype);
             }
             if (data is IPropertyContainer propData) {
                 string partField;
