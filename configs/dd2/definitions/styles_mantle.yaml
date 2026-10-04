@@ -48,6 +48,17 @@ entities:
           new_label_format: "Mantle_{id:D03}"
           label_id_parse: "Mantle_(\\d+)"
           value_from: { field: data, path: _MantleStyle }
+    runtime_mapping:
+      runtime_type: MantleStyle
+      to_both:
+        "data.female": "data.1910070090"
+        "data.male": "data.2776536455"
+      to_runtime:
+        # null out furmask configs for runtime since it's storing pfb paths instead of direct files
+        # this way it'll just read the active state which will be whichever we patched in
+        "null.1": "furmasks"
+        data.female._MantleStyle: styleHash
+        data.male._MantleStyle: styleHash
 
   items.styles.mantle.MantleMesh:
     to_string: "MantleMesh {id:enum(app.CharacterEditDefine.MantleMeshID)} | {mesh._Mesh}"

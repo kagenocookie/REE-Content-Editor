@@ -134,6 +134,8 @@ Accessible under the Windows > Entities menu option for supported games, these a
 
 ### Dragon's Dogma 2
 
+Most of the game data specific knowledge from [here](https://github.com/kagenocookie/dd2-content-editor/wiki) still applies. Some features can't be fully done through file editing so they still require the [runtime Content Editor](https://github.com/kagenocookie/dd2-content-editor) to work as a loader because of code hooks and some data imports, but no ingame editing should be needed.
+
 Field scene streaming is supported through the `natives/stm/appdata/maincontents.scn.20` file while the `Field` folder is active. The open world scenes should load and unload based on the camera position.
 
 For any spawn related data editing, my [anatomically accurate map](https://kagenocookie.github.io/dd2map/) can be used as a reference for grid cells and positions
@@ -141,6 +143,7 @@ For any spawn related data editing, my [anatomically accurate map](https://kagen
 #### Custom entities:
 - Full custom item support (the [runtime Content Editor](https://github.com/kagenocookie/dd2-content-editor) is also required for custom icon display and style lookup import)
 - Shop modifications
+- Character customization options and custom parts
 - Weather parameters and schedules
 - NPC appearance and costume parameters
 - Events (sudden quests)

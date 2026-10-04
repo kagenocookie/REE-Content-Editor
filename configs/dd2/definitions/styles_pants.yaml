@@ -63,6 +63,17 @@ entities:
             type: resource-holder-pfb
             params:
               skipFields: 1
+    runtime_mapping:
+      runtime_type: PantsStyle
+      to_both:
+        "data.female": "data.1910070090"
+        "data.male": "data.2776536455"
+      to_runtime:
+        # null out furmask configs for runtime since it's storing pfb paths instead of direct files
+        # this way it'll just read the active state which will be whichever we patched in
+        "null.1": "furmasks"
+        data.female._PantsStyle: styleHash
+        data.male._PantsStyle: styleHash
 
   items.styles.pants.PantsLgMesh:
     to_string: "PantsLgMesh {id:enum(app.CharacterEditDefine.PantsLgMeshID)} | {mesh._Mesh}"

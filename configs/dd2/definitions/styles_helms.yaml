@@ -63,6 +63,17 @@ entities:
             type: resource-holder-pfb
             params:
               skipFields: 1
+    runtime_mapping:
+      runtime_type: HelmStyle
+      to_both:
+        "data.female": "data.1910070090"
+        "data.male": "data.2776536455"
+      to_runtime:
+        # null out furmask configs for runtime since it's storing pfb paths instead of direct files
+        # this way it'll just read the active state which will be whichever we patched in
+        "null.1": "furmasks"
+        data.female._HelmStyle: styleHash
+        data.male._HelmStyle: styleHash
 
   items.styles.helms.HelmMesh:
     to_string: "HelmMesh {id:enum(app.CharacterEditDefine.HelmMeshID)} | {humanMesh._Mesh}"

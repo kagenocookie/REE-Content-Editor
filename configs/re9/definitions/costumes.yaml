@@ -13,7 +13,7 @@
 # => another list of all available bonuses, except with some useless extra settings ??
 
 entities:
-  costumes.timeline_costume:
+  costumes.TimelineCostume:
     to_string: "Timeline Costume [{data[0]?._CostumeId}]"
     fields:
     - name: data
@@ -25,16 +25,23 @@ entities:
         classname: app.TimelineEventCostumeCatalog.Unit
         type: object-catalog
         file: natives/stm/event/resource/costumecatalog/ch0200.user.3
-  # costumes.montage_preset:
-  #   custom_id_range: [100000, 999999]
+  # TODO the actual data here is inside linked user files, not directly in the catalog, which isn't supported yet for ID access
+  # costumes.MontagePreset:
   #   to_string: "Montage Preset [{data._Preset._ModelID} / {data._Preset._ID}]"
   #   fields:
-  #     data:
-  #       type: objectArray
+  #     - name: data
   #       label: Data
   #       required: true
-  #       params:
+  #       resource:
+  #         type: item-list-catalog
+  #         id: [{path: _Preset._ModelID, class: app.MontageData }]
   #         classname: app.CharacterMontagePresetCatalogUserData.Entry
+  #         custom_id_range: [100000, 999999]
+  #         files:
+  #         - gameassets/character/characterprefab/cp_e9/cp_e900/montage/cp_e900charactermontagepresetcataloguserdata.user
+  #         - gameassets/character/characterprefab/cp_a1/cp_a100/userdata/cp_a100montagepresetdata.user
+  #         - appsystem/event/timelineevent/catalog/timelineevent_charactermontagepresetcataloguserdata.user
+  #         - appsystem/event/timelineevent/catalog/timelineevent_charactermontagepresetcataloguserdata_1stchunk.user
 
 classes:
   app.TimelineEventCostumeCatalog.Unit:
@@ -50,13 +57,4 @@ classes:
   app.FigureItemCatalog.Data:
     to_string: "FigureItemCatalogData {_BonusID} Category={_ItemCategoryID}"
   app.CharacterMontagePresetCatalogUserData.Entry:
-    # TODO nested IDs not supported yet
-    # id: [_Preset._ModelID]
-    # sub_id: [_Preset._ID]
     to_string: "Montage Preset Entry [{_Preset._ModelID} / {_Preset._ID}] {:path(_Preset)}"
-    # patcher:
-    #   type: object-catalog
-    #   file: natives/stm/gameassets/character/characterprefab/cp_e9/cp_e900/montage/cp_e900charactermontagepresetcataloguserdata.user.3
-    #   file: natives/stm/gameassets/character/characterprefab/cp_a1/cp_a100/userdata/cp_a100montagepresetdata.user.3
-    #   file: natives/stm/appsystem/event/timelineevent/catalog/timelineevent_charactermontagepresetcataloguserdata.user.3
-    #   file: natives/stm/appsystem/event/timelineevent/catalog/timelineevent_charactermontagepresetcataloguserdata_1stchunk.user.3

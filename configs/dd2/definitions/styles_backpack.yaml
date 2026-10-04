@@ -50,6 +50,11 @@ entities:
           new_label_format: "Backpack_{id:D03}"
           label_id_parse: "Backpack_(\\d+)"
           value_from: { field: data, path: _BackpackStyle }
+    runtime_mapping:
+      runtime_type: BackpackStyle
+      to_both:
+        "data.female": "data.1910070090"
+        "data.male": "data.2776536455"
 
   items.styles.backpack.BackpackMesh:
     to_string: "BackpackMesh {id:enum(app.CharacterEditDefine.BackpackMeshID)} | {mesh._Mesh}"

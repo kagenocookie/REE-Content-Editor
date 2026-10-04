@@ -347,7 +347,22 @@
           "description": "Array of field names that uniquely identify this resource.",
           "type": "array",
           "items": {
-            "type": ["string", "object"]
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  },
+                  "class": {
+                    "type": "string"
+                  }
+                }
+              }
+            ]
           },
           "minItems": 1
         },
