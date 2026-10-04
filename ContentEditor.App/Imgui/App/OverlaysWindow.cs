@@ -211,6 +211,7 @@ public class OverlaysWindow : IWindowHandler
             new HotkeyHint { Description = Lang.Settings.Bind_Close, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Close.Get())},
             new HotkeyHint { Description = Lang.Settings.Bind_HomePage, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_HomePage.Get())},
             new HotkeyHint { Description = Lang.Settings.Bind_OpenPakBrowser, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_OpenPakBrowser.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_OpenFileSearch, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_OpenFileSearch.Get())},
             new HotkeyHint { Description = Lang.Settings.Bind_OpenMacroShelf, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_OpenMacroShelf.Get())},
             new HotkeyHint { Description = Lang.Settings.Bind_ShowHotkeyHints, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_HotkeyHint.Get())},
         }

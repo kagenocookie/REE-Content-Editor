@@ -1,0 +1,94 @@
+using ContentEditor.App.ImguiHandling;
+using ContentEditor.Core;
+using ContentPatcher;
+using ReeLib;
+
+namespace ContentEditor.App;
+
+public class EntitiesWindow : IWindowHandler, IWorkspaceContainer
+{
+    public bool HasUnsavedChanges => throw new NotImplementedException();
+    public string HandlerName => "Entity Editor";
+
+    public readonly GameIdentifier game;
+
+    public ContentWorkspace Workspace { get; }
+    protected UIContext context = null!;
+
+    public EntitiesWindow(ContentWorkspace workspace)
+    {
+        this.game = workspace.Env.Config.Game;
+        Workspace = workspace;
+    }
+
+    public void Init(UIContext context)
+    {
+        this.context = context;
+    }
+
+    public void OnWindow() => this.ShowDefaultWindow(context);
+    public void OnIMGUI()
+    {
+        if (Workspace.Config.EntityHierarchy.Count == 0) {
+            ImGui.TextColored(Colors.Warning, "No content editor entities defined for " + Workspace.Game);
+            return;
+        }
+
+        if (Workspace.CurrentBundle == null) {
+            ImGui.TextColored(Colors.Warning, "No bundle selected. Changes will not be saveable. Select or create a new bundle first.");
+        }
+        var data = context.Get<WindowData>();
+        var selectedTabIndexes = data.GetOrAddPersistentClass<List<int>>("tabIndex");
+        var curLevelList = Workspace.Config.EntityHierarchy;
+        string? name = null;
+        EntityConfig? type = null;
+        int i = 0;
+        while (curLevelList != null) {
+            int index = i >= selectedTabIndexes.Count ? -1 : selectedTabIndexes[i];
+            ImGui.PushID(i);
+            if (ImguiHelpers.Tabs(curLevelList.FriendlyNames, ref index)) {
+                selectedTabIndexes.RemoveAtAfter(i);
+                if (i >= selectedTabIndexes.Count) {
+                    selectedTabIndexes.Add(index);
+                } else {
+                    selectedTabIndexes[i] = index;
+                }
+                data.SetPersistentData("tabIndex", selectedTabIndexes);
+            }
+            ImGui.PopID();
+            if (index == -1) {
+                selectedTabIndexes.RemoveAtAfter(i);
+                break;
+            }
+            var cur = curLevelList.Get(index);
+            name = cur.name;
+            if (cur.Item1 is EntityConfig conf) {
+                type = conf;
+                break;
+            } else {
+                curLevelList = (HierarchyTypeList<EntityConfig>)cur.Item1;
+            }
+            i++;
+        }
+
+        if (type == null || name == null) return;
+        if (type is EntityConfig cfg) {
+            data.Context ??= UIContext.CreateRootContext("ContentEditor", this);
+            var tab = data.GetOrAddSubwindow(name, true);
+            if (tab.Handler == null) {
+                tab.Handler = new EntitySelection(Workspace, name);
+                tab.Handler.Init(tab.Context!);
+            }
+
+            ImGui.Spacing();
+            ImGui.Indent(2);
+            tab.Handler.OnIMGUI();
+            ImGui.Unindent(2);
+        }
+    }
+
+    public bool RequestClose()
+    {
+        return false;
+    }
+}

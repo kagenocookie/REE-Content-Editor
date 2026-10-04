@@ -1,88 +1,199 @@
 # list of resources required for a new common NPC:
-# - character data natives/stm/appsystem/ch/ch300/userdata/characterdatalist.user.2
-# - head bake pfb (app.PartSwapTextureHolder pfb)
-# -> catalog - natives/stm/appsystem/charaedit/ch000/catalog/headprebaketexturecatalog_npc.user.2
-# - body bake pfb (app.PartSwapTextureHolder pfb)
-# -> catalog - natives/stm/appsystem/charaedit/ch000/catalog/bodyprebaketexturecatalog_npc.user.2
-# -> catalog _Hash is computed from "ch300000_0" - _0 or _1 for the main/replacement NPCs; does the value matter for anything, can we just pass in the chara ID?
-# - npcart image (app.GUITextureHolder pfb) - natives/stm/appsystem/gui/prefab/textureholder/npcart/npcart_ch300002_00_00.pfb.17
-# -> add to prefab list - natives/stm/appsystem/gui/userdata/newtextureholderdata/guinpcarttextureholderdata.user.2
-# -> enum: app.GUITextureLoaderDefine.NPCArtTextureID, enum format "NPCArt_{charaId}_{variantId}_{costumeId?}"
-# - add thumbnail (app.GUITextureHolder pfb) - natives/stm/appsystem/gui/prefab/textureholder/npcthumb/npcthumb_ch300000_00_00.pfb.17
-# -> add to prefab list - natives/stm/appsystem/gui/userdata/newtextureholderdata/guinpcthumbnailtextureholderdata.user.2
-# -> enum: app.GUITextureLoaderDefine.NPCThumbnailTextureID, enum format "NPCThumb_{charaId}_{variantId}_{costumeId?}"
-# - corpse image (app.GUITextureHolder pfb) - natives/stm/appsystem/gui/prefab/textureholder/corpsethumb/corpsethumb_ch300002_00.pfb.17
-# -> add to prefab list - natives/stm/appsystem/gui/userdata/newtextureholderdata/corpsethumbtextureholderdata.user.2
-# -> enum: app.GUITextureLoaderDefine.CorpseThumbTextureID, enum format "CorpseThumb_{charaId}_{variantId}"
-# - lipsync user file - natives/stm/appsystem/ch/lipsync/npc/ch300002.pfb.17
-# -> catalog - natives/stm/appsystem/catalog/maincontents/userdata/lipsynccataloguserdata.user.2
 # - textures - body (ALBD, NRRA), head (ALBD, NRRA)
-# - appearance and costume data (app.charaedit.ch000.EditDataTable.Data) - natives/stm/appsystem/charaedit/ch000/editdatatable_npc.user.2
-# - name "Mes_{_CharacterID:enum(app.CharacterID)}" (natives/stm/message/ui/charactername.msg.22)
-# - NPC schedule - natives/stm/appsystem/ch/ch300/userdata/npcscheduledata.user.2
-# - spawn them somewhere - natives/stm/appdata/generate/manualset/content/**/npc/normal/normal.user.2
+# - spawn an NPC somewhere - natives/stm/appdata/generate/manualset/content/**/npc/normal/normal.user.2
 
 # other, maybe useless?
 # natives/stm/appdata/generate/manualset/simpleglobalnpcsettable.user.2
 # natives/stm/appdata/generate/manualset/simpleglobalappendnpcsettable.user.2
 
+# runtime hooks required (not exhaustive):
+# app.CharacterIdClassification getCategoryIDFromMemberID()
+# note also this might be called too early, may need to manually insert data where needed (app.NPCManager)
+
 entities:
-  characters.npc_data:
+  characters.NpcData:
     enums:
     - name: app.CharacterID
-      format: "{name}"
+      format: "{code}"
       primary: true
-    custom_id_range: [1000, 999999]
-    to_string: "NPC {name}: {displayName}"
+    to_string: "NPC {code}: {name}"
+    before_create:
+    - type: string-input
+      field: code
+    allow_create_empty: false
+    allow_templates: true
     fields:
-      data:
-        type: object
+      - name: data
         label: Data
         required: true
-        param:
+        resource:
+          id: [ID]
+          type: object-catalog
+          custom_id_range: [1000, 999999]
+          filter:
+          - property: _SubNPC
+            equals: false
+          file: AppSystem/ch/ch300/UserData/CharacterDataList.user
           classname: app.CharacterData
-          nested: false
-      edit_data:
-        type: object
+      - name: alternativeData
+        label: Sub NPC Data
+        resource:
+          id: [ID]
+          type: object-catalog
+          custom_id_range: [1000, 999999]
+          filter:
+          - property: _SubNPC
+            equals: true
+          file: AppSystem/ch/ch300/UserData/CharacterDataList.user
+          classname: app.CharacterData
+      - name: edit_data
         label: Customization
-        param:
+        required: true
+        resource:
+          id: [_CharacterID]
+          type: object-catalog
           classname: app.charaedit.ch000.EditDataTable.Data
-          nested: false
-      name:
-        type: string
+          file: AppSystem/CharaEdit/ch000/EditDataTable_Npc.user
+      - name: code
         label: NPC internal code name
         required: true
-        param:
-          regex: "^ch3[0-9_]{5}$"
-          regexDescription: "Example: ch302345"
-          tooltip: Enter a code name for the NPC. This should be unique across all characters, used for translation keys and file names.
-          initial: "{id:enum_name(app.CharacterID)}"
-          diffable: false
         display_after: start
-      displayName:
-        type: single-msg
+        resource:
+          type: string
+          params:
+            diffable: false
+            regex: "^ch3[0-9_]{5}$"
+            regex_description: "Example: ch302345"
+            tooltip: Enter a code name for the NPC. This should be unique across all characters, used for translation keys and file names.
+            initial: "{id:enum_name(app.CharacterID)}"
+            unique_enum: app.CharacterID
+      - name: name
         label: Name
         required: true
-        param:
-          key: "Mes_{name}" # if data._SubNPC -> _X1 suffix
-          # key might not really matter, there's a NameID on the character data
-          file: natives/stm/message/ui/charactername.msg.22
+        display_after: code
+        resource:
+          type: msg
+          file: Message/UI/CharacterName.msg
+          params:
+            key_format: "Mes_{code}"
+      - name: name_sub
+        label: Sub Name
         display_after: name
+        resource:
+          type: msg
+          file: Message/UI/CharacterName.msg
+          params:
+            key_format: "Mes_{code}_X1"
+      - name: scheduleData
+        resource:
+          type: item-list-catalog
+          classname: app.NPCSchedule
+          id: [ID]
+          file: AppSystem/ch/ch300/UserData/NPCScheduleData.user
 
+      - name: headPreBakeTexture_0
+        required: true
+        field_id:
+          format: "{code}_0"
+        resource:
+          type: resource-holder-pfb
+          file: AppSystem/CharaEdit/ch000/Catalog/HeadPreBakeTextureCatalog_Npc.user
+          params:
+            skipFields: 1
+            nested: true
+      - name: headPreBakeTexture_1
+        field_id:
+          format: "{code}_1"
+        resource:
+          type: resource-holder-pfb
+          file: AppSystem/CharaEdit/ch000/Catalog/HeadPreBakeTextureCatalog_Npc.user
+          params:
+            skipFields: 1
+            nested: true
+      - name: headPreBakeTexture_2
+        field_id:
+          format: "{code}_2"
+        resource:
+          type: resource-holder-pfb
+          file: AppSystem/CharaEdit/ch000/Catalog/HeadPreBakeTextureCatalog_Npc.user
+          params:
+            skipFields: 1
+            nested: true
+      - name: bodyPreBakeTexture_0
+        required: true
+        field_id:
+          format: "{code}_0"
+        resource:
+          type: resource-holder-pfb
+          file: AppSystem/CharaEdit/ch000/Catalog/BodyPreBakeTextureCatalog_Npc.user
+          params:
+            skipFields: 1
+            nested: true
+      - name: bodyPreBakeTexture_1
+        field_id:
+          format: "{code}_1"
+        resource:
+          type: resource-holder-pfb
+          file: AppSystem/CharaEdit/ch000/Catalog/BodyPreBakeTextureCatalog_Npc.user
+          params:
+            skipFields: 1
+            nested: true
+      - name: bodyPreBakeTexture_2
+        field_id:
+          format: "{code}_2"
+        resource:
+          type: resource-holder-pfb
+          file: AppSystem/CharaEdit/ch000/Catalog/BodyPreBakeTextureCatalog_Npc.user
+          params:
+            skipFields: 1
+            nested: true
+      - name: customLipsyncData
+        resource:
+          type: resource-holder-pfb
+          field: _CharacterElements
+          file: AppSystem/Catalog/MainContents/UserData/LipSyncCatalogUserData.user
+          params:
+            skipFields: 1
+            nested: true
+
+# # -> enum: app.GUITextureLoaderDefine.NPCArtTextureID, enum format "NPCArt_{code}_{variantId}_{costumeId?}"
+#       - name: guiNpcTexture
+#         field_id:
+#           field: TODO need to match catalog entry by NPC "index" via app.GUITextureLoaderDefine.NPCArtTextureID enum
+#           path:
+#         resource:
+#           type: resource-holder-pfb
+#           file: AppSystem/Gui/UserData/NewTextureHolderData/GUINPCArtTextureHolderData.user
+# # -> enum: app.GUITextureLoaderDefine.NPCThumbnailTextureID, enum format "NPCThumb_{code}_{variantId}_{costumeId?}"
+#       - name: guiNpcThumbnail
+#         field_id:
+#           field:
+#           path:
+#         resource:
+#           type: resource-holder-pfb
+#           file: AppSystem/Gui/UserData/NewTextureHolderData/GUINPCThumbnailTextureHolderData.user
+# # -> enum: app.GUITextureLoaderDefine.CorpseThumbTextureID, enum format "CorpseThumb_{code}_{variantId}"
+#       - name: guiNpcCorpseThumbnail
+#         field_id:
+#           field:
+#           path:
+#         resource:
+#           type: resource-holder-pfb
+#           file: AppSystem/Gui/UserData/NewTextureHolderData/CorpseThumbTextureHolderData.user
 classes:
   app.charaedit.ch000.EditDataTable.Data:
-    id: [_CharacterID]
     to_string: "EditDataTable Character={_CharacterID:enum(app.CharacterID)}"
-    patcher:
-      type: array-file
-      file: natives/stm/appsystem/charaedit/ch000/editdatatable_npc.user.2
+    fields:
+      _CharacterID: { read_only: true }
   app.CharacterData:
-    id: [ID]
     to_string: "{ID:enum_name(app.CharacterID)} {NameID:translate()}"
-    patcher:
-      type: array-file
-      file: natives/stm/appsystem/ch/ch300/userdata/characterdatalist.user.2
-
+    fields:
+      ID: { read_only: true }
+      Present: { enum: ItemData }
+      _SubSkillPresent: { enum: ItemData }
+      _ItemSteal: { enum: ItemData }
+      LeftWeapon: { enum: Weapon }
+      RightWeapon: { enum: Weapon }
   app.facial.LipSync.Phoneme:
     to_string: "Phoneme: SoundID={_SoundMediaID}, duration={_TotalTime}"
   app.facial.LipSync.Phoneme.KeyFrame:
@@ -101,3 +212,12 @@ classes:
     to_string: "Generic NPC Data: {_Voice:enum(app.CharacterData.VoiceDefine)} {_Prefab.Path}"
   app.LipSyncCatalogUserData.CharacterElement:
     to_string: "NPC Data: {_CharacterID:enum(app.CharacterID)}"
+  app.charaedit.ch000.CostumeData:
+    to_string: "Costume Data [ID={_CostumeID}] | {_TopsStyle:enum(app.TopsStyle)} {_PantsStyle:enum(app.PantsStyle)}"
+  app.charaedit.ch000.AppearanceData:
+    to_string: "Appearance Data [ID={_AppearanceID}]"
+    fields:
+      _HeadStyle: { enum: HeadMeshStyle }
+      _SkinStyle: { enum: SkinStyle }
+      _HairStyle: { enum: HairStyle }
+      _BeardStyle: { enum: BeardStyle }

@@ -101,6 +101,10 @@ public class WindowData
 
     public static WindowData CreateEmbeddedWindow(UIContext context, IRectWindow parentWindow, IWindowHandler handler, string label)
     {
+        if (handler is not IObjectUIHandler) {
+            handler = new EmbeddedWindowHandler(handler);
+        }
+
         var data = new WindowData() {
             ParentWindow = parentWindow,
             Handler = handler,

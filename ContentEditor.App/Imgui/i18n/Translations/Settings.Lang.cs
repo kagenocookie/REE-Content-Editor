@@ -1,4 +1,3 @@
-using System.Text;
 using ContentEditor.Core;
 
 namespace ContentEditor.App;
@@ -149,6 +148,7 @@ public static partial class Lang
         public static readonly FixedString Bind_Close = "Close Current Window";
         public static readonly FixedString Bind_HomePage = "Toggle Home Page";
         public static readonly FixedString Bind_OpenPakBrowser = "Open PAK File Browser";
+        public static readonly FixedString Bind_OpenFileSearch = "Open File Search";
         public static readonly FixedString Bind_OpenMacroShelf = "Open Macro Shelf";
         public static readonly FixedString Bind_ShowHotkeyHints = "Show Hotkey Hints";
         public static readonly FixedString Bind_PakBrowser_OpenBookmarks = "Open Bookmarks";

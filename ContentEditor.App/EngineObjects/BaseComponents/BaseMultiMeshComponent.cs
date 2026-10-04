@@ -31,11 +31,11 @@ public abstract class BaseMultiMeshComponent(GameObject gameObject, RszInstance 
 
     protected abstract void RefreshMesh();
 
-    protected MeshHandle? AddMesh(string meshFilepath, string? materialFilepath)
+    protected MeshHandle? AddMesh(string meshFilepath, string? materialFilepath, ShaderFlags extraFlags = ShaderFlags.None)
     {
         var material = string.IsNullOrEmpty(materialFilepath)
             ? Scene!.RenderContext.LoadMaterialGroup(meshFilepath)
-            : Scene!.RenderContext.LoadMaterialGroup(materialFilepath);
+            : Scene!.RenderContext.LoadMaterialGroup(materialFilepath, extraFlags);
         var mesh = Scene.RenderContext.LoadMesh(meshFilepath);
 
         if (mesh != null) meshes.Add(mesh);

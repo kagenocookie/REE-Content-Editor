@@ -1,8 +1,4 @@
-using System.Diagnostics;
-using System.Text.Json;
-using ContentPatcher;
 using ReeLib;
-using ReeLib.Common;
 
 namespace ContentEditor.BackgroundTasks;
 
