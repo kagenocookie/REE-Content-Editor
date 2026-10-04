@@ -49,13 +49,25 @@ public class MessageData : IAddressableContentResource
     public string? Get(Language lang) => Messages.GetValueOrDefault(lang.ToString());
     public string? Get(string lang) => Messages.GetValueOrDefault(lang);
 
-    public void Set(Language lang, string msg)
+    public void Set(Language lang, string msg, bool syncOtherLanguages = false)
     {
-        Messages[lang.ToString()] = msg;
+        Set(lang.ToString(), msg, syncOtherLanguages);
     }
 
-    public void Set(string lang, string msg)
+    public void Set(string lang, string msg, bool syncOtherLanguages = false)
     {
+        if (!syncOtherLanguages) {
+            Messages[lang] = msg;
+            return;
+        }
+
+        var curMsg = Messages.GetValueOrDefault(lang);
+        // auto-sync to other languages only if they're identical to the current text
+        foreach (var (c, m) in Messages) {
+            if (m == curMsg || string.IsNullOrEmpty(m)) {
+                Messages[c] = msg;
+            }
+        }
         Messages[lang] = msg;
     }
 

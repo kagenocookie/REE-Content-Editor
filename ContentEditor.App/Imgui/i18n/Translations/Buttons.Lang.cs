@@ -52,6 +52,7 @@ public static partial class Lang
         public static readonly FixedString Reload = "Reload";
         public static readonly FixedString ForceReload = "Force Reload";
         public static readonly FixedString RefreshList = "Refresh List";
+        public static readonly FixedString SyncText = "Sync Text Between Languages";
         public static readonly IconString ForceReimport = new("{0} Re-Import", AppIcons.SI_Update);
         public static readonly FixedString UpdateSceneCache = "Update Scene Cache";
         public static readonly FixedString NewWorkspace = "Open New Workspace";
