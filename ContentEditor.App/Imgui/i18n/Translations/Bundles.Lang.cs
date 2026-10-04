@@ -37,6 +37,7 @@ public static partial class Lang
             Are you sure you wish to delete the bundle {0}?
             This will delete all of the bundle's edited files and runtime bundle data and is not recoverable.
             """;
+        public static readonly InterpolatedString<string> RuntimeOnlyBundle = "{0} (Runtime bundle)";
         public static readonly FixedString RebuildPatchDiffs = "Force Rebuild Patch Diffs";
         public static readonly FixedString OpenFileInEditor = "Open file in Editor";
         public static readonly FixedString EditTargetPathPopup = "EditTargetPath";

@@ -469,8 +469,16 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     if (!string.IsNullOrEmpty(activeBundleFilter) && !b.Name.Contains(activeBundleFilter, StringComparison.InvariantCultureIgnoreCase)) {
                         continue;
                     }
-                    if (ImGui.MenuItem(b.Name)) {
-                        SetWorkspace(workspace.Env.Config.Game, b.Name);
+                    if (b.IsRuntimeOnly) {
+                        ImGui.PushStyleColor(ImGuiCol.Text, Colors.Faded);
+                        if (ImGui.MenuItem(Lang.Bundles.RuntimeOnlyBundle.Format(b.Name))) {
+                            SetWorkspace(workspace.Env.Config.Game, b.Name);
+                        }
+                        ImGui.PopStyleColor();
+                    } else {
+                        if (ImGui.MenuItem(b.Name)) {
+                            SetWorkspace(workspace.Env.Config.Game, b.Name);
+                        }
                     }
                 }
                 ImGui.EndMenu();

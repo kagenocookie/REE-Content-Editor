@@ -34,6 +34,9 @@ public class Bundle : BaseBundle
     public IEnumerable<string> ResourceLocalPaths => ResourceListing?.Keys ?? Enumerable.Empty<string>();
 
     [JsonIgnore]
+    public bool IsRuntimeOnly => RuntimeBundle != null && ResourceListing == null && Entities.Count == 0;
+
+    [JsonIgnore]
     private Dictionary<string, string>? _targetToLocalPathCache;
 
     private Dictionary<string, string> TargetToLocalPathCache =>
