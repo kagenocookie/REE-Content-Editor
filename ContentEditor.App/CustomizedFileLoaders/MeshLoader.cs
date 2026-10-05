@@ -80,7 +80,7 @@ public partial class MeshLoader : IFileLoader,
         } else {
             var filepath = handle.Filepath;
             var ext = Path.GetExtension(handle.Filepath.AsSpan());
-            var useDirectFilepath = false;
+            var useDirectFilepath = ext.SequenceEqual(".gltf") && File.Exists(Path.ChangeExtension(filepath, ".bin"));
             if (ext.SequenceEqual(".blend")) {
                 filepath = HandleBlenderImportConversion(filepath);
                 if (filepath == null) {
@@ -89,6 +89,11 @@ public partial class MeshLoader : IFileLoader,
                 useDirectFilepath = true;
                 ext = Path.GetExtension(filepath.AsSpan());
             }
+
+            if (AppConfig.Instance.UseExperimentalGltfLoader && (ext.SequenceEqual(".glb") || ext.SequenceEqual(".gltf"))) {
+                return CommonMeshResource.CreateFromGltf(handle, name, workspace.Env, useDirectFilepath ? filepath : null);
+            }
+
             using AssimpContext importer = new AssimpContext();
             importer.SetConfig(new MeshVertexLimitConfig(ushort.MaxValue));
             importer.SetConfig(new VertexBoneWeightLimitConfig(16));
@@ -99,7 +104,7 @@ public partial class MeshLoader : IFileLoader,
                 PostProcessSteps.GenerateUVCoords |
                 PostProcessSteps.CalculateTangentSpace |
                 PostProcessSteps.SplitLargeMeshes;
-            if (useDirectFilepath || ext.SequenceEqual(".gltf") && File.Exists(Path.ChangeExtension(filepath, ".bin"))) {
+            if (useDirectFilepath) {
                 importedScene = importer.ImportFile(filepath, importFlags);
             } else {
                 importedScene = importer.ImportFileFromStream(handle.Stream, importFlags, Path.GetExtension(filepath));

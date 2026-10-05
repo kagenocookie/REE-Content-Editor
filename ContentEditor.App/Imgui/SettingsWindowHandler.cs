@@ -263,6 +263,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         if (ImGui.Combo(Lang.Settings.MinLogLevel.String, ref logLevel, LogLevels, LogLevels.Length)) {
             config.LogLevel.Set(logLevel);
         }
+        ShowSetting(config.UseExperimentalGltfLoader, Lang.Settings.UseExperimentalGltFLoader);
     }
 
     private static void ShowPreferencesEditingTab()

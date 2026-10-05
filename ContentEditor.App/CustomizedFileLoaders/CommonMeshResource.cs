@@ -44,7 +44,7 @@ public partial class CommonMeshResource(string name, Workspace workspace) : IRes
 
     public IReadOnlyList<string> MaterialNames => NativeMesh.MaterialNames;
 
-    public bool HasAnimations => _scene?.HasAnimations == true;
+    public bool HasAnimations => _scene?.HasAnimations == true || _motlist?.MotFiles.Count > 0;
 
     public IEnumerable<int> GroupIDs =>
         NativeMesh.MeshData?.LODs[0].MeshGroups.Select(g => (int)g.groupId).Distinct()

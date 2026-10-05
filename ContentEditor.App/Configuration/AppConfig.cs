@@ -27,6 +27,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string RemoteDataSource = "remote_data_source";
         public const string UnpackMaxThreads = "unpack_max_threads";
         public const string GameConfigBaseFilepath = "game_configs_base_filepath";
+        public const string UseExperimentalGltfLoader = "use_experimental_gltf_loader";
         public const string BackgroundColor = "background_color";
         public const string LogLevel = "log_level";
         public const string LogToFile = "log_to_file";
@@ -342,6 +343,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<bool> EnableGpuTexCompression = new SettingWrapper<bool>(Keys.EnableGpuTexCompression, _lock, true);
     public readonly SettingWrapper<bool> UsePakFilePreviewWindow = new SettingWrapper<bool>(Keys.UsePakFilePreviewWindow, _lock, true);
     public readonly SettingWrapper<bool> UsePakCompactFilePaths = new SettingWrapper<bool>(Keys.UsePakCompactFilePaths, _lock, true);
+    public readonly SettingWrapper<bool> UseExperimentalGltfLoader = new SettingWrapper<bool>(Keys.UseExperimentalGltfLoader, _lock, false);
     public readonly SettingWrapper<bool> ShowFps = new SettingWrapper<bool>(Keys.ShowFps, _lock, false);
     public readonly SettingWrapper<bool> LogToFile = new SettingWrapper<bool>(Keys.LogToFile, _lock, true);
     public readonly SettingWrapper<bool> IsFirstTime = new SettingWrapper<bool>(Keys.IsFirstTime, _lock, true);
@@ -573,6 +575,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.EnableGpuTexCompression, instance.EnableGpuTexCompression.value.ToString(), null),
             (Keys.UsePakFilePreviewWindow, instance.UsePakFilePreviewWindow.value.ToString(), null),
             (Keys.UsePakCompactFilePaths, instance.UsePakCompactFilePaths.value.ToString(), null),
+            (Keys.UseExperimentalGltfLoader, instance.UseExperimentalGltfLoader.value.ToString(), null),
             (Keys.PakDisplayMode, instance.PakDisplayModeValue.value.ToString(), null),
             (Keys.BundleDisplayMode, instance.BundleDisplayModeValue.value.ToString(), null),
             (Keys.MacroDisplayMode, instance.MacroDisplayModeValue.value.ToString(), null),
@@ -850,6 +853,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.UsePakCompactFilePaths:
                             UsePakCompactFilePaths.value = ReadBool(value);
+                            break;
+                        case Keys.UseExperimentalGltfLoader:
+                            UseExperimentalGltfLoader.value = ReadBool(value);
                             break;
                         case Keys.UseMDFGroupedParams:
                             UseMDFGroupedParams.value = ReadBool(value);
