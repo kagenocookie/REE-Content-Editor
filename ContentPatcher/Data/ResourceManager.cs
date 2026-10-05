@@ -620,26 +620,10 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             var fieldId = field.GetIDForEntity(entity);
 
             var value = entity.Get(field.name);
+            // note: I'm not quite sure about the null check here
             if (value != null) {
-                // TODO: bypass the value handler and go directly for the resource?
-                // how do we determine the resource ID (for cases where it's different from the entity id)
-
                 entity.FieldValues[field.name] = field.ValueHandler.FetchResource(workspace, entity, fieldId, state);
             }
-
-            // note: I'm not sure if the custom field case needs to be handled here
-            // if (field.ValueHandler is CustomEntityFieldHandler custom) {
-            //     var (resid, res) = custom.LoadValue(workspace, entity, state);
-            //     if (resid == -1 || res == null) {
-            //         // fall back to default resource fetch
-            //         entity.FieldValues[field.name] = field.ValueHandler.FetchResource(workspace, entity, fieldId, state);
-            //         continue;
-            //     }
-            //     if (field == entity.Config.IDField && entity.Id != resid) {
-            //         entity.Id = resid;
-            //     }
-            //     entity.FieldValues[field.name] = res;
-            // }
         }
     }
 

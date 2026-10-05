@@ -30,6 +30,26 @@ entities:
             filter:
             - property: _Gender
               equals: 1910070090
+    # TODO: figure out what the underwear furmask hashes map to, or if they're just hardcoded
+    # - name: furmask
+    #   resource:
+    #     type: group
+    #     subtypes:
+    #       male:
+    #         file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_m_Underwear.user
+    #         type: resource-holder-pfb
+    #         params:
+    #           skipFields: 1
+    #       female:
+    #         file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_f_Underwear.user
+    #         type: resource-holder-pfb
+    #         params:
+    #           skipFields: 1
+    #       femaleLower:
+    #         file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_f_Underwear_Lower.user
+    #         type: resource-holder-pfb
+    #         params:
+    #           skipFields: 1
 
   items.styles.underwear.UnderwearMesh:
     to_string: "UnderwearMesh {id:enum(app.CharacterEditDefine.UnderwearMeshID)} | {mesh._Mesh}"
