@@ -1045,14 +1045,14 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 if (AppImguiHelpers.HotkeyMenuItem(Lang.Windows.FileSearch, AppConfig.Instance.Key_OpenFileSearch.Get())) {
                     AddSubwindow(new FileSearchWindow());
                 }
-                if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Windows.TexturePacker))) {
+                if (ImGui.MenuItem(Lang.Windows.TexturePacker)) {
                     AddSubwindow(new TextureChannelPacker()).Size = new Vector2(1280, 800);
                 }
-                if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Windows.BatchConvert))) {
+                if (ImGui.MenuItem(Lang.Windows.BatchConvert)) {
                     AddSubwindow(new FileConverter()).Size = new Vector2(1280, 800);
                 }
                 if (workspace.Config.Entities.Any()) {
-                    if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Windows.Entities))) {
+                    if (ImGui.MenuItem(Lang.Windows.Entities)) {
                         AddSubwindow(new EntitiesWindow(workspace));
                     }
                 }
