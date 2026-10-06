@@ -52,6 +52,13 @@ public static partial class Lang
             Does nothing if the file format does not support partial patching.
             If unspecified, the target path will be used for matching the file to a vanilla one.
             """;
+        public static readonly FixedString BundlesAlreadyExist = "Bundles already exist";
+        public static readonly InterpolatedString<string> BundlesAlreadyExistConfirmText = """
+            Bundles already exist. Would you like to overwrite existing bundles?
+            The following bundles will be updated:
+
+            {0}
+            """;
         public static readonly FixedString FileCouldNotBeOpened = "File could not be opened";
         public static readonly InterpolatedString<string> CreatedAt = "Created at: {0}";
         public static readonly InterpolatedString<string> UpdatedAt = "Updated at: {0}";

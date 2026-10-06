@@ -63,9 +63,14 @@ public class RuntimeBundle : BaseBundle
     public void Save()
     {
         Touch();
-        Directory.CreateDirectory(Path.GetDirectoryName(StoragePath)!);
-        using var fs = File.Create(StoragePath);
-        JsonSerializer.Serialize(fs, this, jsonOptions);
+        SaveTo(StoragePath);
+    }
+
+    public void SaveTo(string filepath)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(filepath)!);
+        using var fs = File.Create(filepath);
+        JsonSerializer.Serialize(fs, this, JsonOptions);
     }
 
     public override string ToString() => Name;

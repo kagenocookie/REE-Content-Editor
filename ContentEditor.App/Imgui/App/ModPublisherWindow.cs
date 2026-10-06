@@ -48,16 +48,7 @@ public class ModPublisherWindow : IWindowHandler
         ImGui.SameLine();
         if (ImGui.Button("Publish as loose files ...")) {
             PlatformUtils.ShowFolderDialog((outputPath) => {
-                var modconfig = Path.Combine(outputPath, "modinfo.ini");
-                if (!File.Exists(modconfig)) {
-                    File.WriteAllText(modconfig, bundle.ToModConfigIni());
-                    Logger.Info("Created modinfo.ini in " + modconfig);
-                } else {
-                    Logger.Warn("modinfo.ini already exists, keeping existing file in " + modconfig);
-                }
-                if (!string.IsNullOrEmpty(bundle.ImagePath) && File.Exists(Path.Combine(bundlePath, bundle.ImagePath))) {
-                    File.Copy(Path.Combine(bundlePath, bundle.ImagePath), Path.Combine(outputPath, bundle.ImagePath), true);
-                }
+                WriteModinfo(outputPath, bundle, bundlePath);
                 if (!window.ApplyContentPatches(PatchOutputType.Publish, false, outputPath, bundle.Name)) {
                     Logger.Error("Publishing failed");
                 }
@@ -67,20 +58,31 @@ public class ModPublisherWindow : IWindowHandler
         if (ImGui.Button("Publish as PAK ...")) {
             var srcFolder = Workspace.BundleManager.GetBundleFolder(Workspace.CurrentBundle);
             PlatformUtils.ShowSaveFileDialog((outputPath) => {
-                var modconfig = Path.Combine(srcFolder, "modinfo.ini");
-                if (!File.Exists(modconfig)) {
-                    File.WriteAllText(modconfig, bundle.ToModConfigIni());
-                    Logger.Info("Created modinfo.ini in " + modconfig);
-                } else {
-                    Logger.Warn("modinfo.ini already exists, keeping existing file in " + modconfig);
-                }
-                if (!string.IsNullOrEmpty(bundle.ImagePath) && File.Exists(Path.Combine(bundlePath, bundle.ImagePath))) {
-                    File.Copy(Path.Combine(bundlePath, bundle.ImagePath), Path.Combine(outputPath, bundle.ImagePath), true);
-                }
+                WriteModinfo(outputPath, bundle, bundlePath);
                 if (!window.ApplyContentPatches(PatchOutputType.Publish, true, outputPath, bundle.Name)) {
                     Logger.Error("Publishing failed");
                 }
             }, null, FileFilters.PakFile);
+        }
+        ImGui.SameLine();
+        if (ImGui.Button("Publish patchable ...")) {
+            PlatformUtils.ShowFolderDialog((outputPath) => {
+                var outBundleDir = Path.Combine(outputPath, "content/bundles", bundle.Name);
+                if (bundle.ResourceListing != null) {
+                    foreach (var (localPath, resource) in bundle.ResourceListing) {
+                        var src = Path.Combine(bundlePath, localPath);
+                        if (!File.Exists(src)) continue;
+
+                        var target = Path.Combine(outBundleDir, localPath);
+                        Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                        File.Copy(src, target, true);
+                    }
+                }
+                bundle.SaveTo(outputPath);
+                if (!string.IsNullOrEmpty(bundle.ImagePath) && File.Exists(Path.Combine(bundlePath, bundle.ImagePath))) {
+                    File.Copy(Path.Combine(bundlePath, bundle.ImagePath), Path.Combine(outputPath, bundle.ImagePath), true);
+                }
+            });
         }
 
         ImGui.SeparatorText("Content");
@@ -121,6 +123,20 @@ public class ModPublisherWindow : IWindowHandler
         }
         if (bundle.Entities.Count == 0 && !bundle.HasFiles) {
             ImGui.TextColored(Colors.Info, "There is currently no content inside the bundle.");
+        }
+    }
+
+    private static void WriteModinfo(string outputPath, Bundle bundle, string bundlePath)
+    {
+        var modconfig = Path.Combine(outputPath, "modinfo.ini");
+        if (!File.Exists(modconfig)) {
+            File.WriteAllText(modconfig, bundle.ToModConfigIni());
+            Logger.Info("Created modinfo.ini in " + modconfig);
+        } else {
+            Logger.Warn("modinfo.ini already exists, keeping existing file in " + modconfig);
+        }
+        if (!string.IsNullOrEmpty(bundle.ImagePath) && File.Exists(Path.Combine(bundlePath, bundle.ImagePath))) {
+            File.Copy(Path.Combine(bundlePath, bundle.ImagePath), Path.Combine(outputPath, bundle.ImagePath), true);
         }
     }
 

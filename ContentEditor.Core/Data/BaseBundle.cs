@@ -50,7 +50,7 @@ public class BaseBundle
     [JsonIgnore]
     public string StoragePath { get; set; } = "";
 
-    protected static readonly JsonSerializerOptions jsonOptions = new() {
+    public static readonly JsonSerializerOptions JsonOptions = new() {
         WriteIndented = true,
         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,

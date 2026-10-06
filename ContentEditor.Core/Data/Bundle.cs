@@ -284,7 +284,20 @@ public class Bundle : BaseBundle
         }
         Touch();
         using var fs = File.Create(outfilepath);
-        JsonSerializer.Serialize(fs, this, jsonOptions);
+        JsonSerializer.Serialize(fs, this, JsonOptions);
+    }
+
+    public void SaveTo(string baseFiledir)
+    {
+        var outfilepath = Path.Combine(baseFiledir, "content/bundles", Name, "bundle.json");
+        // save runtime bundle first to ensure it has update timestamp <= desktop bundle
+        if (RuntimeBundle != null) {
+            RuntimeBundle.CopyFrom(this);
+            RuntimeBundle.SaveTo(Path.Combine(baseFiledir, "reframework/data/usercontent/bundles", RuntimeBundle.Name + ".json"));
+        }
+        Directory.CreateDirectory(Path.GetDirectoryName(outfilepath)!);
+        using var fs = File.Create(outfilepath);
+        JsonSerializer.Serialize(fs, this, JsonOptions);
     }
 
     public void Init(BundleManager bundleManager)

@@ -415,6 +415,53 @@ public class BundleManager
         return bundle;
     }
 
+    public bool ImportBundle(string bundleDir, string? runtimeBundleDir, bool allowOverwrite, out bool targetBundleAlreadyExists)
+    {
+        var bundleFile = Path.Combine(bundleDir, "bundle.json");
+        targetBundleAlreadyExists = false;
+        Bundle? bundle;
+        try {
+            using var fs = File.OpenRead(bundleFile);
+            bundle = JsonSerializer.Deserialize<Bundle>(fs, BaseBundle.JsonOptions);
+            if (bundle == null) return false;
+        } catch (Exception e) {
+            Logger.Error($"Found bundle.json in {bundleDir} but failed to import its data: {e.Message}");
+            return false;
+        }
+
+        var targetBundleDir = Path.Combine(AppBundlePath, bundle.Name);
+        if (!allowOverwrite && Directory.Exists(targetBundleDir)) {
+            targetBundleAlreadyExists = true;
+            return false;
+        }
+
+        Directory.CreateDirectory(targetBundleDir);
+
+        File.Move(bundleFile, Path.Combine(targetBundleDir, "bundle.json"), true);
+        if (!string.IsNullOrEmpty(bundle.ImagePath) && File.Exists(Path.Combine(bundleDir, bundle.ImagePath))) {
+            File.Move(Path.Combine(bundleDir, bundle.ImagePath), Path.Combine(targetBundleDir, bundle.ImagePath), true);
+        }
+
+        var runtimeBundleFile = runtimeBundleDir == null ? null : Path.Combine(runtimeBundleDir, bundle.Name + ".json");
+        if (File.Exists(runtimeBundleFile)) {
+            Directory.CreateDirectory(RuntimeBundlePath);
+            File.Move(runtimeBundleFile, Path.Combine(RuntimeBundlePath, bundle.Name + ".json"), true);
+        }
+
+        if (bundle.ResourceListing == null) return true;
+
+        foreach (var (local, target) in bundle.ResourceListing) {
+            var srcFile = Path.Combine(bundleDir, local);
+            if (!File.Exists(srcFile)) continue;
+
+            var tgtFile = Path.Combine(targetBundleDir, local);
+            Directory.CreateDirectory(Path.GetDirectoryName(tgtFile)!);
+            File.Move(srcFile, tgtFile, true);
+        }
+
+        return true;
+    }
+
     public void DeleteBundle(Bundle bundle)
     {
         if (Directory.Exists(bundle.StoragePath)) {

@@ -130,6 +130,8 @@ You can't launch the windows exe directly even with wine due to the .NET depende
 
 Accessible under the Windows > Entities menu option for supported games, these are streamlined editors for game-specific data. They can be used to more easily modify or add custom items and other game content related objects. YAML configuration file example [here](https://github.com/kagenocookie/REE-Content-Editor/blob/master/configs/dd2/definitions/items.yaml).
 
+Note that while the data can be edited this way, some changes or custom new additions might not work ingame without additional runtime handling like REFramework script hooks or manual data inserting. The [Enum injector](https://github.com/kagenocookie/REE-Enum-Injector) might also be needed; the patch output automatically generates valid configs for it when enums are configured on an entity.
+
 ## Game-specific additional support
 
 ### Dragon's Dogma 2

@@ -536,6 +536,12 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
     public void CreateBundleFromLooseFileFolder(string folder, string? initialName = null, Action? postConfirmCallback = null)
     {
+        var bundleFolder = Path.Combine(folder, "content/bundles");
+        if (Directory.Exists(bundleFolder)) {
+            ImportLooseBundles(folder, postConfirmCallback, bundleFolder);
+            return;
+        }
+
         var modinfoPath = Path.Combine(folder, "modinfo.ini");
         initialName ??= Path.GetFileName(folder);
         if (File.Exists(modinfoPath)) {
@@ -552,6 +558,77 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 postConfirmCallback?.Invoke();
             }));
     }
+
+    private void ImportLooseBundles(string folder, Action? postConfirmCallback, string bundleFolder)
+    {
+        var bundleDirs = Directory.EnumerateDirectories(bundleFolder);
+        var runtimeBundleFolder = Path.Combine(folder, "reframework/data/usercontent/bundles");
+        var anyFailed = false;
+        var anySuccess = false;
+        var existingBundles = new List<Bundle>();
+        foreach (var bundleDir in bundleDirs) {
+            var bundleFile = Path.Combine(bundleDir, "bundle.json");
+            if (!File.Exists(bundleFile)) {
+                anyFailed = true;
+                continue;
+            }
+
+            try {
+                using var fs = File.OpenRead(bundleFile);
+                var bundle = JsonSerializer.Deserialize<Bundle>(fs, BaseBundle.JsonOptions);
+                if (!string.IsNullOrEmpty(bundle?.Name)) {
+                    if (Workspace.BundleManager.ImportBundle(bundleDir, runtimeBundleFolder, false, out bool alreadyExists)) {
+                        anySuccess = true;
+                        Logger.Info($"Successfully imported bundle {bundle.Name} to {bundle.StoragePath}");
+                    } else {
+                        if (alreadyExists) {
+                            bundle.StoragePath = bundleDir;
+                            existingBundles.Add(bundle);
+                        }
+                        anyFailed = true;
+                    }
+                }
+            } catch (Exception e) {
+                Logger.Error($"Found bundle.json in {bundleDir} but failed to import its data: {e.Message}");
+                anyFailed = true;
+            }
+        }
+
+        if (anySuccess) {
+            Workspace.BundleManager.LoadDataBundles();
+        }
+        if (anySuccess && !anyFailed) {
+            postConfirmCallback?.Invoke();
+            return;
+        }
+        if (!anyFailed || existingBundles.Count == 0) return;
+
+        var names = string.Join("\n", existingBundles.Select(b => string.IsNullOrEmpty(b.Version) ? b.Name : $"{b.Name} ({b.Version})"));
+        EditorWindow.CurrentWindow!.AddSubwindow(new ConfirmationDialog(
+            Lang.Bundles.BundlesAlreadyExist.String,
+            Lang.Bundles.BundlesAlreadyExistConfirmText.FormatRef(names).String,
+            this,
+            () => {
+                anySuccess = false;
+                anyFailed = false;
+                foreach (var bundle in existingBundles) {
+                    if (Workspace.BundleManager.ImportBundle(bundle.StoragePath, runtimeBundleFolder, true, out _)) {
+                        anySuccess = true;
+                        Logger.Info($"Successfully updated bundle {bundle.Name} to {bundle.StoragePath}");
+                    } else {
+                        anyFailed = true;
+                    }
+                }
+                if (anySuccess) {
+                    Workspace.BundleManager.LoadDataBundles();
+                }
+                if (anySuccess && !anyFailed) {
+                    postConfirmCallback?.Invoke();
+                    return;
+                }
+            }));
+    }
+
     public void CreateBundleFromPakFile(string pakPath)
     {
         var reader = new PakReader();
