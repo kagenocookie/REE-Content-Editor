@@ -65,7 +65,7 @@ public class ModPublisherWindow : IWindowHandler
             }, null, FileFilters.PakFile);
         }
         ImGui.SameLine();
-        if (ImGui.Button("Publish patchable ...")) {
+        if (ImGui.Button("Publish as bundle ...")) {
             PlatformUtils.ShowFolderDialog((outputPath) => {
                 var outBundleDir = Path.Combine(outputPath, "content/bundles", bundle.Name);
                 if (bundle.ResourceListing != null) {
