@@ -28,7 +28,6 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     private Scene? scene;
 
     public Scene? Scene => scene;
-
     private const float TopMargin = 64;
     public Animator? PrimaryAnimator => meshContexts.FirstOrDefault()?.Animator;
     public IEnumerable<Animator> Animators => meshContexts.Select(m => m.Animator!).Where(a => a != null);
@@ -162,7 +161,6 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         scene.Root.Controller.SetCameraPivot(pivot);
         scene.ActiveCamera.OrthoSize = bounds.Size.Length() * 0.7f;
     }
-
     protected override void DrawFileContents() => throw new NotImplementedException();
 
     public override void OnIMGUI()
@@ -306,17 +304,9 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 SaveCameraControlSettings();
                 ImGui.EndPopup();
             }
-            ImGui.Text(Lang.MeshViewer.Menu_Rendering.String + GetDisplayModeName(meshEditor.DisplayMode));
-            ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4, ImGui.GetStyle().FramePadding.Y));
-            ImGui.PushItemFlag(ImGuiItemFlags.AutoClosePopups, false);
-            if (ImGui.BeginMenu($"{AppIcons.SI_Small_ArrowDown}")) {
-                ShowRenderingMenu(mainCtx);
-                ImGui.PopStyleVar();
-                ImGui.EndMenu();
-            } else {
-                ImGui.PopStyleVar();
-            }
-            ImGui.PopItemFlag();
+            ImguiHelpers.SplitButton("MainMenuRenderingMenu", Lang.MeshViewer.Menu_Rendering.String + GetDisplayModeName(meshEditor.DisplayMode), AppIcons.SI_Small_ArrowDown,
+                Vector4.Zero, ImguiHelpers.GetColor(ImGuiCol.HeaderHovered), Vector4.Zero, 0,
+                null, () => ShowRenderingMenu(mainCtx));
             if (!isSynced && mainCtx.GameObject != null) {
                 ImguiHelpers.VerticalSeparator();
                 if (ImGui.BeginMenu(Lang.MeshViewer.Menu_RCOL)) {

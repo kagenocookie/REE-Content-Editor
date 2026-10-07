@@ -426,7 +426,6 @@ public class HomeWindow : IWindowHandler
         }
         var window = EditorWindow.CurrentWindow;
         if (window == null) return;
-        ShowLoadingAnimation(window);
         if (window.IsReady != true) {
             if (!updateInProgress) {
                 if (window.ResourceSetupFailure == null) {

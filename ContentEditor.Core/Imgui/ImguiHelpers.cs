@@ -656,6 +656,40 @@ public static class ImguiHelpers
         drawList.AddRectFilled(bgMin, bgMax, ImGui.GetColorU32(bgColor));
         drawList.AddText(ImGui.GetFont(), overlayFontSize, overlayPos, ImGui.GetColorU32(iconColor), icon);
     }
+    public static void SplitButton(string id, string label, char arrowIcon, Vector4 buttonColor, Vector4 buttonHoverColor, Vector4 buttonActiveColor, int buttonRounding, Action? onMainButtonClick, Action drawMenu)
+    {
+        ImGui.PushID(id);
+        var startY = ImGui.GetCursorPosY();
+        var pos = ImGui.GetCursorScreenPos();
+        var height = ImGui.GetFrameHeight();
+
+        ImGui.PushStyleColor(ImGuiCol.Button, buttonColor);
+        ImGui.PushStyleColor(ImGuiCol.ButtonHovered, buttonHoverColor);
+        ImGui.PushStyleColor(ImGuiCol.ButtonActive, buttonActiveColor);
+        ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, buttonRounding);
+        ImGui.SetCursorPosY(startY + 1);
+        var mainClicked = ImGui.Button(label, new Vector2(0, ImGui.GetTextLineHeightWithSpacing()));
+        ImGui.SameLine(0, 1);
+        ImGui.SetCursorPosY(startY + 1);
+        var arrowClicked = ImGui.Button($"{arrowIcon}", new Vector2(0, ImGui.GetTextLineHeightWithSpacing()));
+        ImGui.PopStyleColor(3);
+        ImGui.PopStyleVar();
+
+        ImGui.SetCursorPosY(startY);
+        string popupId = "##splitMenu" + id;
+        if (mainClicked && onMainButtonClick != null) onMainButtonClick();
+        if ((mainClicked && onMainButtonClick == null) || arrowClicked) ImGui.OpenPopup(popupId);
+
+        ImGui.SetNextWindowPos(new Vector2(pos.X, pos.Y + height));
+        if (ImGui.BeginPopup(popupId)) {
+            ImGui.PushItemFlag(ImGuiItemFlags.AutoClosePopups, false);
+            drawMenu();
+            ImGui.PopItemFlag();
+            ImGui.EndPopup();
+        }
+
+        ImGui.PopID();
+    }
     /// <summary>
     /// Draws a tooltip when item is hovered.
     /// </summary>
