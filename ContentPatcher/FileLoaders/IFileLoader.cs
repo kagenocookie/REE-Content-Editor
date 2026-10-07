@@ -35,6 +35,12 @@ public interface IFileHandleContentProvider<TFileType> where TFileType : class
     TFileType GetFile(FileHandle handle);
 }
 
+public interface IFilePropertyContainer
+{
+    public object? Get(FileHandle handle, string path);
+    public void Set(FileHandle handle, string path, object? value);
+}
+
 public static class FileLoaderExtensions
 {
     public static bool SaveOrWriteTo(this BaseFile file, FileHandle handle, string outputPath)

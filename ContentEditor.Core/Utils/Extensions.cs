@@ -27,6 +27,15 @@ public static partial class Extensions
         return resultStream;
     }
 
+    public static MemoryStream ToReadOnlyMemoryStream(this Stream stream)
+    {
+        if (stream is MemoryStream resultStream) {
+            return new MemoryStream(resultStream.GetBuffer());
+        }
+
+        return stream.ToMemoryStream(false);
+    }
+
     public static bool TryDeserializeJsonFile<T>(this string jsonFilepath, [MaybeNullWhen(false)] out T result, out string? error, JsonSerializerOptions? options = null)
     {
         if (!File.Exists(jsonFilepath)) {
@@ -83,6 +92,13 @@ public static partial class Extensions
     public static ReadOnlySpan<char> GetStringAfterDelimiter(this string str, char delimiter)
     {
         var pos = str.IndexOf(delimiter);
+        if (pos == -1) return str;
+        return str.AsSpan(pos + 1);
+    }
+
+    public static ReadOnlySpan<char> GetStringAfterLastDelimiter(this string str, char delimiter)
+    {
+        var pos = str.LastIndexOf(delimiter);
         if (pos == -1) return str;
         return str.AsSpan(pos + 1);
     }

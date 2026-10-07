@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Assimp;
 using ContentEditor.App.Graphics;
@@ -45,7 +44,7 @@ public partial class CommonMeshResource(string name, Workspace workspace) : IRes
 
     public IReadOnlyList<string> MaterialNames => NativeMesh.MaterialNames;
 
-    public bool HasAnimations => _scene?.HasAnimations == true;
+    public bool HasAnimations => _scene?.HasAnimations == true || _motlist?.MotFiles.Count > 0;
 
     public IEnumerable<int> GroupIDs =>
         NativeMesh.MeshData?.LODs[0].MeshGroups.Select(g => (int)g.groupId).Distinct()
@@ -114,7 +113,10 @@ public partial class CommonMeshResource(string name, Workspace workspace) : IRes
 
     private string? LoadAssimpTexture(Assimp.Scene scene, TextureSlot texture)
     {
-        Debug.Assert(MainLoop.IsMainThread);
+        if (!MainLoop.IsMainThread) {
+            Logger.Warn("Attempted to load texture from non-main thread");
+            return null;
+        }
 
         if (!texture.FilePath.StartsWith('*')) {
             return texture.FilePath;

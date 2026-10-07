@@ -31,11 +31,11 @@ public class SceneRoot : IDisposable
         Scene = scene;
         MouseHandler = new(scene);
         Controller = new(scene);
-        EditorRoot = new GameObject("__editorRoot", scene.Workspace.Env);
+        EditorRoot = new GameObject("__editorRoot", scene.Workspace);
         EditorRoot.ForceSetScene(scene);
 
-        var camGo = new GameObject("__editorCamera", scene.Workspace.Env);
-        Camera = Component.Create<Camera>(camGo, scene.Workspace.Env);
+        var camGo = new GameObject("__editorCamera", scene.Workspace);
+        Camera = Component.Create<Camera>(camGo, scene.Workspace);
         EditorRoot.AddChild(camGo);
     }
 

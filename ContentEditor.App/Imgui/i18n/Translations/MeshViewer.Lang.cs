@@ -1,4 +1,3 @@
-using System.Text;
 using ContentEditor.Core;
 
 namespace ContentEditor.App;

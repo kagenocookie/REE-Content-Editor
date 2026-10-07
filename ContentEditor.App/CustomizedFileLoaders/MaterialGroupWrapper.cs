@@ -19,8 +19,8 @@ public class MaterialGroupWrapper(MdfFile mdf2) : BaseFileResource<MdfFile>(mdf2
     }
 
     public static readonly HashSet<string> AlbedoTextureNames = ["BaseDielectricMap", "ALBD", "ALBDmap", "BackMap", "BaseMetalMap", "BaseDielectricMapBase", "BaseAlphaMap", "BaseShiftMap", "AlbedoMap", "BaseDielectricMapArray"];
-    public static readonly HashSet<string> NormalTextureNames = ["NormalRoughnessMap", "NormalRoughnessCavityMap"];
-    public static readonly HashSet<string> ATXXTextureNames = ["AlphaTranslucentOcclusionCavityMap", "AlphaTranslucentOcclusionSSSMap", "AlphaCavityOcclusionTranslucentMap"];
+    public static readonly HashSet<string> NormalTextureNames = ["NormalRoughnessMap", "NormalRoughnessCavityMap", "NormalRoughnessOcclusionMap"];
+    public static readonly HashSet<string> MapsTextureNames = ["AlphaTranslucentOcclusionCavityMap", "AlphaTranslucentOcclusionSSSMap", "AlphaCavityOcclusionTranslucentMap", "SSSTranslucentCavityFuzzMap"];
 
     public sealed class MaterialLookupData(MaterialData material)
     {
@@ -35,7 +35,7 @@ public class MaterialGroupWrapper(MdfFile mdf2) : BaseFileResource<MdfFile>(mdf2
 
         public TexHeader? AlbedoTexture { get; set; }
         public TexHeader? NormalTexture { get; set; }
-        public TexHeader? ATXXTexture { get; set; }
+        public TexHeader? MapsTexture { get; set; }
 
         // note: I'm not really sure what the differences between the TwoSide flags are
         // based on ingame testing, TwoSideEnable doesn't matter but either of the other or both of two flags will disable backface culling
@@ -65,8 +65,8 @@ public class MaterialGroupWrapper(MdfFile mdf2) : BaseFileResource<MdfFile>(mdf2
                 if (mat.NormalTexture == null && NormalTextureNames.Contains(tex.texType)) {
                     mat.NormalTexture = tex;
                 }
-                if (mat.ATXXTexture == null && ATXXTextureNames.Contains(tex.texType)) {
-                    mat.ATXXTexture = tex;
+                if (mat.MapsTexture == null && MapsTextureNames.Contains(tex.texType)) {
+                    mat.MapsTexture = tex;
                 }
             }
 

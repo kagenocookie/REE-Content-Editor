@@ -1,7 +1,5 @@
-using System.Text;
 using System.Text.Json.Serialization;
 using ContentEditor.Core;
-using ReeLib;
 
 namespace ContentEditor.App;
 
@@ -15,6 +13,12 @@ public static partial class Lang
         public static readonly FixedString UnsavedChangesText_ThisFile = "You have unsaved changes in this file, do you wish to save the file first?";
         public static readonly FixedString UnsavedChangesCloseAll = "Some files have unsaved changes. If you continue, all changes will be lost.\nYou can reopen the files through the File menu";
         public static readonly InterpolatedString<string> UnsavedChangesText_SingleFile = "The file {0} has unsaved changes.\nAre you sure you wish to close it?";
+
+        public static readonly FixedString Classname = "Object Classname";
+        public static readonly FixedString PreviewFile = "Preview File";
+        public static readonly FixedString OpenInNewWindow = "Open in New Window";
+
+        public static readonly FixedString ObjectIsNull = "Object is currently unset / null";
 
         public static readonly FixedString FileClose_KeptOpenMessage = """
             Window has been closed but the file is still kept open in case it's needed.
@@ -34,6 +38,8 @@ public static partial class Lang
         public static readonly FixedString LinkCopied = "Link was copied!";
         public static readonly FixedString URLOpened = "URL was opened!";
         public static readonly FixedString FilterInput = "Filter";
+
+        public static readonly FixedString NewTemplateName = "New template name";
 
         public static readonly IconString WikiLink = new IconString("{0} Documentation Wiki", AppIcons.SI_GenericWiki);
         [JsonIgnore] public static readonly FixedString WikiLink_NoIcon = $"{AppIcons.SI_GenericWiki}";

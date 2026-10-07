@@ -482,7 +482,7 @@ internal class ChainNodeHandler : IObjectUIHandler
                 context.AddChild("Angle Limit Direction", instance, QuaternionFieldHandler.Instance, (c) => c!.angleLimitDirection, (c, v) => c.angleLimitDirection = v);
                 context.AddChild("Angle Limit Radius", instance, new FloatSliderHandler(0, MathF.PI / 2), (c) => c!.angleLimitRadius, (c, v) => c.angleLimitRadius = v);
                 if (instance is Chain2Node c2) {
-                    context.AddChild("Joint Hash", c2, new BoneHashHandler(), c => c!.jointHash, (c, v) => c.jointHash = v);
+                    context.AddChild("Joint Hash", c2, new BoneHashHandler(true), c => c!.jointHash, (c, v) => c.jointHash = v);
                 }
                 WindowHandlerFactory.SetupObjectUIContext(context, instance.GetType(), orderFunc: (f, i) => {
                     if (f.Name == nameof(ChainNodeBase.angleLimitDirection) || f.Name == nameof(ChainNodeBase.angleLimitRadius)) return -1;

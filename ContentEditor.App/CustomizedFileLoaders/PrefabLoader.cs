@@ -7,7 +7,8 @@ public class PrefabLoader : IFileLoader,
     IFileHandleContentProvider<PfbFile>,
     IFileHandleContentProvider<GameObject>,
     IFileHandleContentProvider<Prefab>,
-    IFileHandleContentProvider<Scene>
+    IFileHandleContentProvider<Scene>,
+    IFilePropertyContainer
 {
     int IFileLoader.Priority => 30;
     public bool CanHandleFile(string filepath, REFileFormat format, FileHandle? file) => format.format == KnownFileFormats.Prefab;
@@ -56,6 +57,9 @@ public class PrefabLoader : IFileLoader,
         var prefab = handle.GetResource<Prefab>();
         return prefab.GetSharedInstance().Scene!;
     }
+
+    object? IFilePropertyContainer.Get(FileHandle handle, string path) => PfbFileLoader.Get(handle, path);
+    void IFilePropertyContainer.Set(FileHandle handle, string path, object? value) => PfbFileLoader.Set(handle, path, value);
 }
 
 public class Prefab(FileHandle handle, PfbFile file) : IReeLibResourceFile
@@ -81,7 +85,7 @@ public class Prefab(FileHandle handle, PfbFile file) : IReeLibResourceFile
 
     public GameObject Instantiate(Scene? scene = null)
     {
-        return new GameObject(file.GameObjects![0].Clone(), scene);
+        return new GameObject(file.GameObjects![0].Clone(), scene) { PrefabPath = handle.ResourcePath };
     }
 
     public void WriteTo(string filepath)

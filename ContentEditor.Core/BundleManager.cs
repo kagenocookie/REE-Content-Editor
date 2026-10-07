@@ -3,6 +3,7 @@ namespace ContentEditor.Core;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using ReeLib;
 
 public class BundleManager
@@ -18,6 +19,7 @@ public class BundleManager
         }
     }
     public List<SerializedEnum> Enums { get; } = new();
+    public BundleRuntimeMapping? Mapping { get; set; }
 
     public List<string> UninitializedBundleFolders { get; } = new();
 
@@ -114,25 +116,37 @@ public class BundleManager
 
         // legacy & runtime-only light bundles
         foreach (var entry in Directory.EnumerateFileSystemEntries(RuntimeBundlePath, "*.json")) {
-            if (!TryDeserialize<Bundle>(entry, out var bundle)) {
+            if (!TryDeserialize<RuntimeBundle>(entry, out var runtimeBundle)) {
                 Logger.Error("Failed to open bundle " + entry);
                 continue;
             }
-            if (string.IsNullOrEmpty(bundle.Name)) {
+            if (string.IsNullOrEmpty(runtimeBundle.Name)) {
                 Logger.Error("Found invalid, unnamed bundle " + entry);
                 continue;
             }
-            bundle.StoragePath = entry.NormalizeFilepath();
-            bundle.Init(this);
+            runtimeBundle.StoragePath = entry.NormalizeFilepath();
+            var mainBundle = orderedBundles.FirstOrDefault(b => b.Value.Name == runtimeBundle.Name).Value
+                ?? unorderedBundles.FirstOrDefault(b => b.Name == runtimeBundle.Name);
+            if (mainBundle == null) {
+                mainBundle = new Bundle() { StoragePath = ConstructBundleFolder(runtimeBundle.Name) };
+                mainBundle.CopyFrom(runtimeBundle);
+                mainBundle.RuntimeBundle = runtimeBundle;
+                MigrateRuntimeToDesktop(mainBundle);
+                mainBundle.Touch();
 
-            // TODO figure out app/runtime bundle link
-            if (orderedBundles.Any(bb => bb.Value.Name == bundle.Name) || unorderedBundles.Any(bb => bb.Name == bundle.Name)) continue;
+                var idx = settings.BundleOrder.IndexOf(runtimeBundle.Name);
+                if (idx != -1) {
+                    orderedBundles.Add(idx, mainBundle);
+                } else {
+                    unorderedBundles.Add(mainBundle);
+                }
+            }
 
-            var idx = settings.BundleOrder.IndexOf(bundle.Name);
-            if (idx != -1) {
-                orderedBundles.Add(idx, bundle);
-            } else {
-                unorderedBundles.Add(bundle);
+            mainBundle.RuntimeBundle = runtimeBundle;
+            if (runtimeBundle.UpdatedAtTime > mainBundle.UpdatedAtTime) {
+                Logger.Info($"Updating main bundle data from changes in runtime bundle {mainBundle.Name}...");
+                mainBundle.UpdateFrom(runtimeBundle);
+                MigrateRuntimeToDesktop(mainBundle);
             }
         }
 
@@ -160,6 +174,85 @@ public class BundleManager
         RefreshEnums();
         if (bundleImports.Created.Count > 0) EntitiesCreated?.Invoke(bundleImports.Created);
         if (bundleImports.Updated.Count > 0) EntitiesUpdated?.Invoke(bundleImports.Updated);
+    }
+
+    private void MigrateRuntimeToDesktop(Bundle bundle)
+    {
+        if (Mapping == null || bundle.RuntimeBundle?.RuntimeEntities == null) return;
+
+        foreach (var runtimeEntityRaw in bundle.RuntimeBundle.RuntimeEntities) {
+            MinimalEntity? runtimeEntity;
+            try {
+                runtimeEntity = runtimeEntityRaw.Deserialize<MinimalEntity>(JsonConfig.luaJsonOptions);
+                if (runtimeEntity == null) {
+                    continue;
+                }
+            } catch (Exception) {
+                continue;
+            }
+
+            if (runtimeEntity.Id == 0 || string.IsNullOrEmpty(runtimeEntity.Type)) {
+                continue;
+            }
+
+            if (!Mapping.HasRuntimeMapping(runtimeEntity.Type, out var editorType)) {
+                continue;
+            }
+
+            var desktopEntity = bundle.GetEntity(editorType, runtimeEntity.Id);
+            if (desktopEntity == null) {
+                desktopEntity = new Entity() { Id = runtimeEntity.Id, Type = editorType };
+                bundle.RecordEntity(desktopEntity);
+            }
+            desktopEntity.Label = runtimeEntity.Label;
+
+            if (Mapping.MapToDesktop(runtimeEntity.Type, runtimeEntityRaw, desktopEntity)) {
+                // Logger.Info($"Auto-migrated bundle \"{bundle.Name}\" runtime entity \"{runtimeEntity}\" to desktop entity");
+            } else {
+                Logger.Warn($"Failed to migrate bundle \"{bundle.Name}\" runtime entity \"{runtimeEntity}\" to desktop entity \"{desktopEntity}\"");
+            }
+        }
+    }
+
+    public void MapToRuntimeBundle(Bundle bundle)
+    {
+        if (Mapping == null) return;
+
+        if (bundle.RuntimeBundle == null) {
+            // verify if any entities require runtime data
+            var entities = bundle.Entities.Select(e => e.Type).Distinct();
+            if (!entities.Any(e => Mapping.IsRuntimeRequiredDesktopEntity(e))) {
+                return;
+            }
+            bundle.RuntimeBundle = new RuntimeBundle() { StoragePath = Path.Combine(RuntimeBundlePath, bundle.Name + ".json").NormalizeFilepath() };
+        }
+
+        var runtimeEntites = bundle.RuntimeBundle.RuntimeEntities
+            ?.Select(rr => (data: rr, entity: rr.Deserialize<MinimalEntity>(JsonConfig.luaJsonOptions)!))
+            .GroupBy(e => e.entity?.Type ?? "")
+            .ToDictionary(kv => kv.Key) ?? [];
+
+        foreach (var entity in bundle.Entities) {
+            if (!Mapping.HasDesktopMapping(entity.Type, out var runtimeType)) {
+                continue;
+            }
+
+            var runtimeList = runtimeEntites.GetValueOrDefault(runtimeType);
+
+            var runtimeEntity = runtimeList?.FirstOrDefault(r => r.entity.Id == entity.Id) ?? default;
+            if (runtimeEntity.data == null) {
+                runtimeEntity.data = (JsonObject)JsonSerializer.SerializeToNode(new MinimalEntity() {
+                    Id = entity.Id,
+                    Type = runtimeType,
+                    Label = entity.Label
+                }, JsonConfig.luaJsonOptions)!;
+                bundle.RuntimeBundle.RuntimeEntities ??= new();
+                bundle.RuntimeBundle.RuntimeEntities.Add(runtimeEntity.data);
+            }
+            if (!Mapping.MapToRuntime(entity.Type, entity, runtimeEntity.data)) {
+                Logger.Error($"Failed to map entity {entity} to runtime type {runtimeType}");
+            }
+        }
     }
 
     private void RefreshEnums()
@@ -201,9 +294,6 @@ public class BundleManager
         var path = bundle.StoragePath ??= ConstructBundleFolder(bundle.Name);
         if (Path.GetExtension(path.AsSpan()).SequenceEqual(".json")) {
             return Path.GetDirectoryName(path)!;
-        }
-        if (!Directory.Exists(path)) {
-            Directory.CreateDirectory(path);
         }
         return path;
     }
@@ -323,6 +413,65 @@ public class BundleManager
         AllBundles.Add(bundle);
         ActiveBundles.Add(bundle);
         return bundle;
+    }
+
+    public bool ImportBundle(string bundleDir, string? runtimeBundleDir, bool allowOverwrite, out bool targetBundleAlreadyExists)
+    {
+        var bundleFile = Path.Combine(bundleDir, "bundle.json");
+        targetBundleAlreadyExists = false;
+        Bundle? bundle;
+        try {
+            using var fs = File.OpenRead(bundleFile);
+            bundle = JsonSerializer.Deserialize<Bundle>(fs, BaseBundle.JsonOptions);
+            if (bundle == null) return false;
+        } catch (Exception e) {
+            Logger.Error($"Found bundle.json in {bundleDir} but failed to import its data: {e.Message}");
+            return false;
+        }
+
+        var targetBundleDir = Path.Combine(AppBundlePath, bundle.Name);
+        if (!allowOverwrite && Directory.Exists(targetBundleDir)) {
+            targetBundleAlreadyExists = true;
+            return false;
+        }
+
+        Directory.CreateDirectory(targetBundleDir);
+
+        File.Move(bundleFile, Path.Combine(targetBundleDir, "bundle.json"), true);
+        if (!string.IsNullOrEmpty(bundle.ImagePath) && File.Exists(Path.Combine(bundleDir, bundle.ImagePath))) {
+            File.Move(Path.Combine(bundleDir, bundle.ImagePath), Path.Combine(targetBundleDir, bundle.ImagePath), true);
+        }
+
+        var runtimeBundleFile = runtimeBundleDir == null ? null : Path.Combine(runtimeBundleDir, bundle.Name + ".json");
+        if (File.Exists(runtimeBundleFile)) {
+            Directory.CreateDirectory(RuntimeBundlePath);
+            File.Move(runtimeBundleFile, Path.Combine(RuntimeBundlePath, bundle.Name + ".json"), true);
+        }
+
+        if (bundle.ResourceListing == null) return true;
+
+        foreach (var (local, target) in bundle.ResourceListing) {
+            var srcFile = Path.Combine(bundleDir, local);
+            if (!File.Exists(srcFile)) continue;
+
+            var tgtFile = Path.Combine(targetBundleDir, local);
+            Directory.CreateDirectory(Path.GetDirectoryName(tgtFile)!);
+            File.Move(srcFile, tgtFile, true);
+        }
+
+        return true;
+    }
+
+    public void DeleteBundle(Bundle bundle)
+    {
+        if (Directory.Exists(bundle.StoragePath)) {
+            Directory.Delete(bundle.StoragePath, true);
+        }
+        if (bundle.RuntimeBundle != null && File.Exists(bundle.RuntimeBundle.StoragePath)) {
+            File.Delete(bundle.RuntimeBundle.StoragePath);
+        }
+        AllBundles.Remove(bundle);
+        ActiveBundles.Remove(bundle);
     }
 
     public BundleManager CreateBundleSpecificManager(string? bundleName)

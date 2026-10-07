@@ -36,31 +36,39 @@
     "4": {
         "crc": "4",
         "fields": [
+            { "name": "Standby", "type": "Bool", "size": 1, "align": 1 },
+            { "name": "Path", "type": "String", "size": 4, "align": 4 }
+        ],
+        "name": "via.Prefab"
+    },
+    "5": {
+        "crc": "5",
+        "fields": [
             { "name": "Mesh", "type": "Resource", "size": 4, "align": 4, "original_type": "via.render.MeshResourceHolder" },
             { "name": "Material", "type": "Resource", "size": 4, "align": 4, "original_type": "via.render.MeshMaterialResourceHolder" },
             { "name": "PartsEnable", "type": "Bool", "size": 1, "align": 1, "array": true }
         ],
         "name": "via.render.Mesh"
     },
-    "5": {
-        "crc": "5",
-        "fields": [],
-        "name": "via.Camera"
-    },
     "6": {
         "crc": "6",
         "fields": [],
-        "name": "via.motion.Motion"
+        "name": "via.Camera"
     },
     "7": {
         "crc": "7",
+        "fields": [],
+        "name": "via.motion.Motion"
+    },
+    "8": {
+        "crc": "8",
         "fields": [
             { "name": "RequestSetGroups", "type": "Object", "size": 4, "align": 4, "array": true, "original_type": "via.physics.RequestSetCollider.RequestSetGroup" }
         ],
         "name": "via.physics.RequestSetCollider"
     },
-    "8": {
-        "crc": "8",
+    "9": {
+        "crc": "9",
         "fields": [
             { "name": "Resource", "type": "Resource", "size": 4, "align": 4, "original_type": "via.physics.RequestSetColliderResourceHolder" }
         ],

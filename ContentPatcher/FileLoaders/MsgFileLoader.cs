@@ -32,7 +32,7 @@ public class MsgFilePatcher : IResourceFilePatcher
         foreach (var entry in newfile.Entries) {
             if (!missing.Remove(entry.Name, out var baseEntry)) {
                 messageDiffs ??= new();
-                messageDiffs.Add(entry.Name, new MessageData(entry, newfile.FileHandler.FilePath!, "").ToJson());
+                messageDiffs.Add(entry.Name, new MessageData(entry, newfile.FileHandler.FilePath!).ToJson());
             } else {
                 JsonObject? diff = null;
 

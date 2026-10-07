@@ -1,4 +1,3 @@
-using System.Text;
 using ContentEditor.Core;
 
 namespace ContentEditor.App;
@@ -104,6 +103,7 @@ public static partial class Lang
         public static readonly TextTooltip UseSymlinkPatching = new TextTooltip("Use symbolic links for patching", "Whether to allow using symbolic links for patched files when possible instead of direct file copy.\nThis can make the patching faster and reduce unnecessary disk writes and storage.\nRequires Content Editor to be launched with admin permissions on Windows.");
         public static readonly TextTooltip RemoteDataSource = new TextTooltip("Resource data source", "The source from which to check for updates and download game-specific resource cache files.\nWill use the default GitHub repository if unspecified.");
         public static readonly TextTooltip EnableGpuTexCompression = new TextTooltip("Enable GPU texture compression", "Whether to enable using the much faster GPU-based compression method.\nCurrently only available on Windows.\nCan be disabled in case of issues, so that CPU-based compression is used instead.");
+        public static readonly TextTooltip UseExperimentalGltFLoader = new TextTooltip("Use experimental GLTF loader", "Whether to enable the experimental new direct GLTF / GLB file loader. Not yet fully functional but should provide better future integration.");
         public static readonly TextTooltip GameConfigBasePath = new TextTooltip("Game Config Base Path", "The folder path that contains the game specific entity configurations. Will use relative path config/ by default if unspecified.");
         public static readonly TextTooltip ResourcesFilepath = new TextTooltip("Resource data storage path", "The folder to use for storing the auto-downloaded game specific resource files.");
         public static readonly TextTooltip CacheFilepath = new TextTooltip("Cache file path", "The folder to use for general file caching. Must not be empty.");
@@ -150,6 +150,7 @@ public static partial class Lang
         public static readonly FixedString Bind_Close = "Close Current Window";
         public static readonly FixedString Bind_HomePage = "Toggle Home Page";
         public static readonly FixedString Bind_OpenPakBrowser = "Open PAK File Browser";
+        public static readonly FixedString Bind_OpenFileSearch = "Open File Search";
         public static readonly FixedString Bind_OpenMacroShelf = "Open Macro Shelf";
         public static readonly FixedString Bind_ShowHotkeyHints = "Show Hotkey Hints";
         public static readonly FixedString Bind_PakBrowser_OpenBookmarks = "Open Bookmarks";

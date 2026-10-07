@@ -78,6 +78,21 @@ public class MessageManager(Workspace env)
         }
     }
 
+    public void UpdateMessage(MessageData msg)
+    {
+        if (!loaded) {
+            LoadLanguage(language);
+        }
+        if (msg.Messages.TryGetValue(language.ToString(), out var text)) {
+            if (msg.Guid != Guid.Empty) {
+                guidMessages[msg.Guid] = text;
+            }
+            if (!string.IsNullOrEmpty(msg.MessageKey)) {
+                keyMessages[MurMur3HashUtils.GetHash(msg.MessageKey)] = text;
+            }
+        }
+    }
+
     public void Update(MsgFile msg)
     {
         if (!loaded) LoadLanguage(language);

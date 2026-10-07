@@ -15,7 +15,6 @@ using ContentEditor.Core;
 using ContentEditor.Reversing;
 using ContentPatcher;
 using ReeLib;
-using ReeLib.Common;
 using ReeLib.Data;
 using ReeLib.Efx;
 using ReeLib.Tools;
@@ -135,7 +134,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         this.env = env;
 
         var configPath = Path.Combine(AppConfig.Instance.ConfigBasePath, env.Config.Game.name);
-        var patchConfig = this.workspace?.Config ?? new PatchDataContainer(Path.GetFullPath(configPath));
+        var patchConfig = this.workspace?.Config ?? new PatchConfig(Path.GetFullPath(configPath));
 
         var workspace = new ContentWorkspace(env, patchConfig, this.workspace?.BundleManager);
         ChangeWorkspace(workspace, bundle);
@@ -164,12 +163,10 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     private static void SetupTypes(ContentWorkspace workspace)
     {
         foreach (var (name, cfg) in workspace.Config.Classes) {
-            if (cfg.StringFormatter != null) {
-                var cls = workspace.Env.RszParser.GetRSZClass(name);
-                if (cls == null) continue;
+            var cls = workspace.Env.RszParser.GetRSZClass(name);
+            if (cls == null) continue;
 
-                WindowHandlerFactory.SetClassFormatter(cls, cfg.StringFormatter);
-            }
+            WindowHandlerFactory.InitClassConfig(workspace, cfg);
         }
 
         WindowHandlerFactory.SetupTypesForGame(workspace.Game, workspace.Env);
@@ -297,6 +294,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         if (workspace != null && cfg.Key_OpenMacroShelf.Get().IsPressed()) {
             AddUniqueSubwindow(new LuaMacroShelf(workspace));
         }
+        if (workspace != null && cfg.Key_OpenFileSearch.Get().IsPressed()) {
+            AddSubwindow(new FileSearchWindow());
+        }
     }
 
     protected override void SetupMouse(IMouse mouse)
@@ -351,11 +351,11 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
     }
 
-    public void AddFileEditor(FileHandle file)
+    public void AddFileEditor(FileHandle file, UIContext? sourceContext = null)
     {
         if (workspace == null) return;
 
-        var handler = WindowHandlerFactory.CreateFileResourceHandler(workspace, file);
+        var handler = WindowHandlerFactory.CreateFileResourceHandler(workspace, file, sourceContext);
         if (handler != null) {
             if (file.HandleType != FileHandleType.Embedded && file.HandleType != FileHandleType.New) {
                 AppConfig.Settings.RecentFiles.AddRecent(workspace.Game, file.Filepath);
@@ -468,8 +468,16 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     if (!string.IsNullOrEmpty(activeBundleFilter) && !b.Name.Contains(activeBundleFilter, StringComparison.InvariantCultureIgnoreCase)) {
                         continue;
                     }
-                    if (ImGui.MenuItem(b.Name)) {
-                        SetWorkspace(workspace.Env.Config.Game, b.Name);
+                    if (b.IsRuntimeOnly) {
+                        ImGui.PushStyleColor(ImGuiCol.Text, Colors.Faded);
+                        if (ImGui.MenuItem(Lang.Bundles.RuntimeOnlyBundle.Format(b.Name))) {
+                            SetWorkspace(workspace.Env.Config.Game, b.Name);
+                        }
+                        ImGui.PopStyleColor();
+                    } else {
+                        if (ImGui.MenuItem(b.Name)) {
+                            SetWorkspace(workspace.Env.Config.Game, b.Name);
+                        }
                     }
                 }
                 ImGui.EndMenu();
@@ -528,6 +536,12 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
     public void CreateBundleFromLooseFileFolder(string folder, string? initialName = null, Action? postConfirmCallback = null)
     {
+        var bundleFolder = Path.Combine(folder, "content/bundles");
+        if (Directory.Exists(bundleFolder)) {
+            ImportLooseBundles(folder, postConfirmCallback, bundleFolder);
+            return;
+        }
+
         var modinfoPath = Path.Combine(folder, "modinfo.ini");
         initialName ??= Path.GetFileName(folder);
         if (File.Exists(modinfoPath)) {
@@ -544,6 +558,77 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 postConfirmCallback?.Invoke();
             }));
     }
+
+    private void ImportLooseBundles(string folder, Action? postConfirmCallback, string bundleFolder)
+    {
+        var bundleDirs = Directory.EnumerateDirectories(bundleFolder);
+        var runtimeBundleFolder = Path.Combine(folder, "reframework/data/usercontent/bundles");
+        var anyFailed = false;
+        var anySuccess = false;
+        var existingBundles = new List<Bundle>();
+        foreach (var bundleDir in bundleDirs) {
+            var bundleFile = Path.Combine(bundleDir, "bundle.json");
+            if (!File.Exists(bundleFile)) {
+                anyFailed = true;
+                continue;
+            }
+
+            try {
+                using var fs = File.OpenRead(bundleFile);
+                var bundle = JsonSerializer.Deserialize<Bundle>(fs, BaseBundle.JsonOptions);
+                if (!string.IsNullOrEmpty(bundle?.Name)) {
+                    if (Workspace.BundleManager.ImportBundle(bundleDir, runtimeBundleFolder, false, out bool alreadyExists)) {
+                        anySuccess = true;
+                        Logger.Info($"Successfully imported bundle {bundle.Name} to {bundle.StoragePath}");
+                    } else {
+                        if (alreadyExists) {
+                            bundle.StoragePath = bundleDir;
+                            existingBundles.Add(bundle);
+                        }
+                        anyFailed = true;
+                    }
+                }
+            } catch (Exception e) {
+                Logger.Error($"Found bundle.json in {bundleDir} but failed to import its data: {e.Message}");
+                anyFailed = true;
+            }
+        }
+
+        if (anySuccess) {
+            Workspace.BundleManager.LoadDataBundles();
+        }
+        if (anySuccess && !anyFailed) {
+            postConfirmCallback?.Invoke();
+            return;
+        }
+        if (!anyFailed || existingBundles.Count == 0) return;
+
+        var names = string.Join("\n", existingBundles.Select(b => string.IsNullOrEmpty(b.Version) ? b.Name : $"{b.Name} ({b.Version})"));
+        EditorWindow.CurrentWindow!.AddSubwindow(new ConfirmationDialog(
+            Lang.Bundles.BundlesAlreadyExist.String,
+            Lang.Bundles.BundlesAlreadyExistConfirmText.FormatRef(names).String,
+            this,
+            () => {
+                anySuccess = false;
+                anyFailed = false;
+                foreach (var bundle in existingBundles) {
+                    if (Workspace.BundleManager.ImportBundle(bundle.StoragePath, runtimeBundleFolder, true, out _)) {
+                        anySuccess = true;
+                        Logger.Info($"Successfully updated bundle {bundle.Name} to {bundle.StoragePath}");
+                    } else {
+                        anyFailed = true;
+                    }
+                }
+                if (anySuccess) {
+                    Workspace.BundleManager.LoadDataBundles();
+                }
+                if (anySuccess && !anyFailed) {
+                    postConfirmCallback?.Invoke();
+                    return;
+                }
+            }));
+    }
+
     public void CreateBundleFromPakFile(string pakPath)
     {
         var reader = new PakReader();
@@ -994,6 +1079,10 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     AddSubwindow(new ListFileGeneratorTaskWindow());
                 }
 
+                if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Tools.DataGeneration_RSZJson))) {
+                    AddSubwindow(new RszJsonGeneratorTaskWindow(workspace));
+                }
+
                 if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Tools.DataGeneration_Bookmarks))) {
                     var list = PrefabLister.GenerateFileSets(workspace);
                     if (list != null) {
@@ -1030,18 +1119,18 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 if (ImGui.MenuItem(Lang.Windows.BundleManager)) {
                     ShowBundleManagement();
                 }
-                if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Windows.FileSearch))) {
+                if (AppImguiHelpers.HotkeyMenuItem(Lang.Windows.FileSearch, AppConfig.Instance.Key_OpenFileSearch.Get())) {
                     AddSubwindow(new FileSearchWindow());
                 }
-                if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Windows.TexturePacker))) {
+                if (ImGui.MenuItem(Lang.Windows.TexturePacker)) {
                     AddSubwindow(new TextureChannelPacker()).Size = new Vector2(1280, 800);
                 }
-                if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Windows.BatchConvert))) {
+                if (ImGui.MenuItem(Lang.Windows.BatchConvert)) {
                     AddSubwindow(new FileConverter()).Size = new Vector2(1280, 800);
                 }
                 if (workspace.Config.Entities.Any()) {
-                    if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Windows.Entities))) {
-                        AddSubwindow(new AppContentEditorWindow(workspace));
+                    if (ImGui.MenuItem(Lang.Windows.Entities)) {
+                        AddSubwindow(new EntitiesWindow(workspace));
                     }
                 }
                 if (AppImguiHelpers.HotkeyMenuItem(Lang.Windows.MacroShelf, AppConfig.Instance.Key_OpenMacroShelf.Get())) {

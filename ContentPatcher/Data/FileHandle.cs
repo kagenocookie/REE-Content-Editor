@@ -133,6 +133,23 @@ public sealed class FileHandle(string path, Stream stream, FileHandleType handle
         }
     }
 
+    public void CopyContentsTo(FileHandle target, ContentWorkspace workspace)
+    {
+        if (target.Format != Format) {
+            Logger.Error($"Attempted to copy file contents to mismatching file type handle ({Format} -> {target.Format})");
+            return;
+        }
+
+        var srcData = ((IReeLibResourceFile)Resource).FileHandler;
+        var newData = ((IReeLibResourceFile)target.Resource).FileHandler;
+        newData.Seek(0);
+        newData.Stream.SetLength(0);
+        srcData.Seek(0);
+        srcData.Stream.CopyTo(newData.Stream);
+        target.Revert(workspace);
+        target.Modified = true;
+    }
+
     public void EmitChange()
     {
         _modified = true;

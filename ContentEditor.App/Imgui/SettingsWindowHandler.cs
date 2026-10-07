@@ -263,6 +263,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         if (ImGui.Combo(Lang.Settings.MinLogLevel.String, ref logLevel, LogLevels, LogLevels.Length)) {
             config.LogLevel.Set(logLevel);
         }
+        ShowSetting(config.UseExperimentalGltfLoader, Lang.Settings.UseExperimentalGltFLoader);
     }
 
     private static void ShowPreferencesEditingTab()
@@ -412,6 +413,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ImguiKeybinding(Lang.Settings.Bind_Close, config.Key_Close);
         ImguiKeybinding(Lang.Settings.Bind_HomePage, config.Key_HomePage);
         ImguiKeybinding(Lang.Settings.Bind_OpenPakBrowser, config.Key_OpenPakBrowser);
+        ImguiKeybinding(Lang.Settings.Bind_OpenFileSearch, config.Key_OpenFileSearch);
         ImguiKeybinding(Lang.Settings.Bind_OpenMacroShelf, config.Key_OpenMacroShelf);
         ImguiKeybinding(Lang.Settings.Bind_ShowHotkeyHints, config.Key_HotkeyHint);
     }

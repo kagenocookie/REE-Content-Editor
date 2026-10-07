@@ -151,7 +151,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
             if ((node is GameObject || node is Folder && string.IsNullOrEmpty(((Folder)node).ScenePath))) {
                 if (ImGui.Selectable($"{AppIcons.SI_SceneGameObject} New GameObject")) {
                     var ws = context.GetWorkspace();
-                    var newgo = new GameObject("New_GameObject", ws!.Env, folder ?? (node as GameObject)?.Folder, scene);
+                    var newgo = new GameObject("New_GameObject", ws!, folder ?? (node as GameObject)?.Folder, scene);
                     UndoRedo.RecordAddChild(context, newgo, (INodeObject<GameObject>)node);
                     newgo.MakeNameUnique();
                     rootEditor?.SetPrimaryInspector(newgo);
@@ -186,7 +186,6 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
                         }
                         if (file != null && file.GetCustomContent<Prefab>() is Prefab prefab) {
                             var instance = prefab.Instantiate();
-                            instance.PrefabPath = file.ResourcePath ?? "";
                             instance.RandomizeGuids();
                             UndoRedo.RecordAddChild(context, instance, (INodeObject<GameObject>)node);
                             instance.MakeNameUnique();
@@ -450,7 +449,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
             ImGui.SameLine();
             if (ImGui.Button($"{AppIcons.SI_GenericAdd} Add GameObject")) {
                 var ws = context.GetWorkspace();
-                var newgo = new GameObject("New_GameObject", ws!.Env, folder, folder.Scene);
+                var newgo = new GameObject("New_GameObject", ws!, folder, folder.Scene);
                 UndoRedo.RecordAddChild(context, newgo, (INodeObject<GameObject>)folder);
                 newgo.MakeNameUnique();
                 GetRootInspector(context)?.SetPrimaryInspector(newgo);
