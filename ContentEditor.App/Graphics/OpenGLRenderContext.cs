@@ -548,7 +548,7 @@ public sealed class OpenGLRenderContext : RenderContext
                 break;
             case BuiltInMaterials.MonoColor:
                 material.Name = "mesh_editor_selection";
-                material.SetParameter("_MainColor", new Color(255, 128, 0, 150));
+                material.SetParameter("_MainColor", AppConfig.Instance.MeshHighlightColor);
                 material.BlendMode = new MaterialBlendMode(true, BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
                 break;
             case BuiltInMaterials.EditVertices:

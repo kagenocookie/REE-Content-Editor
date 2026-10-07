@@ -92,6 +92,14 @@ public static class Colors
     public static Vector4 FileTypeFBXSKEL => Current.FileTypeFBXSKEL;
     public static Vector4 FileTypeREFSKEL => Current.FileTypeREFSKEL;
     public static Vector4 FileTypeSSS => Current.FileTypeSSS;
+    public static Vector4 FileTypeCCBK => Current.FileTypeCCBK;
+    public static Vector4 FileTypeCLSM => Current.FileTypeCLSM;
+    public static Vector4 FileTypeDEF => Current.FileTypeDEF;
+    public static Vector4 FileTypeEEM => Current.FileTypeEEM;
+    public static Vector4 FileTypeEFCSV => Current.FileTypeEFCSV;
+    public static Vector4 FileTypeGRND => Current.FileTypeGRND;
+    public static Vector4 FileTypeGML => Current.FileTypeGML;
+    public static Vector4 FileTypeGTL => Current.FileTypeGTL;
 
     public static Vector4 HomeButtonActive => Current.HomeButtonActive;
 
@@ -226,8 +234,12 @@ public sealed class AppColors
     public Vector4 FileTypeCMAT = new Vector4(1, 0.70f, 0.16f, 1);
     public Vector4 FileTypeCHF = new Vector4(1, 0.70f, 0.16f, 1);
     public Vector4 FileTypeCLSP = new Vector4(1, 0.70f, 0.16f, 1);
+    public Vector4 FileTypeCCBK = new Vector4(1, 0.70f, 0.16f, 1);
+    public Vector4 FileTypeCLSM = new Vector4(1, 0.70f, 0.16f, 1);
     public Vector4 FileTypeFOL = new Vector4(0.15f, 0.65f, 0, 1);
     public Vector4 FileTypeEFX = new Vector4(0.21f, 0.88f, 0, 1);
+    public Vector4 FileTypeEEM = new Vector4(0.21f, 0.88f, 0, 1);
+    public Vector4 FileTypeEFCSV = new Vector4(0.21f, 0.88f, 0, 1);
     public Vector4 FileTypeGUI = new Vector4(1, 0.4f, 0.1f, 0.8f);
     public Vector4 FileTypeGCF = new Vector4(1, 0.4f, 0.1f, 0.8f);
     public Vector4 FileTypeGCP = new Vector4(1, 0.4f, 0.1f, 0.8f);
@@ -266,6 +278,10 @@ public sealed class AppColors
     public Vector4 FileTypeSKELETON = new Vector4(0.77f, 0.77f, 0.77f, 1);
     public Vector4 FileTypeFBXSKEL = new Vector4(0.216f, 0.627f, 0.776f, 1);
     public Vector4 FileTypeREFSKEL = new Vector4(0.776f, 0.525f, 0.322f, 1);
+    public Vector4 FileTypeDEF = new Vector4(0.25f, 0.8f, 1, 1);
+    public Vector4 FileTypeGRND = new Vector4(0.715f, 0.53f, 0.27f, 1);
+    public Vector4 FileTypeGML = new Vector4(0.715f, 0.53f, 0.27f, 1);
+    public Vector4 FileTypeGTL = new Vector4(0.715f, 0.53f, 0.27f, 1);
 
     public Vector4 HomeButtonActive = new Vector4(0.253f, 0.480f, 0.788f, 0.510f);
 

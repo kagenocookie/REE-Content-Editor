@@ -292,16 +292,16 @@ public class BookmarksPanel
 
     private void ShowBookmarksContextMenu(BookmarkManager manager, BookmarkManager.BookmarkEntry bm)
     {
-        if (ImguiHelpers.ContextMenuItem("##CopyPath", AppIcons.SI_FileCopyPath, "Copy Path", Colors.IconPrimary)) {
+        if (ImguiHelpers.SelectableItem("##CopyPath", AppIcons.SI_FileCopyPath, "Copy Path", Colors.IconPrimary)) {
             EditorWindow.CurrentWindow?.CopyToClipboard(bm.Path);
         }
-        if (ImguiHelpers.ContextMenuItem("##JumptoLocation", AppIcons.SIC_FileJumpTo, "Jump to file Location", [Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary])) {
+        if (ImguiHelpers.SelectableItemMultiColor("##JumptoLocation", AppIcons.SIC_FileJumpTo, "Jump to file Location", [Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary])) {
             _navigateTo(bm.Path);
         }
-        if (ImguiHelpers.ContextMenuItem("##RemoveBookmarks", AppIcons.SIC_BookmarkRemove, "Remove from Bookmarks", [Colors.IconPrimary, Colors.IconTertiary])) {
+        if (ImguiHelpers.SelectableItemMultiColor("##RemoveBookmarks", AppIcons.SIC_BookmarkRemove, "Remove from Bookmarks", [Colors.IconPrimary, Colors.IconTertiary])) {
             manager.RemoveBookmark(Workspace.Config.Game.name, bm.Path);
         }
-        if (ImGui.BeginMenu($"{AppIcons.SI_GenericTag} | Tags")) {
+        if (ImGui.BeginMenu($"{AppIcons.SI_GenericTag} Tags")) {
             ImGui.PushItemFlag(ImGuiItemFlags.AutoClosePopups, false);
             foreach (var tag in BookmarkManager.TagInfoMap.Keys) {
                 bool hasTag = bm.Tags.Contains(tag);

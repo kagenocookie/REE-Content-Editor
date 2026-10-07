@@ -466,6 +466,14 @@ public static class AppIcons
     public static readonly char[] SIC_MeshEditorOutlinerGroups = { '\uee8e', '\uee8f', '\uee90', '\uee91' };
     public static readonly char[] SIC_MeshEditorOutlinerHighlight = { '\uee92', '\uee93', '\uee94', '\uee95' };
     public static readonly char[] SIC_FolderOpenGameFile = { '\uee96', '\uee97', '\uee98', '\uee99' };
+    public static readonly char SI_FileType_CCBK = '\uee9a';
+    public static readonly char SI_FileType_CLSM = '\uee9b';
+    public static readonly char SI_FileType_DEF = '\uee9c';
+    public static readonly char SI_FileType_EEM = '\uee9d';
+    public static readonly char SI_FileType_EFCSV = '\uee9e';
+    public static readonly char SI_FileType_GRND = '\uee9f';
+    public static readonly char SI_FileType_GML = '\ueea0';
+    public static readonly char SI_FileType_GTL = '\ueea1';
 
     public static string PrependIcon(this string text, object target)
     {
@@ -596,6 +604,14 @@ public static class AppIcons
         KnownFileFormats.FbxSkeleton => (SI_FileType_FBXSKEL, Colors.FileTypeFBXSKEL),
         KnownFileFormats.RefSkeleton => (SI_FileType_FBXSKEL, Colors.FileTypeREFSKEL),
         KnownFileFormats.SSSProfile => (SI_FileType_SSS, Colors.FileTypeSSS),
+        KnownFileFormats.CharacterColliderBank => (SI_FileType_CCBK, Colors.FileTypeCCBK),
+        KnownFileFormats.CollisionSkinningMesh => (SI_FileType_CLSM, Colors.FileTypeCLSM),
+        KnownFileFormats.DynamicsDefinition => (SI_FileType_DEF, Colors.FileTypeDEF),
+        KnownFileFormats.EffectEmitMask => (SI_FileType_EEM, Colors.FileTypeEEM),
+        KnownFileFormats.EffectCsv => (SI_FileType_EFCSV, Colors.FileTypeEFCSV),
+        KnownFileFormats.Ground => (SI_FileType_GRND, Colors.FileTypeGRND),
+        KnownFileFormats.GroundMaterialList => (SI_FileType_GML, Colors.FileTypeGML),
+        KnownFileFormats.GroundTextureList => (SI_FileType_GTL, Colors.FileTypeGTL),
         _ => ('\0', Vector4.One),
     };
 }

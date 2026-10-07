@@ -13,6 +13,7 @@ public static partial class Lang
         public static readonly IconString Menu_RCOL = new("{0} RCOL", AppIcons.SI_FileType_RCOL);
         public static readonly IconString Menu_Chain = new("{0} Chain", AppIcons.SI_MeshViewerChain);
         public static readonly IconString Menu_IO = new("{0} Import / Export", AppIcons.SI_GenericIO);
+        public static readonly IconString Menu_Convert = new("{0} Convert", AppIcons.SI_GenericConvert);
         public static readonly IconString Tab_OutlinerModels = new("{0} Models", AppIcons.SI_FileType_MESH);
         public static readonly IconString Tab_OutlinerAnimations = new("{0} Animations", AppIcons.SI_Animation);
         public static readonly FixedString Tooltip_OutlinerExpand = "Expand Outliner";
@@ -24,6 +25,16 @@ public static partial class Lang
         public static readonly FixedString Tooltip_CollectionSave = "Save Collection";
         public static readonly FixedString Tooltip_CollectionLoad = "Load Collection";
         public static readonly FixedString Tooltip_CollectionClear = "Remove all additional meshes";
+        public static readonly FixedString Tooltip_AnimatorPause = "Pause";
+        public static readonly FixedString Tooltip_AnimatorPlay = "Play";
+        public static readonly FixedString Tooltip_AnimatorRestart = "Restart";
+        public static readonly FixedString Tooltip_AnimatorStop = "Stop";
+        public static readonly FixedString Tooltip_AnimatorPrevFrame = "Previous Frame";
+        public static readonly FixedString Tooltip_AnimatorNextFrame = "Next Frame";
+        public static readonly FixedString Tooltip_AnimatorAutoplay = "Autoplay";
+        public static readonly FixedString Tooltip_AnimatorPLaybackSpeed = "Playback Speed";
+        public static readonly FixedString Tooltip_AnimatorShowSkel = "Show Skeleton";
+        public static readonly FixedString Button_AnimatorAuto = "Auto";
         public static readonly IconString Button_OutlinerMeshCollection = new("{0} Mesh Collection", AppIcons.SI_SceneGameObject4);
         public static readonly FixedString Separator_Objects = "Objects";
         public static readonly FixedString Separator_Render = "Render Modes";
@@ -48,8 +59,7 @@ public static partial class Lang
         public static readonly FixedString Editor_SelectionRadius = "Selection radius";
         public static readonly FixedString Editor_MirrorAxes = "Global axis mirroring";
         public static readonly FixedString Editor_MirrorRadius = "Mirror radius";
-        public static readonly FixedString Editor_ExportReminder = "*Use 'Export Mesh' to write mesh with Edits*";
-        public static readonly FixedString Editor_StayOnTop = "Stay on top";
+        public static readonly FixedString Editor_ExportReminder = "Use 'Export Mesh' to write mesh with Edits";
         public static readonly FixedString Display_Default = "Default";
         public static readonly FixedString Display_Solid = "Solid";
         public static readonly FixedString Display_Wireframe = "Wireframe";

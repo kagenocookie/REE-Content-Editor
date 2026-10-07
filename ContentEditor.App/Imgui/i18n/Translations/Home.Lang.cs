@@ -75,6 +75,7 @@ public static partial class Lang
         public static readonly FixedString Tooltip_FirstTimeSetup_CustomGameNote = "This is a custom defined game. The app may need an upgrade to fully support all files, some files may not load correctly.";
         public static readonly FixedString Tooltip_FirstTimeSetup_GamePath = "This is the path to the game (where the .exe file is located).";
         public static readonly FixedString Tab_FirstTimeSetup = "First Time Setup";
+        public static readonly FixedString Tab_Loading = "Loading...";
         public static readonly FixedString Tab_Bundles = "Bundles";
         public static readonly FixedString Tab_Updates_A = "Updates *";
         public static readonly FixedString Tab_Updates_B = "Updates";

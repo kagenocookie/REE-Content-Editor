@@ -29,6 +29,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string GameConfigBaseFilepath = "game_configs_base_filepath";
         public const string UseExperimentalGltfLoader = "use_experimental_gltf_loader";
         public const string BackgroundColor = "background_color";
+        public const string MeshHighlightColor = "mesh_highlight_color";
         public const string LogLevel = "log_level";
         public const string LogToFile = "log_to_file";
         public const string ShowFps = "show_fps";
@@ -129,6 +130,8 @@ public class AppConfig : Singleton<AppConfig>
         public const string Key_MeshViewer_VertexSelection = "key_meshviewer_vertex_selection";
         public const string Key_MeshViewer_EdgeSelection = "key_meshviewer_edge_selection";
         public const string Key_MeshViewer_FaceSelection = "key_meshviewer_face_selection";
+        public const string Key_MeshViewer_ToggleOutliner = "key_meshviewer_toggle_outliner";
+        public const string Key_MeshViewer_ResetView = "key_meshviewer_resetview";
         public const string Key_TextureViewer_ResetView = "key_textureviewer_resetview";
         public const string Key_TextureViewer_ZoomIn = "key_textureviewer_zoomin";
         public const string Key_TextureViewer_ZoomOut = "key_textureviewer_zoomout";
@@ -331,6 +334,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly ClassSettingWrapper<string> ExternalTextEditor = new ClassSettingWrapper<string>(Keys.ExternalTextEditor, _lock);
     public readonly SettingWrapper<int> UnpackMaxThreads = new SettingWrapper<int>(Keys.UnpackMaxThreads, _lock, 4);
     public readonly SettingWrapper<ReeLib.via.Color> BackgroundColor = new SettingWrapper<ReeLib.via.Color>(Keys.BackgroundColor, _lock, new ReeLib.via.Color(115, 140, 153, 255));
+    public readonly SettingWrapper<ReeLib.via.Color> MeshHighlightColor = new SettingWrapper<ReeLib.via.Color>(Keys.MeshHighlightColor, _lock, new ReeLib.via.Color(255, 128, 0, 150));
     public readonly SettingWrapper<bool> PrettyFieldLabels = new SettingWrapper<bool>(Keys.PrettyLabels, _lock, true);
     public readonly SettingWrapper<bool> ShowQuaternionsAsEuler = new SettingWrapper<bool>(Keys.QuaternionsAsEuler, _lock, true);
     public readonly SettingWrapper<bool> QuaternionsDisableAutoNormalize = new SettingWrapper<bool>(Keys.QuaternionsDisableAutoNormalize, _lock, false);
@@ -433,6 +437,8 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<KeyBinding> Key_MeshViewer_VertexSelection = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_VertexSelection, _lock, new KeyBinding(ImGuiKey.Key1));
     public readonly SettingWrapper<KeyBinding> Key_MeshViewer_EdgeSelection = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_EdgeSelection, _lock, new KeyBinding(ImGuiKey.Key2));
     public readonly SettingWrapper<KeyBinding> Key_MeshViewer_FaceSelection = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_FaceSelection, _lock, new KeyBinding(ImGuiKey.Key3));
+    public readonly SettingWrapper<KeyBinding> Key_MeshViewer_ToggleOutliner = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_ToggleOutliner, _lock, new KeyBinding(ImGuiKey.T, ctrl: true));
+    public readonly SettingWrapper<KeyBinding> Key_MeshViewer_ResetView = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_ResetView, _lock, new KeyBinding(ImGuiKey.Keypad0, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_TextureViewer_ResetView = new SettingWrapper<KeyBinding>(Keys.Key_TextureViewer_ResetView, _lock, new KeyBinding(ImGuiKey.Keypad0, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_TextureViewer_ZoomIn = new SettingWrapper<KeyBinding>(Keys.Key_TextureViewer_ZoomIn, _lock, new KeyBinding(ImGuiKey.Equal, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_TextureViewer_ZoomOut = new SettingWrapper<KeyBinding>(Keys.Key_TextureViewer_ZoomOut, _lock, new KeyBinding(ImGuiKey.Minus, ctrl: true));
@@ -564,6 +570,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.BundleCustomBaseTargetPath, instance.BundleCustomBaseTargetPath.value?.ToString() ?? "", null),
             (Keys.Theme, instance.Theme.value?.ToString() ?? "", null),
             (Keys.BackgroundColor, instance.BackgroundColor.value.ToString(), null),
+            (Keys.MeshHighlightColor, instance.MeshHighlightColor.value.ToString(), null),
             (Keys.LogLevel, instance.LogLevel.value.ToString(), null),
             (Keys.MaxUndoSteps, instance.MaxUndoSteps.value.ToString(), null),
             (Keys.AutoExpandFieldsCount, instance.AutoExpandFieldsCount.value.ToString(), null),
@@ -653,6 +660,8 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.Key_MeshViewer_VertexSelection, instance.Key_MeshViewer_VertexSelection.value.ToString(), "Keys"),
             (Keys.Key_MeshViewer_EdgeSelection, instance.Key_MeshViewer_EdgeSelection.value.ToString(), "Keys"),
             (Keys.Key_MeshViewer_FaceSelection, instance.Key_MeshViewer_FaceSelection.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_ToggleOutliner, instance.Key_MeshViewer_ToggleOutliner.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_ResetView, instance.Key_MeshViewer_ResetView.value.ToString(), "Keys"),
             (Keys.Key_TextureViewer_ResetView, instance.Key_TextureViewer_ResetView.value.ToString(), "Keys"),
             (Keys.Key_TextureViewer_ZoomIn, instance.Key_TextureViewer_ZoomIn.value.ToString(), "Keys"),
             (Keys.Key_TextureViewer_ZoomOut, instance.Key_TextureViewer_ZoomOut.value.ToString(), "Keys"),
@@ -778,6 +787,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.BackgroundColor:
                             if (ReeLib.via.Color.TryParse(value, out var _col)) BackgroundColor.value = _col;
+                            break;
+                        case Keys.MeshHighlightColor:
+                            if (ReeLib.via.Color.TryParse(value, out _col)) MeshHighlightColor.value = _col;
                             break;
                         case Keys.LogLevel:
                             if (int.TryParse(value, out var _intvalue)) LogLevel.value = _intvalue;
@@ -966,6 +978,8 @@ public class AppConfig : Singleton<AppConfig>
                         case Keys.Key_MeshViewer_VertexSelection: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_VertexSelection.value = _key; break;
                         case Keys.Key_MeshViewer_EdgeSelection: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_EdgeSelection.value = _key; break;
                         case Keys.Key_MeshViewer_FaceSelection: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_FaceSelection.value = _key; break;
+                        case Keys.Key_MeshViewer_ToggleOutliner: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_ToggleOutliner.value = _key; break;
+                        case Keys.Key_MeshViewer_ResetView: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_ResetView.value = _key; break;
                         case Keys.Key_TextureViewer_ResetView: if (KeyBinding.TryParse(value, out _key)) Key_TextureViewer_ResetView.value = _key; break;
                         case Keys.Key_TextureViewer_ZoomIn: if (KeyBinding.TryParse(value, out _key)) Key_TextureViewer_ZoomIn.value = _key; break;
                         case Keys.Key_TextureViewer_ZoomOut: if (KeyBinding.TryParse(value, out _key)) Key_TextureViewer_ZoomOut.value = _key; break;
@@ -1311,6 +1325,7 @@ public record MeshViewerSettings
     public bool EditorMirrorY { get; set; }
     public bool EditorMirrorZ { get; set; }
     public float EditorMirrorRadius { get; set; } = DefaultEditorMirrorRadius;
+    public float OutlinerWidth { get; set; } = 1f;
 }
 
 public class BundleDefaults

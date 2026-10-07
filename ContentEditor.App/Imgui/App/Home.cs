@@ -58,7 +58,11 @@ public class HomeWindow : IWindowHandler
         { "mhrise", () => new[] { Colors.Game_MHRISEPrimary, Colors.Game_MHRISESecondary, Colors.Game_MHRISESecondary }},
         { "mhwilds", () => new[] { Colors.Game_MHWILDSPrimary, Colors.Game_MHWILDSSecondary, Colors.Game_MHWILDSSecondary }},
     };
-
+    private float loadingAnimTime;
+    private bool loadingFadeOutActive;
+    private float loadingFadeOutTimer;
+    private float loadingFadeOutDuration = 0.7f;
+    private float[] loadingRNDArray = null!;
     private int currentTipsIDX = 0;
     private float tipTimer;
     private float tipDuration = 15f;
@@ -84,6 +88,9 @@ public class HomeWindow : IWindowHandler
         gameNameCodes = games.Select(g => g.Code).ToArray();
         gameNames = games.Select(g => g.Name).ToArray();
         if (tips.Length > 0) currentTipsIDX = randomTipsIDX.Next(tips.Length);
+
+        loadingRNDArray = new float[32];
+        for (int i = 0; i < loadingRNDArray.Length; i++) loadingRNDArray[i] = (float)randomTipsIDX.NextDouble();
     }
     public void OnWindow()
     {
@@ -270,13 +277,34 @@ public class HomeWindow : IWindowHandler
                 var isReady = window?.IsReady == true;
                 if (!isReady && !wasPreviouslyNotSetup) {
                     notSetupTimeStart = DateTime.Now;
+                    loadingAnimTime = 0f;
                 }
-                if (!isReady) ImGui.BeginDisabled();
-                if (ImGui.BeginTabItem(Lang.Home.Tab_Bundles, isReady && wasPreviouslyNotSetup ? ImGuiTabItemFlags.SetSelected : ImGuiTabItemFlags.None)) {
+                if (isReady && wasPreviouslyNotSetup && !loadingFadeOutActive) {
+                    loadingFadeOutActive = true;
+                    loadingFadeOutTimer = 0f;
+                }
+                if (loadingFadeOutActive) {
+                    loadingFadeOutTimer += ImGui.GetIO().DeltaTime;
+                    if (loadingFadeOutTimer >= loadingFadeOutDuration) {
+                        loadingFadeOutActive = false;
+                    }
+                }
+                wasPreviouslyNotSetup = !isReady;
+
+                if (!isReady || loadingFadeOutActive) {
+                    if (ImGui.BeginTabItem(Lang.Home.Tab_Loading)) {
+                        float fadeAlpha = loadingFadeOutActive ? MathF.Max(0f, 1f - loadingFadeOutTimer / loadingFadeOutDuration) : 1f;
+                        ShowLoadingAnimation(window!, isReady, fadeAlpha);
+                        ImGui.EndTabItem();
+                    }
+                    ImGui.EndTabBar();
+                    return;
+                }
+
+                if (ImGui.BeginTabItem(Lang.Home.Tab_Bundles, wasPreviouslyNotSetup ? ImGuiTabItemFlags.SetSelected : ImGuiTabItemFlags.None)) {
                     ShowBundlesTab(context);
                     ImGui.EndTabItem();
                 }
-                if (!isReady) ImGui.EndDisabled();
                 if (ImGui.BeginTabItem(AppConfig.IsOutdatedVersion ? Lang.Home.Tab_Updates_A : Lang.Home.Tab_Updates_B)) {
                     ShowUpdateLog();
                     ImGui.EndTabItem();
@@ -285,11 +313,10 @@ public class HomeWindow : IWindowHandler
                     ShowCommitLog();
                     ImGui.EndTabItem();
                 }
-                if (ImGui.BeginTabItem(Lang.Home.Tab_GameSetup, window?.ResourceSetupFailure != null || !isReady && DateTime.Now - notSetupTimeStart > SetupAutoSwitchDelay ? ImGuiTabItemFlags.SetSelected : ImGuiTabItemFlags.None)) {
+                if (ImGui.BeginTabItem(Lang.Home.Tab_GameSetup, window?.ResourceSetupFailure != null ? ImGuiTabItemFlags.SetSelected : ImGuiTabItemFlags.None)) {
                     ShowGameConfigTab();
                     ImGui.EndTabItem();
                 }
-                wasPreviouslyNotSetup = !isReady;
             }
             ImGui.EndTabBar();
         }
@@ -299,14 +326,14 @@ public class HomeWindow : IWindowHandler
     {
         ImGui.SeparatorText(Lang.Home.Sep_ThemeColor);
         var theme = AppConfig.Instance.Theme.Get();
-        if (ImguiHelpers.ValueCombo("Theme", DefaultThemes.AvailableThemes, DefaultThemes.AvailableThemes, ref theme)) {
+        if (ImguiHelpers.ValueCombo(Lang.Settings.Theme.String, DefaultThemes.AvailableThemes, DefaultThemes.AvailableThemes, ref theme)) {
             UI.ApplyTheme(theme!);
             AppConfig.Instance.Theme.Set(theme);
         }
         ImguiHelpers.Tooltip(Lang.Home.Tooltip_FirstTimeSetup_Theme);
 
         var color = AppConfig.Instance.BackgroundColor.Get().ToVector4();
-        if (ImGui.ColorEdit4("Scene Background Color", ref color)) {
+        if (ImGui.ColorEdit4(Lang.Settings.BackgroundColor.String, ref color)) {
             var newColor = ReeLib.via.Color.FromVector4(color);
             AppConfig.Instance.BackgroundColor.Set(newColor);
             foreach (var wnd in MainLoop.Instance.Windows) {
@@ -325,7 +352,7 @@ public class HomeWindow : IWindowHandler
                 ImGui.Button($"{AppIcons.SI_GenericInfo}");
                 ImguiHelpers.TooltipColored(Lang.Home.Tooltip_FirstTimeSetup_CustomGameNote, Colors.Note);
             }
-            ImGui.InputText("Game Short Name", ref chosenGame, 20);
+            ImGui.InputText(Lang.Settings.Custom_ShortName, ref chosenGame, 20);
             ImguiHelpers.IsRequired();
             chosenGame = chosenGame.Replace(" ", "");
         } else {
@@ -340,7 +367,7 @@ public class HomeWindow : IWindowHandler
             var extractPath = AppConfig.Instance.GetGameExtractPath(chosenGame);
             var isCustomGame = !Enum.TryParse<GameName>(chosenGame, out _);
 
-            if (AppImguiHelpers.InputFolder("Game Path"u8, ref gamepath) && Directory.Exists(gamepath)) {
+            if (AppImguiHelpers.InputFolder(Lang.Settings.GamePath.Text, ref gamepath) && Directory.Exists(gamepath)) {
                 AppConfig.Instance.SetGamePath(chosenGame, gamepath);
             }
             if (!ImGui.IsItemActive() && string.IsNullOrEmpty(gamepath) && !string.IsNullOrEmpty(gameExe)) {
@@ -401,10 +428,10 @@ public class HomeWindow : IWindowHandler
         if (window == null) return;
         if (window.IsReady != true) {
             if (!updateInProgress) {
-                ImGui.PushFont(ImFontPtr.Null, UI.FontSize * 2);
                 if (window.ResourceSetupFailure == null) {
-                    ImGui.TextColored(Colors.Note, "Loading up workspace..."u8);
+                    ShowLoadingAnimation(window);
                 } else {
+                    ImGui.PushFont(ImFontPtr.Null, UI.FontSize * 2);
                     ImGui.TextColored(Colors.Error, "Workspace failed to set up:\n" + window.ResourceSetupFailure);
                     if (ImGui.Button(Lang.Buttons.Retry)) {
                         window.SetWorkspace(window.LastRequestedGame, null, true);
@@ -415,8 +442,8 @@ public class HomeWindow : IWindowHandler
                         ResourceRepository.Initialize(true);
                         window.SetWorkspace(window.LastRequestedGame, window.Workspace?.CurrentBundle?.Name, true);
                     }
+                    ImGui.PopFont();
                 }
-                ImGui.PopFont();
             }
             return;
         }
@@ -512,6 +539,238 @@ public class HomeWindow : IWindowHandler
         }
     }
 
+    private void ShowLoadingAnimation(EditorWindow window, bool isComplete = false, float fadeAlpha = 1f)
+    {
+        var deltaTime = ImGui.GetIO().DeltaTime;
+        loadingAnimTime += deltaTime;
+
+        float percentRampTarget = 58f;
+        float rampDuration = 1.42f;
+        float percentTau = 3.6f;
+
+        float percent;
+        if (isComplete) {
+            percent = 100f;
+        } else if (loadingAnimTime < rampDuration) {
+            percent = percentRampTarget * (loadingAnimTime / rampDuration);
+        } else {
+            var rate = MathF.Exp(-(loadingAnimTime - rampDuration) / percentTau);
+            percent = MathF.Min(99.999f, 100f - (100f - percentRampTarget) * rate);
+        }
+        var progressFract = percent / 100f;
+
+        var dots = new string('.', 1 + (int)(loadingAnimTime * 2f) % 3);
+        var gameLabel = string.IsNullOrEmpty(window.LastRequestedGame.name) ? "--" : window.LastRequestedGame.name.ToUpper();
+        var drawList = ImGui.GetWindowDrawList();
+        var themePrimaryColor = isComplete ? Colors.IconPrimary : Colors.IconSecondary;
+        Vector4 AccentColor(float alpha) => new Vector4(themePrimaryColor.X, themePrimaryColor.Y, themePrimaryColor.Z, alpha * fadeAlpha);
+
+        ImGui.PushStyleVar(ImGuiStyleVar.Alpha, fadeAlpha);
+        ImGui.Spacing();
+        var rowStart = ImGui.GetCursorScreenPos();
+        var rowAvail = ImGui.GetContentRegionAvail();
+        var percentText = $"{percent:0.000}%%";
+        var dotIDX = percentText.IndexOf('.');
+        var intPart = percentText[..dotIDX];
+        var fractPart = percentText[dotIDX..];
+        var intFontSize = UI.FontSizeLarge + 60;
+        var fractFontSize = UI.FontSize * 1.5f;
+        float fractTopAlign = 0.28f;
+        var fractYOffset = fractTopAlign * (intFontSize - fractFontSize);
+
+        ImGui.PushFont(ImFontPtr.Null, intFontSize);
+        var intW = ImGui.CalcTextSize(intPart).X;
+        var numberH = ImGui.GetTextLineHeight();
+        var numColW = ImGui.CalcTextSize("100").X + 6f * UI.UIScale;
+        ImGui.PopFont();
+
+        ImGui.PushFont(ImFontPtr.Null, fractFontSize);
+        var fractW = ImGui.CalcTextSize(fractPart).X;
+        numColW += ImGui.CalcTextSize(".000%%").X;
+        ImGui.PopFont();
+
+        var numberW = rowStart.X + (numColW - (intW + fractW));
+        ImGui.PushStyleColor(ImGuiCol.Text, themePrimaryColor);
+        ImGui.PushFont(ImFontPtr.Null, intFontSize);
+        ImGui.SetCursorScreenPos(new Vector2(numberW, rowStart.Y));
+        ImGui.Text(intPart);
+        ImGui.PopFont();
+        ImGui.PushFont(ImFontPtr.Null, fractFontSize);
+        ImGui.SetCursorScreenPos(new Vector2(numberW + intW, rowStart.Y + fractYOffset));
+        ImGui.Text(fractPart);
+        ImGui.PopFont();
+        ImGui.PopStyleColor();
+
+        float textColumnWidth = 260f;
+        var scaledTextColW = textColumnWidth * UI.UIScale;
+        var textColumnW = rowStart.X + numColW + 16f * UI.UIScale;
+
+        ImGui.SetCursorScreenPos(new Vector2(textColumnW, rowStart.Y + 6f * UI.UIScale));
+        ImGui.BeginGroup();
+        ImGui.TextColored(Colors.TextActive, isComplete ? "WORKSPACE READY" : "PREPARING WORKSPACE" + dots);
+        ImGui.TextColored(Colors.Faded, $"GAME: {gameLabel}");
+        ImGui.EndGroup();
+        var textH = ImGui.GetTextLineHeightWithSpacing() * 3f;
+        var rowH = MathF.Max(numberH, textH + 6f * UI.UIScale);
+
+        void DrawStatusPanel(Vector2 topLeft, Vector2 bottomRight)
+        {
+            var panelW = bottomRight.X - topLeft.X;
+            if (panelW < 100f * UI.UIScale) return;
+
+            drawList.AddRect(topLeft, bottomRight, ImGui.GetColorU32(AccentColor(0.45f)), 0f, ImDrawFlags.None, 1.5f * UI.UIScale);
+
+            var padding = 6f * UI.UIScale;
+            var boxesTop = new Vector2(topLeft.X + padding, topLeft.Y + padding);
+            var boxesBottom = new Vector2(bottomRight.X - padding, bottomRight.Y - padding);
+            var boxesAreaW = boxesBottom.X - boxesTop.X;
+
+            var spacing = 4f * UI.UIScale;
+            var targetBoxW = 14f * UI.UIScale;
+            var boxCount = Math.Clamp((int)(boxesAreaW / (targetBoxW + spacing)), 6, 24);
+            var boxW = (boxesAreaW - spacing * (boxCount - 1)) / boxCount;
+
+            float activeBox = 0.95f;
+            for (int i = 0; i < boxCount; i++) {
+                bool isReady;
+                float sinceActivate;
+                if (isComplete) {
+                    isReady = true;
+                    sinceActivate = 1f;
+                } else {
+                    var activateAt = loadingRNDArray[i % loadingRNDArray.Length] * activeBox;
+                    isReady = progressFract >= activateAt;
+                    sinceActivate = progressFract - activateAt;
+                }
+
+                var boxX = boxesTop.X + i * (boxW + spacing);
+                var boxMin = new Vector2(boxX, boxesTop.Y);
+                var boxMax = new Vector2(boxX + boxW, boxesBottom.Y);
+
+                uint textColor;
+                if (isReady) {
+                    var flashAlpha = sinceActivate < 0.02f ? 1f : 0.7f;
+                    drawList.AddRectFilled(boxMin, boxMax, ImGui.GetColorU32(AccentColor(flashAlpha)));
+                    textColor = ImGui.GetColorU32(ImGuiCol.WindowBg);
+                } else {
+                    drawList.AddRect(boxMin, boxMax, ImGui.GetColorU32(AccentColor(0.4f)), 0f, ImDrawFlags.None, 1f * UI.UIScale);
+                    textColor = ImGui.GetColorU32(AccentColor(0.8f));
+                }
+
+                var boxLabel = isReady ? "READY" : "NULL";
+                var charStep = ImGui.GetTextLineHeight() * 0.68f;
+                var charY = boxMin.Y + (boxMax.Y - boxMin.Y - charStep * boxLabel.Length) * 0.5f;
+                foreach (var character in boxLabel) {
+                    var charSize = ImGui.CalcTextSize(character.ToString());
+                    drawList.AddText(new Vector2(boxX + (boxW - charSize.X) * 0.5f, charY), textColor, character.ToString());
+                    charY += charStep;
+                }
+            }
+        }
+
+        var panelLeft = textColumnW + scaledTextColW;
+        if (panelLeft < rowStart.X + rowAvail.X) {
+            DrawStatusPanel(new Vector2(panelLeft, rowStart.Y), new Vector2(rowStart.X + rowAvail.X, rowStart.Y + rowH));
+        }
+
+        ImGui.SetCursorScreenPos(new Vector2(rowStart.X, rowStart.Y + rowH));
+        ImGui.Spacing();
+        ImGui.Spacing();
+
+        var avail = ImGui.GetContentRegionAvail();
+        var dummyH = MathF.Max(100f * UI.UIScale, MathF.Min(220f * UI.UIScale, avail.Y - 20f * UI.UIScale));
+        var origin = ImGui.GetCursorScreenPos();
+        ImGui.Dummy(new Vector2(avail.X, dummyH));
+
+        void DrawBackgroundGrid()
+        {
+            var spacing = new Vector2(46f, 38f) * UI.UIScale;
+            var columns = (int)(avail.X / spacing.X) + 1;
+            var rows = (int)(dummyH / spacing.Y) + 1;
+            var halfPlusSize = ImGui.CalcTextSize("+") * 0.5f;
+
+            for (int i = 0; i < columns * rows; i++) {
+                var alpha = 0.105f + 0.055f * MathF.Sin(loadingAnimTime * 1.1f + i);
+                var pos = origin + new Vector2(i % columns, i / columns) * spacing - halfPlusSize;
+                drawList.AddText(pos, ImGui.GetColorU32(AccentColor(alpha)), "+");
+            }
+        }
+
+        void DrawMultilineProgressionBars(float startY, float regionHeight)
+        {
+            int rowCount = 14;
+            var rowSpacing = regionHeight / rowCount;
+            var diagonalStep = (avail.X * 0.14f) / rowCount;
+            var rightMargin = 6f * UI.UIScale;
+
+            for (int i = 0; i < rowCount; i++) {
+                var lineX = origin.X + i * diagonalStep;
+                var fullLengthToEdge = MathF.Max(0f, origin.X + avail.X - rightMargin - lineX);
+                var lineY = origin.Y + startY + i * rowSpacing;
+                float length;
+                bool isFinished;
+                var localFract = 1f;
+
+                if (isComplete) {
+                    length = fullLengthToEdge;
+                    isFinished = true;
+                } else {
+                    var normalizedIDX = i / (float)(rowCount - 1);
+                    var envelope = 1f - MathF.Abs(normalizedIDX - 0.5f) * 2f;
+                    var rowFactor = 0.3f + 0.7f * envelope;
+
+                    var jitter = 0.85f + 0.3f * loadingRNDArray[i % loadingRNDArray.Length];
+                    rowFactor = MathF.Min(1f, rowFactor * jitter);
+
+                    var rowStartFract = normalizedIDX * 0.27f;
+                    localFract = Math.Clamp((progressFract - rowStartFract) / (1f - rowStartFract), 0f, 1f);
+                    var eased = 1f - MathF.Pow(1f - localFract, 2.5f);
+
+                    length = fullLengthToEdge * rowFactor * eased;
+                    isFinished = eased > 0.95f;
+                    if (length <= 0.5f) continue;
+                }
+                if (i % 2 == 0) {
+                    var rowLabel = $"{i + 1:00}";
+                    var labelSize = ImGui.CalcTextSize(rowLabel);
+                    drawList.AddText( new Vector2(lineX - labelSize.X - 8f * UI.UIScale, lineY - labelSize.Y * 0.5f), ImGui.GetColorU32(AccentColor(0.45f)), rowLabel);
+                }
+                drawList.AddLine(new Vector2(lineX, lineY + 3f * UI.UIScale), new Vector2(lineX + length, lineY + 3f * UI.UIScale), ImGui.GetColorU32(AccentColor(0.35f)), 1f);
+                drawList.AddLine(new Vector2(lineX, lineY), new Vector2(lineX + length, lineY), ImGui.GetColorU32(AccentColor(isFinished ? 1f : 0.85f)), (isFinished ? 3f : 2.4f) * UI.UIScale);
+
+                if (!isComplete && localFract < 0.999f) {
+                    var tipLength = MathF.Min(14f * UI.UIScale, length);
+                    drawList.AddLine(new Vector2(lineX + length - tipLength, lineY), new Vector2(lineX + length, lineY), ImGui.GetColorU32(Colors.IconPrimary), 2.6f * UI.UIScale);
+                }
+            }
+        }
+
+        void DrawBackgroundGridCorners()
+        {
+            var size = 10f * UI.UIScale;
+            var color = ImGui.GetColorU32(AccentColor(0.5f));
+            var min = origin;
+            var max = new Vector2(origin.X + avail.X, origin.Y + dummyH);
+            var corners = new (Vector2 point, float dirX, float dirY)[] {
+                (min, 1, 1),
+                (new Vector2(max.X, min.Y), -1, 1),
+                (new Vector2(min.X, max.Y), 1, -1),
+                (max, -1, -1),
+            };
+
+            foreach (var (point, dirX, dirY) in corners) {
+                drawList.AddLine(point, new Vector2(point.X + dirX * size, point.Y), color, 1.5f * UI.UIScale);
+                drawList.AddLine(point, new Vector2(point.X, point.Y + dirY * size), color, 1.5f * UI.UIScale);
+            }
+        }
+
+        DrawBackgroundGrid();
+        DrawMultilineProgressionBars(dummyH * 0.08f, dummyH * 0.84f);
+        DrawBackgroundGridCorners();
+
+        ImGui.Spacing();
+        ImGui.PopStyleVar();
+    }
     private void ShowBundlesTab(UIContext context)
     {
         var data = context.Get<WindowData>();
@@ -672,7 +931,7 @@ public class HomeWindow : IWindowHandler
                     bundleToOpen = bundleName;
                 }
             } else {
-                if (ImguiHelpers.ContextMenuItem($"##{gamePrefix}{bundleName}", AppIcons.SIC_BundleContain, bundleName, GetGameColors(gamePrefix, false))) {
+                if (ImguiHelpers.SelectableItemMultiColor($"##{gamePrefix}{bundleName}", AppIcons.SIC_BundleContain, bundleName, GetGameColors(gamePrefix, false))) {
                     if (gamePrefix != null) {
                         gameToSet = gamePrefix;
                         bundleToOpen = bundleName;

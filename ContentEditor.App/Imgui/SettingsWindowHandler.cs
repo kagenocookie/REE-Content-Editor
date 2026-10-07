@@ -384,6 +384,11 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         if (isAlpha && _wasOriginallyAlphaBg == false) {
             ImGui.TextColored(Colors.Warning, Lang.Settings.Warn_Transparency);
         }
+        var highlightColor = config.MeshHighlightColor.Get().ToVector4();
+        if (ImGui.ColorEdit4(Lang.Settings.HighlightColor.String, ref highlightColor)) {
+            var newColor = ReeLib.via.Color.FromVector4(highlightColor);
+            config.MeshHighlightColor.Set(newColor);
+        }
     }
     private static void ShowDisplayMeshViewerTab()
     {
@@ -423,6 +428,8 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     private void ShowHotkeysMeshViewerTab()
     {
         ImGui.Spacing();
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_ToggleOutliner, config.Key_MeshViewer_ToggleOutliner);
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_ResetView, config.Key_MeshViewer_ResetView);
         ImGui.SeparatorText(Lang.Settings.Section_MeshEditor);
         ImguiKeybinding(Lang.Settings.Bind_MeshViewer_VertexSelection, config.Key_MeshViewer_VertexSelection);
         ImguiKeybinding(Lang.Settings.Bind_MeshViewer_EdgeSelection, config.Key_MeshViewer_EdgeSelection);
