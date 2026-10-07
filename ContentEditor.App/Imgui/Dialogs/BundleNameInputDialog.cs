@@ -7,11 +7,11 @@ using ContentEditor.Editor;
 
 namespace ContentEditor.App;
 
-public class NameInputDialog : IWindowHandler
+public partial class BundleNameInputDialog : IWindowHandler
 {
     public bool HasUnsavedChanges => false;
 
-    public string HandlerName => "Name Input";
+    public string HandlerName => "Bundle Name Input";
 
     private readonly TranslatableBase title;
     private readonly TranslatableBase text;
@@ -25,12 +25,15 @@ public class NameInputDialog : IWindowHandler
     private WindowData data = null!;
     protected UIContext context = null!;
 
-    public NameInputDialog(TranslatableBase title, TranslatableBase text, string initialName, Regex validationRegex, IRectWindow parent, Action<string> onConfirmed, Action? onCancelled = null)
+    [System.Text.RegularExpressions.GeneratedRegex("^[ a-zA-Z0-9_()'-]+$")]
+    public static partial System.Text.RegularExpressions.Regex FilenameRegex();
+
+    public BundleNameInputDialog(TranslatableBase title, TranslatableBase text, string initialName, IRectWindow parent, Action<string> onConfirmed, Action? onCancelled = null, Regex? validationRegex = null)
     {
         this.title = title;
         this.text = text;
         this.input = initialName;
-        this.validationRegex = validationRegex;
+        this.validationRegex = validationRegex ?? FilenameRegex();
         this.parent = parent;
         OnConfirmed = onConfirmed;
         OnCancelled = onCancelled;
@@ -58,14 +61,21 @@ public class NameInputDialog : IWindowHandler
         ImGui.Text(text);
         ImGui.Unindent(ts / 2);
 
-
-
         ImGui.Spacing();
         ImGui.Spacing();
         ImGui.InputText("Name", ref input, 300);
-        var valid = validationRegex == null || validationRegex.IsMatch(input);
+        input = input.Trim();
+        var valid = validationRegex.IsMatch(input);
         if (!valid) {
             ImGui.TextColored(Colors.Error, "Chosen name contains invalid characters");
+        } else {
+            var workspace = EditorWindow.CurrentWindow?.Workspace;
+            if (workspace != null) {
+                var existing = workspace.BundleManager.GetBundle(input, null);
+                if (existing != null) {
+                    ImGui.TextColored(Colors.Note, "Bundle already exists and will be updated.");
+                }
+            }
         }
 
 

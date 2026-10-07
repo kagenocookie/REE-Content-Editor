@@ -552,9 +552,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             }
         }
 
-        AddSubwindow(new NameInputDialog(Lang.Home.BundleDialog_Title, Lang.Home.BundleDialog_Text_Loose.FormatRef(folder),
-            initialName, FilenameRegex(), this, name => {
-                Workspace.InitializeUnlabelledBundle(name, folder);
+        AddSubwindow(new BundleNameInputDialog(Lang.Home.BundleDialog_Title, Lang.Home.BundleDialog_Text_Loose.FormatRef(folder),
+            initialName, this, name => {
+                Workspace.InitializeUnlabelledBundle(name, folder, allowUpdate: true);
                 postConfirmCallback?.Invoke();
             }));
     }
@@ -645,8 +645,8 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             }
         }
 
-        AddSubwindow(new NameInputDialog(Lang.Home.BundleDialog_Title, Lang.Home.BundleDialog_Text_PAK.FormatRef(pakPath),
-            initialName, FilenameRegex(), this, name => Workspace.CreateBundleFromPAK(name, pakPath)));
+        AddSubwindow(new BundleNameInputDialog(Lang.Home.BundleDialog_Title, Lang.Home.BundleDialog_Text_PAK.FormatRef(pakPath),
+            initialName, this, name => Workspace.CreateBundleFromPAK(name, pakPath, true)));
     }
 
     public void CreateBundleFromArchive(string archiveFilepath)
@@ -1361,7 +1361,4 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         SceneManager?.Dispose();
         base.Dispose(disposing);
     }
-
-    [System.Text.RegularExpressions.GeneratedRegex("^[ a-zA-Z0-9_()'-]+$")]
-    public static partial System.Text.RegularExpressions.Regex FilenameRegex();
 }

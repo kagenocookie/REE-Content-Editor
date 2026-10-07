@@ -148,7 +148,7 @@ public sealed class ContentWorkspace : IDisposable
         if (bundle.HasFiles) {
             // update the diffs for all open bundle resource files that are part of the bundle
             // we don't check for file.Modified because it can be marked as false but still be different from the current diff
-            // e.g. if we manually replaced the file or undo'ed our changes
+            // e.g. if we manually  the file or undo'ed our changes
             if (forceDiffAllFiles) {
                 foreach (var info in bundle.Files) {
                     FileHandle? file;
@@ -277,9 +277,9 @@ public sealed class ContentWorkspace : IDisposable
         }
     }
 
-    public void CreateBundleFromPAK(string bundleName, string pakFilepath)
+    public void CreateBundleFromPAK(string bundleName, string pakFilepath, bool allowUpdate)
     {
-        if (BundleManager.GetBundle(bundleName, null) != null) {
+        if (!allowUpdate && BundleManager.GetBundle(bundleName, null) != null) {
             Logger.Error($"Bundle {bundleName} already exists!");
             return;
         }
@@ -298,17 +298,41 @@ public sealed class ContentWorkspace : IDisposable
         }
         Directory.CreateDirectory(bundlePath);
         pak.UnpackFilesTo(bundlePath);
-        InitializeUnlabelledBundle(bundlePath, null, bundleName);
+        InitializeUnlabelledBundle(bundlePath, null, allowUpdate);
     }
 
-    public void InitializeUnlabelledBundle(string bundlePath, string? sourcePath = null, string? name = null)
+    public void InitializeUnlabelledBundle(string bundlePath, string? sourcePath = null, bool allowUpdate = false)
     {
-        var bundleName = name ?? Path.GetFileName(bundlePath);
+        var bundleName = Path.GetFileName(bundlePath);
 
-        if (!Path.IsPathFullyQualified(bundlePath)) bundlePath = BundleManager.ConstructBundleFolder(bundlePath);
-        if (BundleManager.GetBundle(bundleName, null) != null) {
+        if (!Path.IsPathFullyQualified(bundlePath)) bundlePath = BundleManager.ConstructBundleFolder(bundleName);
+        var existingBundle = BundleManager.GetBundle(bundleName, null);
+        if (!allowUpdate && existingBundle != null) {
             Logger.Error($"Bundle {bundleName} already exists!");
             return;
+        }
+        if (existingBundle?.ResourceListing != null) {
+            // delete known previous files in case the update also removed anything
+            // any files not listed in the bundle resource listing can stay cause they were probably user edited
+            try {
+                foreach (var (local, r) in existingBundle.ResourceListing) {
+                    var path = Path.Combine(bundlePath, local);
+                    if (File.Exists(path)) {
+                        File.Delete(path);
+                    }
+                }
+                existingBundle.ResourceListing.Clear();
+            } catch (Exception e) {
+                Logger.Error($"Failed to delete bundle's previous files, merging with updated bundle files instead. Error: {e.Message}");
+            }
+        }
+
+        var bundleJsonPath = Path.Combine(bundlePath, "bundle.json");
+        if (existingBundle != null && sourcePath != null && !File.Exists(Path.Combine(sourcePath, "bundle.json"))) {
+            // if we're doing an import from an external dir, make sure we ignore the previous active bundle json
+            // we've already cleared the existing files so this way we don't try to reload the old bundle.json later
+            // a reload would've kept stale file references that might no longer exist
+            bundleJsonPath = null;
         }
         if (sourcePath != null && sourcePath.NormalizeFilepath() != bundlePath.NormalizeFilepath()) {
             // copy all files from source to the bundle path
@@ -322,7 +346,6 @@ public sealed class ContentWorkspace : IDisposable
         if (originalBundle != null) {
             SetBundle(null);
         }
-        var bundleJsonPath = Path.Combine(bundlePath, "bundle.json");
         var bundle = BundleManager.GetOrCreateBundle(bundleName, bundlePath);
         bundle.Name = bundleName;
         var modIni = Path.Combine(bundlePath, "modinfo.ini");
@@ -341,7 +364,7 @@ public sealed class ContentWorkspace : IDisposable
         }
 
         var hasPreviousBundleData = false;
-        if (Path.Exists(bundleJsonPath)) {
+        if (bundleJsonPath != null && Path.Exists(bundleJsonPath)) {
             using var fs = File.OpenRead(bundleJsonPath);
             var data = JsonSerializer.Deserialize<Bundle>(fs);
             if (data != null) {
@@ -379,7 +402,7 @@ public sealed class ContentWorkspace : IDisposable
 
         foreach (var file in Directory.EnumerateFiles(bundlePath, "*.*", SearchOption.AllDirectories)) {
             var localFile = file.NormalizeFilepath().Replace(bundlePathNorm, "").TrimStart('/');
-            if (localFile == "modinfo.ini") continue;
+            if (localFile == "modinfo.ini" || localFile == "bundle.json") continue;
             var ext = Path.GetExtension(file).ToLowerInvariant();
             if (ext == ".png" || ext == ".jpg" || ext == ".jpeg") {
                 // probably cover images
@@ -399,7 +422,9 @@ public sealed class ContentWorkspace : IDisposable
                 // we'll need a different flow for upgrading legacy DD2 bundles, as well as some sort of migration of legacy data
                 return;
             } else if (localFile.StartsWith("reframework/")) {
-                bundle.AddResource(localFile, localFile, true);
+                if (!bundle.ContainsResource(localFile)) {
+                    bundle.AddResource(localFile, localFile, true);
+                }
             } else {
                 var listfile = Env.ListFile;
                 var nativePath = localFile;
