@@ -1230,6 +1230,9 @@ public record DevSettings
     public string? REFPath { get; set; }
     public string? ReasyPath { get; set; }
     public string[]? RefRSZList { get; set; }
+
+    public string? ManualMergeSource { get; set; }
+    public string? ManualMergeTarget { get; set; }
 }
 
 public record ChangelogData

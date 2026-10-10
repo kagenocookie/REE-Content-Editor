@@ -1,9 +1,13 @@
 using System.Diagnostics;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using ContentEditor.App;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
+using ReeLib;
 
 namespace ContentEditor.BackgroundTasks;
 
@@ -115,7 +119,8 @@ public class RszJsonGeneratorTask(ContentWorkspace workspace, RszJsonGeneratorTa
                     "--patch", path,
                     "--crc",
                     "--force-count-mismatch",
-                    "--only-versioned-source-fields")) {
+                    "--only-versioned-source-fields",
+                    "--no-prune")) {
                     return Task.CompletedTask;
                 }
             }
@@ -183,7 +188,7 @@ public class RszJsonGeneratorTask(ContentWorkspace workspace, RszJsonGeneratorTa
     }
 }
 
-public class RszJsonGeneratorTaskWindow(ContentWorkspace env) : BaseWindowHandler
+public partial class RszJsonGeneratorTaskWindow(ContentWorkspace env) : BaseWindowHandler
 {
     public override string HandlerName => "RSZ File Generator";
 
@@ -196,6 +201,10 @@ public class RszJsonGeneratorTaskWindow(ContentWorkspace env) : BaseWindowHandle
     public string additonalRszInput = "";
     public List<string> referenceRszList = AppConfig.Settings.Dev.RefRSZList?.ToList() ?? [];
 
+    public string manualMergeTarget = AppConfig.Settings.Dev.ManualMergeTarget ?? "";
+    public string manualMergeSource = AppConfig.Settings.Dev.ManualMergeSource ?? "";
+    private HashSet<string> ignoredManuals = new();
+
     private RszJsonGeneratorTask? task;
     private List<string>? lastOutputList;
 
@@ -205,6 +214,11 @@ public class RszJsonGeneratorTaskWindow(ContentWorkspace env) : BaseWindowHandle
         if (pendingTask != null && pendingTask != task) {
             ImGui.TextColored(Colors.Note, "RSZ JSON file generation is in progress. Please wait for it to finish or restart Content Editor to cancel it.");
             return;
+        }
+
+        if (ImGui.TreeNode("Manual Merge"u8)) {
+            ShowManualMergeUI();
+            ImGui.TreePop();
         }
 
         if (context.children.Count == 0) {
@@ -239,6 +253,7 @@ public class RszJsonGeneratorTaskWindow(ContentWorkspace env) : BaseWindowHandle
         if (options.HasFlag(RszJsonGeneratorTask.Options.CleanupKnownNames)) {
             ImGui.SeparatorText("Reference RSZ JSON files"u8);
             ImGui.TextColored(Colors.Note, "You need to clone the REasy repository for this step!"u8);
+            ImGui.TextColored(Colors.Info, "This will execute CRC-based patching based on previously resolved RSZ JSON files. Make sure to select the stripped files and not the full ones."u8);
             if (ImguiHelpers.SameLine() && ImGui.Button("Open##REAsy"u8)) {
                 FileSystemUtils.OpenURL("https://github.com/seifhassine/REasy");
             }
@@ -344,4 +359,387 @@ public class RszJsonGeneratorTaskWindow(ContentWorkspace env) : BaseWindowHandle
             }
         }
     }
+
+    private Dictionary<string, SafeRszClass>? manualRszSource;
+    private Dictionary<string, SafeRszClass>? manualRszTarget;
+    private string? manualMergeError;
+    private sealed record SafeRszClass(JsonObject obj, string name)
+    {
+        public required SafeRszField[] fields;
+        public HashSet<int> Skips = new();
+        public JsonObject ToJson()
+        {
+            var o = (JsonObject)obj.DeepClone();
+            o["fields"] = new JsonArray(fields.Select(f => f.obj.DeepClone()).ToArray());
+            return o;
+        }
+        public override string ToString() => name;
+    }
+    private sealed record SafeRszField(JsonObject obj)
+    {
+        public string name = (string)obj!["name"]!;
+        public string type = (string)obj["type"]!;
+        public bool array = (bool)obj["array"]!;
+        public int size = (int)obj["size"]!;
+        public int align = (int)obj["align"]!;
+
+        public SafeRszField DeepClone() => new SafeRszField((JsonObject)obj.DeepClone());
+        public override string ToString() => $"sz={size:D02} al={align:D02} arr={array}; {type} | {name}";
+    }
+
+    private string _newName = "";
+    private (string? hash, int fieldIndex) _newStrTarget;
+    private bool newIsClassname;
+    private bool _startRenameThisFrame;
+
+    private static readonly Dictionary<(int size, int align), RszFieldType[]> probablyTypesForSizes = new() {
+        { (1, 1), [ RszFieldType.Bool, RszFieldType.U8, RszFieldType.S8, RszFieldType.S32 ] },
+        { (4, 4), [ RszFieldType.S32, RszFieldType.U32, RszFieldType.F32 ] },
+        { (8, 4), [ RszFieldType.Float2, RszFieldType.Range, RszFieldType.Uint2 ] },
+        { (12, 4), [ RszFieldType.Float3, RszFieldType.Uint3 ] },
+        { (16, 4), [ RszFieldType.Float4, RszFieldType.Uint4 ] },
+        { (16, 8), [ RszFieldType.GameObjectRef, RszFieldType.Guid ] },
+        { (16, 16), [ RszFieldType.Vec3, RszFieldType.Vec2, RszFieldType.Vec4, RszFieldType.Quaternion, RszFieldType.Sphere ] },
+        { (32, 16), [ RszFieldType.AABB ] },
+        { (80, 16), [ RszFieldType.OBB ] },
+    };
+
+    private void ShowManualMergeUI()
+    {
+        var changed = AppImguiHelpers.InputFilepath("Merge into file"u8, ref manualMergeTarget, FileFilters.JsonFile);
+        changed |= AppImguiHelpers.InputFilepath("Reference file"u8, ref manualMergeSource, FileFilters.JsonFile);
+
+        if (changed) {
+            manualRszSource = null;
+            manualRszTarget = null;
+
+            AppConfig.Settings.Dev.ManualMergeTarget = manualMergeTarget;
+            AppConfig.Settings.Dev.ManualMergeSource = manualMergeSource;
+            AppConfig.Settings.Save();
+        } else if (!string.IsNullOrEmpty(manualMergeError)) {
+            ImGui.TextColored(Colors.Error, manualMergeError);
+            if (ImGui.Button(Lang.Buttons.Clear)) {
+                manualMergeError = null;
+            }
+            return;
+        }
+
+        if (manualRszTarget == null || manualRszSource == null) {
+            if (!File.Exists(manualMergeTarget) || !File.Exists(manualMergeSource)) {
+                manualMergeError = "RSZ files not found";
+                return;
+            }
+            try {
+                var manualRszSource1 = JsonSerializer.Deserialize<Dictionary<string, JsonObject>>(File.ReadAllText(manualMergeSource));
+                var manualRszTarget1 = JsonSerializer.Deserialize<Dictionary<string, JsonObject>>(File.ReadAllText(manualMergeTarget));
+                if (manualRszTarget1 == null || manualRszSource1 == null) {
+                    manualMergeError = "Couldn't read RSZ files";
+                    return;
+                }
+
+                manualRszSource = new Dictionary<string, SafeRszClass>();
+                manualRszTarget = new Dictionary<string, SafeRszClass>();
+                foreach (var (k, v) in manualRszSource1) {
+                    var fields = v["fields"];
+                    if (fields == null) continue;
+
+                    var fields1 = (fields as JsonArray)?.Select(item => new SafeRszField((JsonObject)item!))!.ToArray()!;
+                    manualRszSource[k] = new SafeRszClass(v, (string)v["name"]!) { fields = fields1 };
+                }
+                foreach (var (k, v) in manualRszTarget1) {
+                    var fields = v["fields"];
+                    if (fields == null) continue;
+
+                    var fields1 = (fields as JsonArray)?.Select(item => new SafeRszField((JsonObject)item!))!.ToArray()!;
+                    manualRszTarget[k] = new SafeRszClass(v, (string)v["name"]!) { fields = fields1 };
+                }
+            } catch (Exception e) {
+                manualMergeError = e.Message;
+                return;
+            }
+            if (manualRszTarget == null || manualRszSource == null) {
+                manualMergeError = "Couldn't read RSZ files";
+                return;
+            }
+        }
+
+        var unresolved = manualRszTarget.Where(tt =>
+            tt.Value.fields.Any(f => IsNumberedFieldNameRegex().IsMatch(f.name)));
+
+        if (!unresolved.Any()) {
+            ImGui.TextColored(Colors.Success, "Everything seems to be in order!");
+            return;
+        }
+
+        ImGui.Text($"Unresolved classes: {unresolved.Count()} (hidden: {ignoredManuals.Count})");
+
+        int limit = 25;
+        var sz = ImGui.GetContentRegionAvail();
+        // var buttonW = UI.UIScale * 40;
+        // var compW = sz.X / 2 - ImGui.GetStyle().CellPadding.X - buttonW - ImGui.GetStyle().FramePadding.X * 2;
+        var compW = sz.X / 2 - ImGui.GetStyle().CellPadding.X;
+        var h = sz.Y;
+        foreach (var (hash, target) in unresolved) {
+            if (ignoredManuals.Contains(hash)) continue;
+            if (!manualRszSource.TryGetValue(hash, out var src) || src == null) {
+                continue;
+            }
+
+            // run comparison first
+            int lastEqualIndex = -1;
+            int lastIdenticalIndex = -1;
+            var skipped = 0;
+            int j = 0;
+            for (int i = 0; i < target.fields.Length; i++) {
+                var f = target.fields[i];
+                var isSkip = target.Skips.Contains(i);
+                if (isSkip) {
+                    skipped++;
+                    continue;
+                }
+                var targetI = j++;
+                while (src.Skips.Contains(targetI)) {
+                    targetI = j++;
+                }
+                var targetF = src.fields.ElementAtOrDefault(targetI);
+                if (lastIdenticalIndex == -1 && targetF?.name != f.name) {
+                    lastIdenticalIndex = i;
+                }
+
+                if (lastEqualIndex == -1) {
+                    if (targetF == null) {
+                        lastEqualIndex = i;
+                    } else if (targetF.align == f.align && targetF.size == f.size && targetF.array == f.array) {
+                        //
+                    } else {
+                        lastEqualIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            if (lastIdenticalIndex == -1 && target.fields.All(f => !IsNumberedFieldNameRegex().IsMatch(f.name))) {
+                // already identical and fully resolved, nothing much to do here
+                continue;
+            }
+
+            var header = $"{hash} {target.name}";
+
+            ImGui.SetNextWindowSize(new System.Numerics.Vector2(compW, h));
+            ImGui.BeginChild($"target##{limit}", ImGuiChildFlags.ResizeY|ImGuiChildFlags.AutoResizeY);
+
+            ImGui.Text(header);
+            skipped = 0;
+            for (int i = 0; i < target.fields.Length; i++) {
+                var f = target.fields[i];
+                var str = f.ToString();
+                var isSkip = target.Skips.Contains(i);
+                if (isSkip) {
+                    ImGui.TextColored(Colors.Faded, str);
+                    skipped++;
+                } else if (i < lastIdenticalIndex || lastIdenticalIndex == -1) {
+                    ImGui.TextColored(Colors.Success, str);
+                } else if (i < lastEqualIndex || lastEqualIndex == -1) {
+                    ImGui.TextColored(Colors.Note, str);
+                } else {
+                    ImGui.Text(str);
+                }
+
+                if (ImGui.IsItemClicked()) {
+                    if (VirtualClipboard.TryGetFromClipboard<SafeRszField>(out var pasted)) {
+                        var ii = i;
+                        UndoRedo.RecordCallbackSetter(null, target, f, pasted, (x, v) => x.fields[ii] = v);
+                    }
+                }
+                if (target.fields.Length >= i && ImGui.BeginPopupContextItem(str)) {
+                    if (ImGui.Selectable(isSkip ? "Unskip" : "Skip")) {
+                        UndoRedo.RecordCallbackSetter(null, target, (skip: isSkip, i), (skip: !isSkip, i), static (c, val) => {
+                            if (val.skip) {
+                                c.Skips.Add(val.i);
+                            } else {
+                                c.Skips.Remove(val.i);
+                            }
+                        });
+                    }
+                    if (ImGui.Selectable("Change name"u8)) {
+                        _newStrTarget = (hash, i);
+                        newIsClassname = false;
+                        _newName = "";
+                        _startRenameThisFrame = true;
+                    }
+                    if (ImGui.Selectable("Change classname"u8)) {
+                        _newStrTarget = (hash, i);
+                        newIsClassname = true;
+                        _newName = f.obj["original_type"]?.GetValue<string>() ?? "";
+                        _startRenameThisFrame = true;
+                    }
+                    if (probablyTypesForSizes.TryGetValue((f.size, f.align), out var recs)) {
+                        foreach (var rec in recs) {
+                            if (ImGui.Selectable($"Type: {rec}")) {
+                                UndoRedo.RecordCallbackSetter(null, f, f.type, rec.ToString(), static (ff, tt) => {
+                                    ff.type = tt;
+                                    ff.obj["type"] = tt;
+                                });
+                            }
+                        }
+                    }
+                    if (ImGui.BeginMenu("Change type >"u8)) {
+                        foreach (var newT in Enum.GetValues<RszFieldType>()) {
+                            var tstr = newT.ToString();
+                            if (ImGui.Selectable(tstr, tstr == f.type)) {
+                                UndoRedo.RecordCallbackSetter(null, f, f.type, tstr, static (ff, tt) => {
+                                    ff.type = tt;
+                                    ff.obj["type"] = tt;
+                                });
+                            }
+                        }
+                        ImGui.EndMenu();
+                    }
+                    ImGui.EndPopup();
+                }
+                if (_newStrTarget.hash == hash && i == _newStrTarget.fieldIndex) {
+                    ImGui.SameLine();
+                    ImGui.SetNextItemWidth(200 * UI.UIScale);
+                    if (_startRenameThisFrame) {
+                        _startRenameThisFrame = false;
+                        ImGui.SetKeyboardFocusHere();
+                    }
+                    ImGui.InputText("##newname", ref _newName, 80);
+                    if (ImGui.Button("Confirm")) {
+                        if (newIsClassname) {
+                            UndoRedo.RecordCallbackSetter(null, target.fields[i], target.fields[i].obj["original_type"] ?? "", _newName, (f, n) => {
+                                f.obj["original_type"] = n;
+                            });
+                        } else {
+                            UndoRedo.RecordCallbackSetter(null, target.fields[i], target.fields[i].name, _newName, (f, n) => {
+                                f.name = n;
+                                f.obj["name"] = n;
+                            });
+                        }
+                        _newStrTarget = default;
+                    }
+                    ImGui.SameLine();
+                    if (ImGui.Button("Cancel")) {
+                        _newStrTarget = default;
+                    }
+                }
+            }
+            ImGui.EndChild();
+
+            ImGui.SameLine();
+
+            ImGui.SetNextWindowSize(new System.Numerics.Vector2(compW, h));
+            ImGui.BeginChild($"source##{limit}", ImGuiChildFlags.ResizeY|ImGuiChildFlags.AutoResizeY);
+            ImGui.Text(header);
+
+            if (lastIdenticalIndex == -1) {
+                if (ImGui.Button("Hide this class")) {
+                    UndoRedo.RecordCallbackSetter(null, (ignoredManuals, hash), false, true, (data, ignore) => {
+                        if (ignore) {
+                            data.ignoredManuals.Add(hash);
+                        } else {
+                            data.ignoredManuals.Remove(hash);
+                        }
+                    });
+                }
+            }
+
+            skipped = 0;
+            for (int i = 0; i < src.fields.Length; i++) {
+                var f = src.fields[i];
+                var str = f.ToString();
+                var isSkip = src.Skips.Contains(i);
+                var prevSkipped = target.Skips.Count(ss => ss <= i);
+                if (isSkip) {
+                    ImGui.TextColored(Colors.Faded, str);
+                    skipped++;
+                } else if (i + prevSkipped - skipped < lastIdenticalIndex || lastIdenticalIndex == -1) {
+                    ImGui.TextColored(Colors.Success, str);
+                } else if (i + prevSkipped - skipped < lastEqualIndex || lastEqualIndex == -1) {
+                    ImGui.TextColored(Colors.Note, str);
+                } else {
+                    ImGui.Text(str);
+                }
+                if (ImGui.IsItemClicked()) {
+                    VirtualClipboard.CopyToClipboard(f.DeepClone());
+                }
+                if (ImGui.BeginPopupContextItem(str)) {
+                    if (ImGui.Selectable(isSkip ? "Unskip" : "Skip")) {
+                        UndoRedo.RecordCallbackSetter(null, src, (skip: isSkip, i), (skip: !isSkip, i), static (c, val) => {
+                            if (val.skip) {
+                                c.Skips.Add(val.i);
+                            } else {
+                                c.Skips.Remove(val.i);
+                            }
+                        });
+                    }
+
+                    if (target.fields.Length >= i && ImGui.Selectable("Transfer all unskipped up to (including) this field")) {
+                        var newRange = src.fields.Where((ff, ii) => ii <= i && !src.Skips.Contains(ii)).Select(x => x.DeepClone()).ToArray();
+                        var oldRange = target.fields.Where((ff, ii) => !target.Skips.Contains(ii)).Take(newRange.Length).Select(x => x.DeepClone()).ToArray();
+                        if (newRange.Length == src.fields.Length && oldRange.Length == target.fields.Length) {
+                            // full replace
+                            UndoRedo.RecordCallbackSetter(null, target, target.fields, src.fields, (tt, fs) => {
+                                tt.fields = fs;
+                            });
+                        } else {
+                            UndoRedo.RecordCallbackSetter(null, target, oldRange, newRange, static (list, range) => {
+                                int j = 0;
+                                for (int i = 0; i < range.Length; i++) {
+                                    if (list.Skips.Contains(i + j)) {
+                                        j++;
+                                        i--;
+                                        continue;
+                                    }
+                                    list.fields[i + j] = range[i];
+                                }
+                            });
+                        }
+                    }
+
+                    if (ImGui.Selectable("Fully replace all target fields"u8)) {
+                        UndoRedo.RecordCallbackSetter(null, target, target.fields, src.fields, (tt, fs) => {
+                            tt.fields = fs;
+                        });
+                    }
+
+                    if (ImGui.Selectable("Hide this class"u8)) {
+                        UndoRedo.RecordCallbackSetter(null, (ignoredManuals, hash), false, true, (data, ignore) => {
+                            if (ignore) {
+                                data.ignoredManuals.Add(hash);
+                            } else {
+                                data.ignoredManuals.Remove(hash);
+                            }
+                        });
+                    }
+                    ImGui.EndPopup();
+                }
+            }
+
+            ImGui.EndChild();
+
+            ImGui.Separator();
+
+            if (limit-- <= 0) break;
+        }
+
+        if (ImGui.Button("Save changes to ...")) {
+            var updatedJson = manualRszTarget.ToDictionary(kv => kv.Key, kv => kv.Value.ToJson());
+
+            PlatformUtils.ShowSaveFileDialog((outPath) => {
+                using var fs = File.Create(outPath);
+                JsonSerializer.Serialize(fs, updatedJson, JsonConfig.rszJsonOptions);
+            }, manualMergeTarget, FileFilters.JsonFile);
+        }
+        ImGui.SameLine();
+        if (ImGui.Button("Unhide all")) {
+            var bckp = ignoredManuals;
+            UndoRedo.RecordCallbackSetter(null, this, ignoredManuals, new(), (data, newSet) => {
+                data.ignoredManuals = newSet;
+            });
+        }
+    }
+
+    [GeneratedRegex("^v\\d+$")]
+    private static partial Regex IsNumberedFieldNameRegex();
 }
