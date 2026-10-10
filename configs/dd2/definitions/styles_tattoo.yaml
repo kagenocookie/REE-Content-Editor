@@ -31,7 +31,9 @@ entities:
     - name: texture
       required: true
       resource:
-        file: AppSystem/CharaEdit/ch000/Catalog/TattooCatalog.user
+        files:
+        - AppSystem/CharaEdit/ch000/Catalog/TattooCatalog.user
+        - AppSystem/CharaEdit/ch000/Catalog/TattooCatalog_40000.user
         custom_id_range: [10000, 10000000]
         type: resource-holder-pfb
         params:

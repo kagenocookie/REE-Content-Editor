@@ -76,19 +76,25 @@ entities:
       required: true
       resource:
         custom_id_range: [10000, 10000000]
-        file: AppSystem/CharaEdit/ch000/Catalog/MantleMeshCatalog_Default.user
+        files:
+        - AppSystem/CharaEdit/ch000/Catalog/MantleMeshCatalog_Default.user
+        - AppSystem/CharaEdit/ch000/Catalog/MantleMeshCatalog_40000.user
         type: resource-holder-pfb
         params:
           skipFields: 1
     - name: chain
       resource:
-        file: AppSystem/CharaEdit/ch000/Catalog/MantleChainCatalog_Default.user
+        files:
+        - AppSystem/CharaEdit/ch000/Catalog/MantleChainCatalog_Default.user
+        - AppSystem/CharaEdit/ch000/Catalog/MantleChainCatalog_40000.user
         type: resource-holder-pfb
         params:
           skipFields: 1
     - name: clsp
       resource:
-        file: AppSystem/CharaEdit/ch000/Catalog/MantleCollisionShapePresetCatalog_Default.user
+        files:
+        - AppSystem/CharaEdit/ch000/Catalog/MantleCollisionShapePresetCatalog_Default.user
+        - AppSystem/CharaEdit/ch000/Catalog/MantleCollisionShapePresetCatalog_40000.user
         type: resource-holder-pfb
         classname: app.PartSwapCollisionShapePresetHolder
         params:
@@ -96,13 +102,17 @@ entities:
           catalogClassname: app.PartSwapCatalog.Item
     - name: cloth
       resource:
-        file: AppSystem/CharaEdit/ch000/Catalog/MantleGpuClothCatalog_Default.user
+        files:
+        - AppSystem/CharaEdit/ch000/Catalog/MantleGpuClothCatalog_Default.user
+        - AppSystem/CharaEdit/ch000/Catalog/MantleGpuClothCatalog_40000.user
         type: resource-holder-pfb
         params:
           skipFields: 1
     - name: sfur
       resource:
-        file: AppSystem/CharaEdit/ch000/Catalog/MantleShellFurCatalog_Default.user
+        files:
+        - AppSystem/CharaEdit/ch000/Catalog/MantleShellFurCatalog_Default.user
+        - AppSystem/CharaEdit/ch000/Catalog/MantleShellFurCatalog_40000.user
         type: resource-holder-pfb
         params:
           skipFields: 1
@@ -134,7 +144,9 @@ entities:
     - name: skin
       required: true
       resource:
-        file: AppSystem/CharaEdit/ch000/Catalog/MantleSkinCatalog_Default.user
+        files:
+        - AppSystem/CharaEdit/ch000/Catalog/MantleSkinCatalog_Default.user
+        - AppSystem/CharaEdit/ch000/Catalog/MantleSkinCatalog_40000.user
         custom_id_range: [10000, 10000000]
         type: resource-holder-pfb
         params:

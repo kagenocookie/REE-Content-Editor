@@ -41,19 +41,25 @@ entities:
       required: true
       resource:
         custom_id_range: [10000, 10000000]
-        file: AppSystem/CharaEdit/ch000/Catalog/HairMeshCatalog_Default.user
+        files:
+        - AppSystem/CharaEdit/ch000/Catalog/HairMeshCatalog_Default.user
+        - AppSystem/CharaEdit/ch000/Catalog/HairMeshCatalog_40000.user
         type: resource-holder-pfb
         params:
           skipFields: 1
     - name: chain
       resource:
-        file: AppSystem/CharaEdit/ch000/Catalog/HairChainCatalog_Default.user
+        files:
+        - AppSystem/CharaEdit/ch000/Catalog/HairChainCatalog_Default.user
+        - AppSystem/CharaEdit/ch000/Catalog/HairChainCatalog_40000.user
         type: resource-holder-pfb
         params:
           skipFields: 1
     - name: clsp
       resource:
-        file: AppSystem/CharaEdit/ch000/Catalog/HairClspCatalog_Default.user
+        files:
+        - AppSystem/CharaEdit/ch000/Catalog/HairClspCatalog_Default.user
+        - AppSystem/CharaEdit/ch000/Catalog/HairClspCatalog_40000.user
         type: resource-holder-pfb
         classname: app.PartSwapCollisionShapePresetHolder
         params:
@@ -73,7 +79,9 @@ entities:
     - name: skin
       required: true
       resource:
-        file: AppSystem/CharaEdit/ch000/Catalog/HairSkinCatalog_Default.user
+        files:
+        - AppSystem/CharaEdit/ch000/Catalog/HairSkinCatalog_Default.user
+        - AppSystem/CharaEdit/ch000/Catalog/HairSkinCatalog_40000.user
         custom_id_range: [10000, 10000000]
         type: resource-holder-pfb
         params:
@@ -81,7 +89,9 @@ entities:
     - name: skinBeast
       required: true
       resource:
-        file: AppSystem/CharaEdit/ch000/Catalog/HairSkinCatalog_Default_BA.user
+        files:
+        - AppSystem/CharaEdit/ch000/Catalog/HairSkinCatalog_Default_BA.user
+        - AppSystem/CharaEdit/ch000/Catalog/HairSkinCatalog_40000_BA.user
         type: resource-holder-pfb
         params:
           skipFields: 1

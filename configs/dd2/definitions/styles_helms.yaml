@@ -130,7 +130,9 @@ entities:
           skipFields: 1
     - name: clsp
       resource:
-        file: AppSystem/CharaEdit/ch000/Catalog/HelmCollisionShapePresetCatalog_Default.user
+        files:
+        - AppSystem/CharaEdit/ch000/Catalog/HelmCollisionShapePresetCatalog_Default.user
+        - AppSystem/CharaEdit/ch000/Catalog/HelmCollisionShapePresetCatalog_40000.user
         type: resource-holder-pfb
         params:
           skipFields: 1
@@ -146,28 +148,38 @@ entities:
         classname: app.PartSwapCatalog.Item
         subtypes:
           humanMale:
-            file: AppSystem/CharaEdit/ch000/Catalog/HelmWrapDeformerCatalog_HM_Default.user
+            files:
+            - AppSystem/CharaEdit/ch000/Catalog/HelmWrapDeformerCatalog_HM_Default.user
+            - AppSystem/CharaEdit/ch000/Catalog/HelmWrapDeformerCatalog_HM_40000.user
             type: resource-holder-pfb
             params:
               skipFields: 1
           humanFemale:
-            file: AppSystem/CharaEdit/ch000/Catalog/HelmWrapDeformerCatalog_HF_Default.user
+            files:
+            - AppSystem/CharaEdit/ch000/Catalog/HelmWrapDeformerCatalog_HF_Default.user
+            - AppSystem/CharaEdit/ch000/Catalog/HelmWrapDeformerCatalog_HF_40000.user
             type: resource-holder-pfb
             params:
               skipFields: 1
           beastMale:
-            file: AppSystem/CharaEdit/ch000/Catalog/HelmWrapDeformerCatalog_BM_Default.user
+            files:
+            - AppSystem/CharaEdit/ch000/Catalog/HelmWrapDeformerCatalog_BM_Default.user
+            - AppSystem/CharaEdit/ch000/Catalog/HelmWrapDeformerCatalog_BM_40000.user
             type: resource-holder-pfb
             params:
               skipFields: 1
           beastFemale:
-            file: AppSystem/CharaEdit/ch000/Catalog/HelmWrapDeformerCatalog_BF_Default.user
+            files:
+            - AppSystem/CharaEdit/ch000/Catalog/HelmWrapDeformerCatalog_BF_Default.user
+            - AppSystem/CharaEdit/ch000/Catalog/HelmWrapDeformerCatalog_BF_40000.user
             type: resource-holder-pfb
             params:
               skipFields: 1
     - name: sfur
       resource:
-        file: AppSystem/CharaEdit/ch000/Catalog/HelmShellFurCatalog_Default.user
+        files:
+        - AppSystem/CharaEdit/ch000/Catalog/HelmShellFurCatalog_Default.user
+        - AppSystem/CharaEdit/ch000/Catalog/HelmShellFurCatalog_40000.user
         type: resource-holder-pfb
         classname: app.PartSwapShellFurHolder
         params:
@@ -212,7 +224,9 @@ entities:
     - name: skin
       required: true
       resource:
-        file: AppSystem/CharaEdit/ch000/Catalog/HelmSkinCatalog_Default.user
+        files:
+        - AppSystem/CharaEdit/ch000/Catalog/HelmSkinCatalog_Default.user
+        - AppSystem/CharaEdit/ch000/Catalog/HelmSkinCatalog_40000.user
         custom_id_range: [10000, 10000000]
         type: resource-holder-pfb
         params:
