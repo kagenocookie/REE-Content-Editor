@@ -59,7 +59,10 @@ public class ItemListCatalogResourceHandler : ResourceHandler, IResourceHandlerS
     {
         var idGenerator = Config.IDGeneratorRequired;
         foreach (var filepath in Files) {
-            var userfile = workspace.ResourceManager.GetFileContents<UserFile>(filepath);
+            if (!workspace.ResourceManager.TryResolveResourceFile<UserFile>(filepath, out var userfile)) {
+                continue;
+            }
+
             var items = arrayAccessor.Get(userfile.Instance!);
             if (items == null) continue;
 

@@ -49,7 +49,10 @@ public class MsgFileResourceHandler : ResourceHandler, IResourceHandlerStatic
     public override void ReadResources(ContentWorkspace workspace, Dictionary<long, IContentResource> dict)
     {
         foreach (var file in Files) {
-            var msg = workspace.ResourceManager.GetFileContents<MsgFile>(file);
+            if (!workspace.ResourceManager.TryResolveResourceFile<MsgFile>(file, out var msg)) {
+                continue;
+            }
+
 
             var langs = msg.Languages!;
             foreach (var entry in msg.Entries) {

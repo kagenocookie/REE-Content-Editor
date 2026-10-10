@@ -865,6 +865,17 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
         return false;
     }
 
+    public bool TryResolveResourceFile<TFileType>(string filename, [MaybeNullWhen(false)] out TFileType file) where TFileType : BaseFile
+    {
+        if (!TryResolveGameFile(filename, out var handle)) {
+            file = null;
+            return false;
+        }
+
+        file = handle.GetFile<TFileType>();
+        return true;
+    }
+
     private void RunBackgroundLoadQueue()
     {
         var linkedResourceQueue = new Queue<string>();
@@ -1335,17 +1346,6 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
         }
 
         return file;
-    }
-
-    public bool TryResolveResourceFile<TFileType>(string filename, [MaybeNullWhen(false)] out TFileType file) where TFileType : BaseFile
-    {
-        if (!TryResolveGameFile(filename, out var handle)) {
-            file = null;
-            return false;
-        }
-
-        file = handle.GetFile<TFileType>();
-        return true;
     }
 
     public void MarkFileResourceModified(string filepath, bool markModified)

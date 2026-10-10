@@ -20,7 +20,10 @@ public class UserFileSingletonResourceHandler : ResourceHandler, IResourceHandle
     public override void ReadResources(ContentWorkspace workspace, Dictionary<long, IContentResource> dict)
     {
         foreach (var filepath in Files) {
-            var userfile = workspace.ResourceManager.GetFileContents<UserFile>(filepath);
+            if (!workspace.ResourceManager.TryResolveResourceFile<UserFile>(filepath, out var userfile)) {
+                continue;
+            }
+
 
             var instance = userfile.Instance!;
             long id;

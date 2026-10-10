@@ -165,7 +165,10 @@ public class ResourceHolderPrefabHandler : ResourceHandler, IResourceHandlerStat
         var idGenerator = Config.IDGenerator;
         List<(RszInstance, string)> instances = new();
         foreach (var filepath in Files) {
-            var instance = workspace.ResourceManager.GetFileContents<UserFile>(filepath).Instance!;
+            if (!workspace.ResourceManager.TryResolveResourceFile<UserFile>(filepath, out var userfile)) {
+                continue;
+            }
+            var instance = userfile.Instance!;
 
             var list = arrayAccessor.Get(instance);
             foreach (var item in list.Cast<RszInstance>()) {

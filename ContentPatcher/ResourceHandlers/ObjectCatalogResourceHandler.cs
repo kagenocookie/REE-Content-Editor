@@ -141,7 +141,10 @@ public class ObjectCatalogResourceHandler : ResourceHandler, IResourceHandlerSta
         var subIdGenerator = Config.SubIDGenerator;
 
         foreach (var filepath in Files) {
-            var userfile = workspace.ResourceManager.GetFileContents<UserFile>(filepath);
+            if (!workspace.ResourceManager.TryResolveResourceFile<UserFile>(filepath, out var userfile)) {
+                continue;
+            }
+
             var items = arrayAccessor.Get(userfile.Instance!);
             foreach (var item in items.Cast<RszInstance>()) {
                 if (Config.Filter?.IsEnabled(item) == false) {
