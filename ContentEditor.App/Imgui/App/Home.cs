@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using ContentEditor.App.Github;
@@ -569,7 +570,7 @@ public class HomeWindow : IWindowHandler
         ImGui.Spacing();
         var rowStart = ImGui.GetCursorScreenPos();
         var rowAvail = ImGui.GetContentRegionAvail();
-        var percentText = $"{percent:0.000}%%";
+        var percentText = $"{percent.ToString("0.000", CultureInfo.InvariantCulture)}%";
         var dotIDX = percentText.IndexOf('.');
         var intPart = percentText[..dotIDX];
         var fractPart = percentText[dotIDX..];
@@ -731,7 +732,7 @@ public class HomeWindow : IWindowHandler
                     if (length <= 0.5f) continue;
                 }
                 if (i % 2 == 0) {
-                    var rowLabel = $"{i + 1:00}";
+                    var rowLabel = (i + 1).ToString("00", CultureInfo.InvariantCulture);
                     var labelSize = ImGui.CalcTextSize(rowLabel);
                     drawList.AddText( new Vector2(lineX - labelSize.X - 8f * UI.UIScale, lineY - labelSize.Y * 0.5f), ImGui.GetColorU32(AccentColor(0.45f)), rowLabel);
                 }
