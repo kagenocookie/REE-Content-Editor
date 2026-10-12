@@ -128,7 +128,7 @@ entities:
     - name: mixMaterials
       label: Mix Combinations
       resource:
-        type: object-catalog
+        type: item-list-catalog
         field: _MaterialList
         classname: app.ItemMixMaterialParam
         id: [_ItemID]
