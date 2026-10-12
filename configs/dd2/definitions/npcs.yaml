@@ -33,7 +33,9 @@ entities:
           filter:
           - property: _SubNPC
             equals: false
-          file: AppSystem/ch/ch300/UserData/CharacterDataList.user
+          files:
+          # - AppSystem/ch/ch300/UserData/CharacterDataList.user
+          - AppSystem/ch/ch300/UserData/CharacterDataList_Contents0014.user
           classname: app.CharacterData
       - name: alternativeData
         label: Sub NPC Data
@@ -44,7 +46,9 @@ entities:
           filter:
           - property: _SubNPC
             equals: true
-          file: AppSystem/ch/ch300/UserData/CharacterDataList.user
+          files:
+          # - AppSystem/ch/ch300/UserData/CharacterDataList.user
+          - AppSystem/ch/ch300/UserData/CharacterDataList_Contents0014.user
           classname: app.CharacterData
       - name: edit_data
         label: Customization
@@ -73,7 +77,9 @@ entities:
         display_after: code
         resource:
           type: msg
-          file: Message/UI/CharacterName.msg
+          files:
+          - Message/UI/CharacterName.msg
+          - Message/UI/CharacterName_CONTENTS_0014_END.msg
           params:
             key_format: "Mes_{code}"
       - name: name_sub
@@ -81,7 +87,9 @@ entities:
         display_after: name
         resource:
           type: msg
-          file: Message/UI/CharacterName.msg
+          files:
+          - Message/UI/CharacterName.msg
+          - Message/UI/CharacterName_CONTENTS_0014_END.msg
           params:
             key_format: "Mes_{code}_X1"
       - name: scheduleData
@@ -89,7 +97,9 @@ entities:
           type: item-list-catalog
           classname: app.NPCSchedule
           id: [ID]
-          file: AppSystem/ch/ch300/UserData/NPCScheduleData.user
+          files:
+          - AppSystem/ch/ch300/UserData/NPCScheduleData.user
+          - AppSystem/ch/ch300/UserData/NPCScheduleData_Contents0014.user
 
       - name: headPreBakeTexture_0
         required: true
@@ -97,7 +107,9 @@ entities:
           format: "{code}_0"
         resource:
           type: resource-holder-pfb
-          file: AppSystem/CharaEdit/ch000/Catalog/HeadPreBakeTextureCatalog_Npc.user
+          files:
+          - AppSystem/CharaEdit/ch000/Catalog/HeadPreBakeTextureCatalog_Npc.user
+          - AppSystem/CharaEdit/ch000/Catalog/HeadPreBakeTextureCatalog_ch300_Ex.user
           params:
             skipFields: 1
             nested: true
@@ -106,7 +118,9 @@ entities:
           format: "{code}_1"
         resource:
           type: resource-holder-pfb
-          file: AppSystem/CharaEdit/ch000/Catalog/HeadPreBakeTextureCatalog_Npc.user
+          files:
+          - AppSystem/CharaEdit/ch000/Catalog/HeadPreBakeTextureCatalog_Npc.user
+          - AppSystem/CharaEdit/ch000/Catalog/HeadPreBakeTextureCatalog_ch300_Ex.user
           params:
             skipFields: 1
             nested: true
@@ -115,7 +129,9 @@ entities:
           format: "{code}_2"
         resource:
           type: resource-holder-pfb
-          file: AppSystem/CharaEdit/ch000/Catalog/HeadPreBakeTextureCatalog_Npc.user
+          files:
+          - AppSystem/CharaEdit/ch000/Catalog/HeadPreBakeTextureCatalog_Npc.user
+          - AppSystem/CharaEdit/ch000/Catalog/HeadPreBakeTextureCatalog_ch300_Ex.user
           params:
             skipFields: 1
             nested: true
@@ -125,7 +141,9 @@ entities:
           format: "{code}_0"
         resource:
           type: resource-holder-pfb
-          file: AppSystem/CharaEdit/ch000/Catalog/BodyPreBakeTextureCatalog_Npc.user
+          files:
+          - AppSystem/CharaEdit/ch000/Catalog/BodyPreBakeTextureCatalog_Npc.user
+          - AppSystem/CharaEdit/ch000/Catalog/BodyPreBakeTextureCatalog_ch300_Ex.user
           params:
             skipFields: 1
             nested: true
@@ -134,7 +152,9 @@ entities:
           format: "{code}_1"
         resource:
           type: resource-holder-pfb
-          file: AppSystem/CharaEdit/ch000/Catalog/BodyPreBakeTextureCatalog_Npc.user
+          files:
+          - AppSystem/CharaEdit/ch000/Catalog/BodyPreBakeTextureCatalog_Npc.user
+          - AppSystem/CharaEdit/ch000/Catalog/BodyPreBakeTextureCatalog_ch300_Ex.user
           params:
             skipFields: 1
             nested: true
@@ -143,7 +163,9 @@ entities:
           format: "{code}_2"
         resource:
           type: resource-holder-pfb
-          file: AppSystem/CharaEdit/ch000/Catalog/BodyPreBakeTextureCatalog_Npc.user
+          files:
+          - AppSystem/CharaEdit/ch000/Catalog/BodyPreBakeTextureCatalog_Npc.user
+          - AppSystem/CharaEdit/ch000/Catalog/BodyPreBakeTextureCatalog_ch300_Ex.user
           params:
             skipFields: 1
             nested: true
@@ -151,7 +173,9 @@ entities:
         resource:
           type: resource-holder-pfb
           field: _CharacterElements
-          file: AppSystem/Catalog/MainContents/UserData/LipSyncCatalogUserData.user
+          files:
+          - AppSystem/Catalog/MainContents/UserData/LipSyncCatalogUserData.user
+          - AppSystem/Catalog/MainContents/UserData/LipSyncCatalogUserData_Contents0014.user
           params:
             skipFields: 1
             nested: true

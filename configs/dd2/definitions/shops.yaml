@@ -4,7 +4,9 @@ entities:
     fields:
     - name: data
       resource:
-        file: AppSystem/Item/ItemShopData/ItemShopData.user
+        files:
+        - AppSystem/Item/ItemShopData/ItemShopData.user
+        - AppSystem/Item/ItemShopData/Contents0014ItemShopData.user
         type: object-catalog
         classname: app.ItemShopParam
         id: [_ShopId]

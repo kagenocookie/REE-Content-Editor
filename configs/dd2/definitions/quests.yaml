@@ -17,7 +17,9 @@ entities:
       resource:
         id: [_IDValue]
         type: object-catalog
-        file: AppSystem/Quest/UserData/QuestContext.user
+        files:
+        - AppSystem/Quest/UserData/QuestContext.user
+        - AppSystem/Quest/UserData/QuestContext_Contents0014.user
         field: ContextDataArray
         classname: app.QuestContextData.ContextData
     - name: variables
@@ -25,7 +27,9 @@ entities:
       resource:
         id: [_IDValue]
         type: object-catalog
-        file: AppSystem/Quest/UserData/QuestContext.user
+        files:
+        - AppSystem/Quest/UserData/QuestContext.user
+        - AppSystem/Quest/UserData/QuestContext_Contents0014.user
         field: VariableDataArray
         classname: app.QuestContextData.VariableData
     - name: deliver
@@ -33,7 +37,9 @@ entities:
       resource:
         id: [_IDValue]
         type: object-catalog
-        file: AppSystem/Quest/UserData/QuestContext.user
+        files:
+        - AppSystem/Quest/UserData/QuestContext.user
+        - AppSystem/Quest/UserData/QuestContext_Contents0014.user
         field: DeliverDataArray
         classname: app.QuestContextData.DeliverData
     - name: after_story
@@ -41,7 +47,9 @@ entities:
       resource:
         id: [_IDValue]
         type: object-catalog
-        file: AppSystem/Quest/UserData/QuestContext.user
+        files:
+        - AppSystem/Quest/UserData/QuestContext.user
+        - AppSystem/Quest/UserData/QuestContext_Contents0014.user
         field: AfterStoryDataArray
         classname: app.QuestContextData.AfterStoryData
     - name: quest_log
@@ -49,14 +57,18 @@ entities:
       resource:
         id: [_Id]
         type: object-catalog
-        file: AppSystem/Catalog/MainContents/UserData/QuestLogCatalog.user
+        files:
+        - AppSystem/Catalog/MainContents/UserData/QuestLogCatalog.user
+        - AppSystem/Catalog/MainContents/UserData/QuestLogContents0014Catalog.user
         classname: app.QuestLogCatalog.Item
     - name: talk_events
       resource:
         id: [_QuestId]
         type: item-list-catalog
         classname: app.TalkEventDialogueCatalog.DialoguePack
-        file: Event/TalkEvent/TalkEventDialogueCatalog.user
+        files:
+        - Event/TalkEvent/TalkEventDialogueCatalog.user
+        - Event/TalkEvent/Contents0014TalkEventDialogueCatalog.user
 
 classes:
   app.QuestContextData.ContextData:

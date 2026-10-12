@@ -1,5 +1,4 @@
 # additional data:
-# - weather schedules: AppSystem/Weather/Weatherschedulesetting1.user  (and additional 2-6 files)
 # - grid -> weather mapping: editdata/gridattribute/weather/gridattributeweather.user
 
 entities:
@@ -40,6 +39,19 @@ entities:
         - AppSystem/Weather/WeatherScheduleSetting4.user
         - AppSystem/Weather/WeatherScheduleSetting5.user
         - AppSystem/Weather/WeatherScheduleSetting6.user
+        - AppSystem/Weather/WeatherScheduleSetting7.user
+        - AppSystem/Weather/WeatherScheduleSetting8.user
+        - AppSystem/Weather/WeatherScheduleSetting9.user
+        - AppSystem/Weather/WeatherScheduleSetting10.user
+        - AppSystem/Weather/WeatherScheduleSetting11.user
+        - AppSystem/Weather/WeatherScheduleSetting12.user
+        - AppSystem/Weather/WeatherScheduleSetting13.user
+        - AppSystem/Weather/WeatherScheduleSetting14.user
+        - AppSystem/Weather/WeatherScheduleSetting15.user
+        - AppSystem/Weather/WeatherScheduleSetting16.user
+        - AppSystem/Weather/WeatherScheduleSetting17.user
+        - AppSystem/Weather/WeatherScheduleSetting18.user
+        - AppSystem/Weather/WeatherScheduleSetting19.user
 classes:
   app.WeatherUserData.WeatherData:
     to_string: "Weather Data {Area:enum(app.WeatherArea)} {Weather:enum(app.WeatherManager.WeatherEnum)}"

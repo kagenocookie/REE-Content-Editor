@@ -113,6 +113,16 @@ entities:
             - field: data
               property: classname
               equals: app.ItemWeaponParam
+    - name: shopAdditionalData
+      resource:
+        type: object-catalog
+        field: _Params
+        classname: app.ItemShopAdditionalParam
+        id: [_Id]
+        files:
+        - AppSystem/Item/ItemShopData/ItemShopAdditionalData.user
+        params:
+          nested: true
     - name: mixRecipes
       label: Combine Recipes
       resource:
