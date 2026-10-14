@@ -11,43 +11,85 @@ namespace ContentEditor.App.FileLoaders;
 
 public partial class CommonMeshResource : IResourceFile
 {
-    internal sealed class ExportContext
+    internal class AssimpNodeImpl(Node node, float scale) : IMeshNodeInterface
+    {
+        public Matrix4x4 Transform {
+            get => GetScaledMatrix(Matrix4x4.Transpose(node.Transform), 1 / scale);
+            set => node.Transform = Matrix4x4.Transpose(GetScaledMatrix(value, scale));
+        }
+
+        public string Name { get => node.Name; set => node.Name = value; }
+
+        public bool HasChild(string name) => node.Children.Any(c => c.Name == name);
+    }
+
+    internal sealed class AssimpExportContext : MeshInterface<Node, AssimpNodeImpl>
     {
         public Assimp.Scene scene = new Assimp.Scene();
 
-        public bool IsGltf => format == "glb";
+        public override Node RootNode => scene.RootNode;
 
         public bool gltfWarned = false;
+        private readonly AssimpContext assimpContext;
+        public float scale;
 
-        public string format = "";
-        public bool includeAllLods;
-        public bool includeShadows;
-        public bool includeOcclusion;
-        public bool includeShapeKeys;
-        public FbxSkelFile? skeleton;
-        public string? rootBoneName;
-        public Dictionary<string, (Node node, bool? deforming, Matrix4x4 inverseTransform)> bonesLookup = new();
-
-        public Node? secondaryWeightNodeContainer;
-        public Dictionary<string, Node> secondaryWeightBones = new();
-
-        public bool writeWeight2FlagAsBones = AppConfig.Settings.Import.ExportSecondaryWeightAsBones;
-
-        public void AddWeight2Bone(string name)
+        public AssimpExportContext(AssimpContext context, string name, string ext)
         {
-            if (!bonesLookup.TryGetValue(name, out var boneData)) {
-                return;
+            this.assimpContext = context;
+
+            format = context.GetFormatIDFromExtension(ext);
+
+            scene.RootNode ??= new Node(name);
+            includeShapeKeys = format == "fbx";
+            scale = GetExportScale(format);
+        }
+
+        protected override bool AllowShapeKeys => includeShapeKeys;
+
+        public override Node AddChild(string name, Node parent)
+        {
+            var newNode = new Node(name, parent);
+            parent.Children.Add(newNode);
+            return newNode;
+        }
+
+
+        public override void AddMot(MotFile file)
+        {
+            AddMotToScene(scene, file, format);
+        }
+
+        public override void ExportToFile(string filepath)
+        {
+            assimpContext.ExportFile(scene, filepath, format);
+        }
+
+        public override void Dispose()
+        {
+            assimpContext.Dispose();
+        }
+
+        internal override AssimpNodeImpl GetNodeImpl(Node node)
+        {
+            return new AssimpNodeImpl(node, scale);
+        }
+
+        protected override void ExportMeshLod(MeshFile file, MeshLOD lod, string namePrefix, Matrix4x4 transform = default)
+        {
+            if (file.BoneData?.Bones.Count > 0 && bonesLookup.Count == 0) {
+                PrepareSkeleton(file);
             }
 
-            if (writeWeight2FlagAsBones) {
-                boneData.node.Children.Add(secondaryWeightBones[name] = new Node(SecondaryWeightDummyBonePrefix + name, boneData.node));
-            } else {
-                if (secondaryWeightNodeContainer == null) {
-                    secondaryWeightNodeContainer = new Node(SecondaryWeightDummyBonePrefix, scene.RootNode);
-                    scene.RootNode.Children.Add(secondaryWeightNodeContainer);
-                }
-                secondaryWeightNodeContainer.Children.Add(secondaryWeightBones[name] = new Node(SecondaryWeightDummyBonePrefix + name, secondaryWeightNodeContainer));
-            }
+            ExportLod(file, this, lod, namePrefix, transform);
+        }
+
+        public override int AddAndGetMaterialIndex(string materialName)
+        {
+            var idx = scene.Materials.FindIndex(m => m.Name == materialName);
+            if (idx != -1) return idx;
+            idx = scene.MaterialCount;
+            scene.Materials.Add(new Material() { Name = materialName });
+            return idx;
         }
     }
 
@@ -191,147 +233,21 @@ public partial class CommonMeshResource : IResourceFile
         scene.Animations.Add(anim);
     }
 
-    internal static void PrepareSkeleton(ExportContext context, MeshFile mesh)
-    {
-        var scale = GetExportScale(context.format);
-
-        Node boneRoot = context.scene.RootNode;
-        if (context.skeleton != null && context.bonesLookup.Count == 0) {
-            foreach (var refBone in context.skeleton.Bones) {
-                Node? parent = null;
-                if (refBone.parentIndex != -1) {
-                    var parentRef = context.skeleton.Bones[refBone.parentIndex];
-                    parent = context.bonesLookup.GetValueOrDefault(parentRef.name).node;
-                    if (parent == null) {
-                        throw new NotImplementedException("Unordered ref skel bones currently not supported");
-                    }
-                }
-                context.rootBoneName ??= refBone.name;
-                var node = new Node(refBone.name, parent ?? boneRoot);
-                (parent ?? boneRoot).Children.Add(node);
-
-                var localTransform = Transform.GetMatrixFromTransforms(refBone.position, refBone.rotation, refBone.scale);
-                node.Transform = Matrix4x4.Transpose(GetScaledMatrix(localTransform, scale));
-
-                Matrix4x4.Invert(localTransform, out var inverseLocal);
-                var inverseGlobal = parent == null ? inverseLocal : context.bonesLookup[parent.Name].inverseTransform * inverseLocal;
-                context.bonesLookup[refBone.name] = (node, null, inverseGlobal);
-            }
-        }
-
-        if (mesh.BoneData == null) return;
-
-        // insert bones by queue and requeue them if we don't have their parent yet
-        var pendingBones = new Queue<MeshBone>(
-            mesh.BoneData.Bones.Where(b => b.parentIndex == -1)
-            .Concat(mesh.BoneData.Bones.Where(b => b.parentIndex != -1)));
-
-        while (pendingBones.TryDequeue(out var srcBone)) {
-            if (context.bonesLookup.TryGetValue(srcBone.name, out var boneData)) {
-                if (srcBone.IsDeformBone && boneData.deforming != true) {
-                    context.bonesLookup[srcBone.name] = (boneData.node, true, boneData.inverseTransform);
-                }
-                continue;
-            }
-
-            var parentNode = boneRoot;
-            if (srcBone.Parent != null) {
-                if (context.bonesLookup.TryGetValue(srcBone.Parent.name, out var parent)) {
-                    parentNode = parent.node;
-                } else {
-                    pendingBones.Enqueue(srcBone);
-                    continue;
-                }
-            }
-            context.rootBoneName ??= srcBone.name;
-
-            var boneNode = new Node(srcBone.name, parentNode);
-            boneNode.Transform = Matrix4x4.Transpose(GetScaledMatrix(srcBone.localTransform.ToSystem(), scale));
-            parentNode.Children.Add(boneNode);
-            context.bonesLookup[srcBone.name] = (boneNode, srcBone.IsDeformBone, srcBone.inverseGlobalTransform.ToSystem());
-            if (srcBone.useSecondaryWeight) {
-                context.AddWeight2Bone(srcBone.name);
-            }
-        }
-
-        if (mesh.MeshBuffer?.ShapeKeyWeights.Length > 0) {
-            if (context.IsGltf) {
-                context.includeShapeKeys = false;
-                if (!context.gltfWarned) {
-                    context.gltfWarned = true;
-                    Logger.Warn($"GLTF exporter does not support enough bones to include shape keys. Mesh will not behave correctly when re-imported. Consider using FBX instead.");
-                }
-            } else {
-                context.includeShapeKeys = true;
-
-                // add shape key specific bone nodes
-                foreach (var (name, data) in context.bonesLookup) {
-                    var shapeKeyName = ShapekeyPrefix + data.node.Name;
-                    if (data.deforming != true || data.node.Children.Any(c => c.Name == shapeKeyName)) continue;
-
-                    data.node.Children.Add(new Node() { Name = shapeKeyName });
-                }
-            }
-        }
-    }
-
-    internal static ExportContext AddMeshToScene(ExportContext context, MeshFile file, string rootName, Matrix4x4 transform = default)
-    {
-        // NOTE: every matrix needs to be transposed, assimp expects them transposed compared to default System.Numeric.Matrix4x4 for some shit ass reason
-        // NOTE2: assimp currently forces vert deduplication for gltf export so we may lose some vertices (https://github.com/assimp/assimp/issues/6349)
-        // NOTE3: weights > 4 will get get lost for gltf because we can't tell it to write more weights (AI_CONFIG_EXPORT_GLTF_UNLIMITED_SKINNING_BONES_PER_VERTEX)
-        // we'd either need access to assimp's Exporter class directly, or have the ExportFile method modified on the assimp side
-
-        context.scene.RootNode ??= new Node(rootName);
-        if (file.BoneData?.Bones.Count > 0 && context.bonesLookup.Count == 0) {
-            PrepareSkeleton(context, file);
-        }
-
-        if (transform == default) transform = Matrix4x4.Identity;
-
-        foreach (var name in file.MaterialNames) {
-            if (!context.scene.Materials.Any(mat => mat.Name == name)) {
-                context.scene.Materials.Add(new Material() { Name = name });
-            }
-        }
-
-        if (file.MeshData != null) {
-            for (int i = 0; i < file.MeshData.LODs.Count; i++) {
-                var lod = file.MeshData.LODs[i];
-                if (i == 0) {
-                    ExportLod(file, context, lod, context.includeAllLods ? $"{rootName}_lod0_" : $"{rootName}_", transform);
-                    if (!context.includeAllLods) break;
-                } else {
-                    ExportLod(file, context, lod, $"{rootName}_lod{i}_", transform);
-                }
-            }
-        }
-        if (context.includeShadows && file.ShadowMesh != null) {
-            for (int i = 0; i < file.ShadowMesh.LODs.Count; i++) {
-                var lod = file.ShadowMesh.LODs[i];
-                ExportLod(file, context, lod, $"{rootName}_shadow_lod{i}_", transform);
-            }
-        }
-        if (context.includeOcclusion && file.OccluderMesh != null) {
-            if (context.scene.MaterialCount == 0) {
-                context.scene.Materials.Add(new Material() { Name = "default" });
-            }
-            ExportLod(file, context, file.OccluderMesh, $"occ_{rootName}_", transform);
-        }
-
-        return context;
-    }
-
     private static void ExportLod(
         MeshFile file,
-        ExportContext context,
+        AssimpExportContext context,
         MeshLOD lod,
         string namePrefix,
         Matrix4x4 transform)
     {
+        // NOTE: every matrix needs to be transposed, assimp expects them transposed compared to default System.Numeric.Matrix4x4 for some shit ass reason
+        // NOTE2: assimp currently forces vert deduplication for gltf export so we may lose some vertices (https://github.com/assimp/assimp/issues/6349)
+        // NOTE3: weights > 4 will get get lost for gltf because we can't tell it to write more weights (AI_CONFIG_EXPORT_GLTF_UNLIMITED_SKINNING_BONES_PER_VERTEX)
+        // unless assimp changes defaults or AssimpNetter exposes the setting somehow, we can't handle that through assimp
+        // alternative direct gltf export solves that better
+
         var scene = context.scene;
         var scale = GetExportScale(context.format);
-        var identity = GetScaledMatrix(Matrix4x4.Identity, scale);
 
         var bounds = file.MeshData?.boundingBox ?? new AABB();
         foreach (var mesh in lod.MeshGroups) {
@@ -413,7 +329,7 @@ public partial class CommonMeshResource : IResourceFile
                                     : file.BoneData.DeformBones[vd.GetIndex(i)];
                                 var bone = aiMesh.Bones[srcBone.index];
                                 bone.VertexWeights.Add(new VertexWeight(vertId, weight));
-                                if (!context.gltfWarned && context.IsGltf && i > 4) {
+                                if (!context.gltfWarned && !context.includeShapeKeys && i > 4) {
                                     context.gltfWarned = true;
                                     Logger.Warn($"GLTF exporter does not support more than 4 vertex bone weights. Mesh will not behave correctly when re-imported. Consider using a different file format.");
                                 }
@@ -444,7 +360,7 @@ public partial class CommonMeshResource : IResourceFile
                         }
                     }
 
-                    if (context.includeShapeKeys) {
+                    if (context.includeShapeKeys && mesh.Buffer.ShapeKeyWeights.Length > 0) {
                         var dict = new Dictionary<int, Bone>();
                         foreach (var bone in file.BoneData!.DeformBones) {
                             var attach = dict[bone.remapIndex] = new Bone() {

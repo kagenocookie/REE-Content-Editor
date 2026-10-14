@@ -120,6 +120,7 @@ public partial class CommonMeshResource : IResourceFile
                     localTransform = new ReeLib.via.mat4(mat),
                     childIndex = -1,
                     nextSibling = -1,
+                    parentIndex = -1,
                     symmetryIndex = mesh.BoneData.Bones.Count
                 };
 
@@ -697,14 +698,22 @@ public partial class CommonMeshResource : IResourceFile
         }
     }
 
-    private static (List<(int index, float weight)>[]?, bool needExtendedBuffer) MergeGltfWeightData(GltfData data, GltfMeshInfo aiMesh, Skin skin, Dictionary<string, int> boneIndexMap, bool shapeKeys, int indexCount, MeshBuffer buffer)
+    private static (List<(int index, float weight)>[]?, bool needExtendedBuffer) MergeGltfWeightData(
+        GltfData data,
+        GltfMeshInfo aiMesh,
+        Skin skin,
+        Dictionary<string, int> boneIndexMap,
+        bool shapeKeys,
+        int indexCount,
+        MeshBuffer buffer,
+        bool noScaling = false)
     {
         if (shapeKeys && buffer.ShapeKeyWeights.Length == 0) return default;
 
         // gltf gives us normalized weights (required per gltf standard)
         // but "shape keys" are also weights and therefore we end up getting split 0.5 main weights and 0.5 shape keys
         // we need to counteract that without losing precision, therefore read weights as float and then scale up both
-        var weightScale = buffer.ShapeKeyWeights.Length > 0 ? 2f : 1f;
+        var weightScale = !noScaling && buffer.ShapeKeyWeights.Length > 0 ? 2f : 1f;
 
         var weightBlockCount = aiMesh.WeightBlockCount;
         if (weightBlockCount == 0) return default;
@@ -728,6 +737,11 @@ public partial class CommonMeshResource : IResourceFile
                         if (jointName.StartsWith(SecondaryWeightDummyBonePrefix)) continue;
 
                         var actualBoneIndex = boneIndexMap[jointName.Replace(ShapekeyPrefix, "")];
+                        // gltf standard requires fully normalized weights but RE .mesh has two sets of weights (normal + shapekey)
+                        // usually they should end up normalized as 0-0.5 for each but just in case some exporters might wanna leave them as-is, handle that
+                        if (w * weightScale > 1.5f) {
+                            return MergeGltfWeightData(data, aiMesh, skin, boneIndexMap, shapeKeys, indexCount, buffer, true);
+                        }
                         // verify we're not over-scaling with a bit of leeway
                         Debug.Assert((w * weightScale) <= 1.02f);
                         mergedWeights[v].Add((actualBoneIndex, w * weightScale));

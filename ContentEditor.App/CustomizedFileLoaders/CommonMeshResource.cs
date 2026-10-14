@@ -26,7 +26,14 @@ public partial class CommonMeshResource(string name, Workspace workspace) : IRes
 
     public Assimp.Scene Scene
     {
-        get => _scene ??= AddMeshToScene(new ExportContext(), NativeMesh, Name).scene;
+        get {
+            if (_scene == null) {
+                using var c = new AssimpExportContext(new AssimpContext(), Name, "fbx");
+                c.AddMesh(NativeMesh, Name);
+                _scene = c.scene;
+            }
+            return _scene;
+        }
         set => _scene = value;
     }
 
@@ -149,26 +156,26 @@ public partial class CommonMeshResource(string name, Workspace workspace) : IRes
         IEnumerable<CommonMeshResource>? additionalMeshes = null
     )
     {
-        using AssimpContext context = new AssimpContext();
+        var useGltfExporter = AppConfig.Instance.UseExperimentalGltfLoader.Get();
+        var context = new AssimpContext();
 
         var ext = PathUtils.GetExtensionWithoutPeriod(filepath);
-        string exportFormat = context.GetFormatIDFromExtension(ext);
-        var exportCtx = new ExportContext() {
-            includeAllLods = includeLodsShadows,
-            includeShadows = includeLodsShadows,
-            format = exportFormat,
-            includeShapeKeys = exportFormat == "glb",
-            includeOcclusion = includeOcc,
-            skeleton = skeleton,
-        };
-        exportCtx.scene.RootNode ??= new Node(Name);
 
-        PrepareSkeleton(exportCtx, NativeMesh);
+        using MeshExportInterface exportCtx = useGltfExporter && (ext == "gltf" || ext == "glb")
+            ? new GltfExportContext(new glTFLoader.Schema.Gltf(), Name)
+            : new AssimpExportContext(context, Name, ext);
+
+        exportCtx.includeAllLods = includeLodsShadows;
+        exportCtx.includeShadows = includeLodsShadows;
+        exportCtx.includeOcclusion = includeOcc;
+        exportCtx.skeleton = skeleton;
+
+        exportCtx.PrepareSkeleton(NativeMesh);
         foreach (var add in additionalMeshes ?? []) {
-            PrepareSkeleton(exportCtx, add.NativeMesh);
+            exportCtx.PrepareSkeleton(add.NativeMesh);
         }
 
-        var scene = AddMeshToScene(exportCtx, NativeMesh, Name);
+        exportCtx.AddMesh(NativeMesh, Name);
 
         if (_mesh == null) {
             Logger.Error("Missing mesh file, can't export");
@@ -177,13 +184,14 @@ public partial class CommonMeshResource(string name, Workspace workspace) : IRes
 
         if (additionalMeshes?.Any() == true) {
             foreach (var addm in additionalMeshes) {
-                AddMeshToScene(exportCtx, addm.NativeMesh, addm.Name);
+                exportCtx.AddMesh(addm.NativeMesh, addm.Name);
             }
         }
+
         if (mots != null) {
             foreach (var mot in mots) {
                 if (mot is MotFile mm) {
-                    AddMotToScene(exportCtx.scene, mm, ext);
+                    exportCtx.AddMot(mm);
                 }
             }
         }
@@ -195,12 +203,7 @@ public partial class CommonMeshResource(string name, Workspace workspace) : IRes
             }
         }
         // PrintTree(exportCtx.scene.RootNode, 0);
-        // foreach (var bone in exportCtx.scene.Meshes[0].Bones) {
-        //     var node = exportCtx.scene.RootNode.FindNode(bone.Name);
-        //     System.Numerics.Matrix4x4.Invert(System.Numerics.Matrix4x4.Transpose(bone.OffsetMatrix), out var boneGlobal);
-        //     Logger.Info(bone.Name + " | Bone: " + boneGlobal.Translation + " | Node: " + System.Numerics.Matrix4x4.Transpose(node.Transform).Translation);
-        // }
-        context.ExportFile(exportCtx.scene, filepath, exportFormat);
+        exportCtx.ExportToFile(filepath);
     }
 
     internal void PreloadMeshBuffers()
