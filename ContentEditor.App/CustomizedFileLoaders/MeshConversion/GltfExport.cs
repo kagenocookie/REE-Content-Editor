@@ -136,6 +136,11 @@ public partial class CommonMeshResource : IResourceFile
                     joints.Add(idx);
                 }
             }
+            if (skeleton != null) {
+                foreach (var sk in skeleton.Bones) {
+                    TryAddJoint(bonesLookup[sk.name].node);
+                }
+            }
             foreach (var bb in mesh.BoneData!.Bones) {
                 TryAddJoint(bonesLookup[bb.name].node);
                 if (writeWeight2FlagAsBones && secondaryWeightBones.TryGetValue(bb.name, out var secb)) {
