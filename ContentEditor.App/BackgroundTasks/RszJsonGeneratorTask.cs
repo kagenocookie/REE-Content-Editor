@@ -132,6 +132,14 @@ public class RszJsonGeneratorTask(ContentWorkspace workspace, RszJsonGeneratorTa
 
             if (workingRszPath != config.rszJsonPath) {
                 File.Copy(workingRszPath, config.rszJsonPath, true);
+                using var fs = File.OpenRead(workingRszPath);
+                LocalResources.SaveRSZTemplateFile(fs, workingRszPath, config.rszJsonPath, true);
+            } else {
+                var tmpPath = config.rszJsonPath + "_reasy.json";
+                File.Copy(workingRszPath, tmpPath, true);
+                using var fs = File.OpenRead(tmpPath);
+                LocalResources.SaveRSZTemplateFile(fs, workingRszPath, config.rszJsonPath, true);
+                File.Delete(tmpPath);
             }
         }
 
@@ -261,9 +269,21 @@ public partial class RszJsonGeneratorTaskWindow(ContentWorkspace env) : BaseWind
                 AppConfig.Settings.Dev.ReasyPath = reasyPath;
                 AppConfig.Instance.SaveJsonConfig();
             }
-            int i = 0;
-            foreach (var file in referenceRszList) {
-                ImGui.PushID(i++);
+            for (int i = 0; i < referenceRszList.Count; i++) {
+                string? file = referenceRszList[i];
+                ImGui.PushID(i);
+                if (ImGui.ArrowButton("##up", ImGuiDir.Up) && i > 0) {
+                    (referenceRszList[i - 1], referenceRszList[i]) = (referenceRszList[i], referenceRszList[i - 1]);
+                    AppConfig.Settings.Dev.RefRSZList = referenceRszList.ToArray();
+                    AppConfig.Instance.SaveJsonConfig();
+                }
+                ImGui.SameLine();
+                if (ImGui.ArrowButton("##down", ImGuiDir.Down) && i < referenceRszList.Count - 1) {
+                    (referenceRszList[i + 1], referenceRszList[i]) = (referenceRszList[i], referenceRszList[i + 1]);
+                    AppConfig.Settings.Dev.RefRSZList = referenceRszList.ToArray();
+                    AppConfig.Instance.SaveJsonConfig();
+                }
+                ImGui.SameLine();
                 if (ImGui.Button($"{AppIcons.SI_GenericDelete}")) {
                     referenceRszList.Remove(file);
                     AppConfig.Settings.Dev.RefRSZList = referenceRszList.ToArray();
@@ -357,6 +377,11 @@ public partial class RszJsonGeneratorTaskWindow(ContentWorkspace env) : BaseWind
                     lastOutputList = null;
                 }
             }
+            ImGui.SameLine();
+            if (ImGui.Button($"{AppIcons.Copy}")) {
+                var str = string.Join("\n", lines ?? []);
+                EditorWindow.CurrentWindow?.CopyToClipboard(str);
+            }
         }
     }
 
@@ -412,6 +437,7 @@ public partial class RszJsonGeneratorTaskWindow(ContentWorkspace env) : BaseWind
         if (changed) {
             manualRszSource = null;
             manualRszTarget = null;
+            manualMergeError = null;
 
             AppConfig.Settings.Dev.ManualMergeTarget = manualMergeTarget;
             AppConfig.Settings.Dev.ManualMergeSource = manualMergeSource;
@@ -472,6 +498,23 @@ public partial class RszJsonGeneratorTaskWindow(ContentWorkspace env) : BaseWind
         }
 
         ImGui.Text($"Unresolved classes: {unresolved.Count()} (hidden: {ignoredManuals.Count})");
+
+        if (ImGui.Button("Save changes to ...")) {
+            var updatedJson = manualRszTarget.ToDictionary(kv => kv.Key, kv => kv.Value.ToJson());
+
+            PlatformUtils.ShowSaveFileDialog((outPath) => {
+                using var fs = File.Create(outPath);
+                JsonSerializer.Serialize(fs, updatedJson, JsonConfig.rszJsonOptions);
+            }, manualMergeTarget, FileFilters.JsonFile);
+        }
+        ImGui.SameLine();
+        if (ImGui.Button("Unhide all")) {
+            var bckp = ignoredManuals;
+            UndoRedo.RecordCallbackSetter(null, this, ignoredManuals, new(), (data, newSet) => {
+                data.ignoredManuals = newSet;
+            });
+        }
+        ImGui.Separator();
 
         int limit = 25;
         var sz = ImGui.GetContentRegionAvail();
@@ -631,16 +674,24 @@ public partial class RszJsonGeneratorTaskWindow(ContentWorkspace env) : BaseWind
             ImGui.SetNextWindowSize(new System.Numerics.Vector2(compW, h));
             ImGui.BeginChild($"source##{limit}", ImGuiChildFlags.ResizeY|ImGuiChildFlags.AutoResizeY);
             ImGui.Text(header);
+            var doHide = false;
+            if (ImGui.BeginPopupContextItem(header)) {
+                if (ImGui.Selectable("Hide this class"u8)) {
+                    doHide = true;
+                }
+
+                if (ImGui.Selectable("Fully replace all target fields"u8)) {
+                    UndoRedo.RecordCallbackSetter(null, target, target.fields, src.fields, (tt, fs) => {
+                        tt.fields = fs;
+                    });
+                }
+
+                ImGui.EndPopup();
+            }
 
             if (lastIdenticalIndex == -1) {
-                if (ImGui.Button("Hide this class")) {
-                    UndoRedo.RecordCallbackSetter(null, (ignoredManuals, hash), false, true, (data, ignore) => {
-                        if (ignore) {
-                            data.ignoredManuals.Add(hash);
-                        } else {
-                            data.ignoredManuals.Remove(hash);
-                        }
-                    });
+                if (ImGui.Button("Hide this class"u8)) {
+                    doHide = true;
                 }
             }
 
@@ -697,23 +748,28 @@ public partial class RszJsonGeneratorTaskWindow(ContentWorkspace env) : BaseWind
                         }
                     }
 
+                    if (ImGui.Selectable("Hide this class"u8)) {
+                        doHide = true;
+                    }
+
                     if (ImGui.Selectable("Fully replace all target fields"u8)) {
                         UndoRedo.RecordCallbackSetter(null, target, target.fields, src.fields, (tt, fs) => {
                             tt.fields = fs;
                         });
                     }
 
-                    if (ImGui.Selectable("Hide this class"u8)) {
-                        UndoRedo.RecordCallbackSetter(null, (ignoredManuals, hash), false, true, (data, ignore) => {
-                            if (ignore) {
-                                data.ignoredManuals.Add(hash);
-                            } else {
-                                data.ignoredManuals.Remove(hash);
-                            }
-                        });
-                    }
                     ImGui.EndPopup();
                 }
+            }
+
+            if (doHide) {
+                UndoRedo.RecordCallbackSetter(null, (ignoredManuals, hash), false, true, (data, ignore) => {
+                    if (ignore) {
+                        data.ignoredManuals.Add(hash);
+                    } else {
+                        data.ignoredManuals.Remove(hash);
+                    }
+                });
             }
 
             ImGui.EndChild();
@@ -721,22 +777,6 @@ public partial class RszJsonGeneratorTaskWindow(ContentWorkspace env) : BaseWind
             ImGui.Separator();
 
             if (limit-- <= 0) break;
-        }
-
-        if (ImGui.Button("Save changes to ...")) {
-            var updatedJson = manualRszTarget.ToDictionary(kv => kv.Key, kv => kv.Value.ToJson());
-
-            PlatformUtils.ShowSaveFileDialog((outPath) => {
-                using var fs = File.Create(outPath);
-                JsonSerializer.Serialize(fs, updatedJson, JsonConfig.rszJsonOptions);
-            }, manualMergeTarget, FileFilters.JsonFile);
-        }
-        ImGui.SameLine();
-        if (ImGui.Button("Unhide all")) {
-            var bckp = ignoredManuals;
-            UndoRedo.RecordCallbackSetter(null, this, ignoredManuals, new(), (data, newSet) => {
-                data.ignoredManuals = newSet;
-            });
         }
     }
 
