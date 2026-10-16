@@ -57,6 +57,7 @@ public static partial class Lang
         public static readonly FixedString UpdateSceneCache = "Update Scene Cache";
         public static readonly FixedString NewWorkspace = "Open New Workspace";
         public static readonly FixedString Show_GameObject = "Show GameObject";
+        public static readonly FixedString ResetToDefault = "Reset To Default";
 
         public static readonly FixedString CheckUpdates = "Check For Updates";
         public static readonly FixedString CheckForDataUpdate = "Check for Updated Game Data Cache";

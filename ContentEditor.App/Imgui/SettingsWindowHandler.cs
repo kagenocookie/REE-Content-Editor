@@ -31,6 +31,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     {
         Preferences_General,
         Preferences_Editing,
+        Preferences_Import,
         Preferences_Bundles,
         Display_General,
         Display_Theme,
@@ -63,6 +64,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         new SettingGroup { Name = Lang.Settings.Group_Preferences, SubGroups = {
                 new SettingSubGroup { Name = Lang.Settings.Group_General, ID = SubGroupID.Preferences_General},
                 new SettingSubGroup { Name = Lang.Settings.Group_Editing, ID = SubGroupID.Preferences_Editing},
+                new SettingSubGroup { Name = Lang.Settings.Group_Import, ID = SubGroupID.Preferences_Import},
                 new SettingSubGroup { Name = Lang.Settings.Group_Bundles, ID = SubGroupID.Preferences_Bundles},
             }
         },
@@ -193,6 +195,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         switch (id) {
             case SubGroupID.Preferences_General: ShowPreferencesGeneralTab(); break;
             case SubGroupID.Preferences_Editing: ShowPreferencesEditingTab(); break;
+            case SubGroupID.Preferences_Import: ShowPreferencesImportTab(); break;
             case SubGroupID.Preferences_Bundles: ShowBundlesEditingTab(); break;
             case SubGroupID.Display_General: ShowDisplayGeneralTab(); break;
             case SubGroupID.Display_Theme: ShowDisplayThemeTab(); break;
@@ -236,9 +239,6 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ShowSetting(config.UseSubPakForLooseTextures, Lang.Settings.UseSubPakForLooseTextures);
         ShowSetting(config.UseSymlinkPatching, Lang.Settings.UseSymlinkPatching);
 
-        // consider moving to an "Import" tab if we get more import related settings
-        ShowExternalToolSetting(config.BlenderPath, FileFilters.ExecutableTool, Lang.Settings.BlenderPath);
-
         ImGui.SeparatorText(Lang.Settings.Section_Cache);
         var configPath = config.GameConfigBaseFilepath.Get();
         if (AppImguiHelpers.InputFolder(Lang.Settings.GameConfigBasePath.Text, ref configPath)) {
@@ -263,7 +263,6 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         if (ImGui.Combo(Lang.Settings.MinLogLevel.String, ref logLevel, LogLevels, LogLevels.Length)) {
             config.LogLevel.Set(logLevel);
         }
-        ShowSetting(config.UseExperimentalGltfLoader, Lang.Settings.UseExperimentalGltFLoader);
     }
 
     private static void ShowPreferencesEditingTab()
@@ -282,6 +281,55 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ShowSetting(config.ShowQuaternionsAsEuler, Lang.Settings.ShowQuaternionsAsEuler);
         ShowSetting(config.QuaternionsDisableAutoNormalize, Lang.Settings.QuaternionsDisableAutoNormalize);
         ShowSetting(config.PauseAnimPlayerOnSeek, Lang.Settings.PauseAnimPlayerOnSeek);
+    }
+
+    private static void ShowPreferencesImportTab()
+    {
+        ImGui.SeparatorText(Lang.Settings.Section_MeshImport);
+        ShowExternalToolSetting(config.BlenderPath, FileFilters.ExecutableTool, Lang.Settings.BlenderPath);
+        ShowMeshImportSettings();
+    }
+
+    public static void ShowMeshImportSettings()
+    {
+        ShowSetting(config.UseExperimentalGltfLoader, Lang.Settings.UseExperimentalGltFLoader);
+
+        var scale = AppConfig.Settings.Import.Scale;
+        if (ShowFloatWithReset(Lang.Settings.MeshImportScale, ref scale, 0.001f, 100, 1)) {
+            AppConfig.Settings.Import.Scale = scale;
+            AppConfig.Settings.Save();
+        }
+
+        var rootId = AppConfig.Settings.Import.ForceRootIdentity;
+        if (ShowCheckbox(Lang.Settings.ImportResetRootOrientation, ref rootId)) {
+            AppConfig.Settings.Import.ForceRootIdentity = rootId;
+            AppConfig.Settings.Save();
+        }
+
+        var convertYUp = AppConfig.Settings.Import.ConvertZToYUpRootRotation;
+        if (ShowCheckbox(Lang.Settings.ConvertRotationYAxis, ref convertYUp)) {
+            AppConfig.Settings.Import.ConvertZToYUpRootRotation = convertYUp;
+            AppConfig.Settings.Save();
+        }
+        var meshMatName = AppConfig.Settings.Import.ImportMaterialsFromMeshName;
+        if (ShowCheckbox(Lang.Settings.ReadMaterialsFromNodeName, ref meshMatName)) {
+            AppConfig.Settings.Import.ImportMaterialsFromMeshName = meshMatName;
+            AppConfig.Settings.Save();
+        }
+
+        ImGui.SeparatorText(Lang.Settings.Section_MeshExport);
+
+        scale = AppConfig.Settings.Import.ExportScale;
+        if (ShowFloatWithReset(Lang.Settings.MeshExportScale, ref scale, 0.001f, 100, 1)) {
+            AppConfig.Settings.Import.ExportScale = Math.Clamp(scale, 0.001f, 100);
+            AppConfig.Settings.Save();
+        }
+
+        var bonesForW2 = AppConfig.Settings.Import.ExportSecondaryWeightAsBones;
+        if (ShowCheckbox(Lang.Settings.ExportWeight2FlagAsBones, ref bonesForW2)) {
+            AppConfig.Settings.Import.ExportSecondaryWeightAsBones = bonesForW2;
+            AppConfig.Settings.Save();
+        }
     }
 
     private static void ShowBundlesEditingTab()
@@ -644,10 +692,42 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
                 value = defaultValue;
                 changed = true;
             }
-            ImguiHelpers.Tooltip("Reset to default"u8);
+            ImguiHelpers.Tooltip(Lang.Buttons.ResetToDefault);
         }
         return changed;
     }
+
+    public static bool ShowFloatWithReset(TextTooltip label, ref float value, float min, float max, float defaultValue, string format = "%.2f")
+    {
+        ImGui.PushID(label.Text);
+        var showReset = Math.Abs(value - defaultValue) > 0.0001f;
+        if (showReset) {
+            var resetWidth = ImGui.CalcTextSize($"{AppIcons.SI_Reset}").X + ImGui.GetStyle().FramePadding.X * 2.0f;
+            ImGui.SetNextItemWidth(Math.Max(1.0f, ImGui.CalcItemWidth() - resetWidth - ImGui.GetStyle().ItemSpacing.X));
+        }
+
+        var changed = ImGui.InputFloat(label.Text, ref value, format);
+        value = Math.Clamp(value, min, max);
+        ImguiHelpers.Tooltip(label.Tooltip);
+        if (showReset) {
+            ImGui.SameLine();
+            if (ImGui.Button($"{AppIcons.SI_Reset}")) {
+                value = defaultValue;
+                changed = true;
+            }
+            ImguiHelpers.Tooltip(Lang.Buttons.ResetToDefault);
+        }
+        ImGui.PopID();
+        return changed;
+    }
+    public static bool ShowCheckbox(TextTooltip label, ref bool check)
+    {
+        var rootId = AppConfig.Settings.Import.ForceRootIdentity;
+        var changed = ImGui.Checkbox(label.Text, ref check);
+        ImguiHelpers.Tooltip(label.Tooltip);
+        return changed;
+    }
+
     private static void ShowFolderSetting(AppConfig.ClassSettingWrapper<string> setting, TextTooltip text)
     {
         var configPath = setting.Get();

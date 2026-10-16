@@ -1309,52 +1309,13 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             ImguiHelpers.Tooltip("Whether to include all currently open meshes in the exported file");
         }
 
+        if (Handle.FileExtension.SequenceEqual("blend") || Path.GetExtension(lastImportSourcePath) == ".blend") {
+            ShowBlendImportSettings();
+        }
+
         if (showImportSettings) {
-            ImGui.SeparatorText("Import Settings");
-            var scale = AppConfig.Settings.Import.Scale;
-            if (ImGui.InputFloat("Import Scale", ref scale, "%.2f")) {
-                AppConfig.Settings.Import.Scale = Math.Clamp(scale, 0.001f, 100);
-                AppConfig.Settings.Save();
-            }
-
-            var rootId = AppConfig.Settings.Import.ForceRootIdentity;
-            if (ImGui.Checkbox("Reset Root Orientation"u8, ref rootId)) {
-                AppConfig.Settings.Import.ForceRootIdentity = rootId;
-                AppConfig.Settings.Save();
-            }
-            ImguiHelpers.Tooltip("Forces the root bone into the default (Identity) orientation on import.\nUse if you find that only your the skeleton is fully rotated along an axis in your imported file"u8);
-            var convertYUp = AppConfig.Settings.Import.ConvertZToYUpRootRotation;
-            if (ImGui.Checkbox("Transform Z-Up -> Y-Up root axis for animations", ref convertYUp)) {
-                AppConfig.Settings.Import.ConvertZToYUpRootRotation = convertYUp;
-                AppConfig.Settings.Save();
-            }
-            ImguiHelpers.Tooltip("For modelling apps that don't know how to export with Y axis as up, this might fix the rotations of imported meshes."u8);
-            var meshMatName = AppConfig.Settings.Import.ImportMaterialsFromMeshName;
-            if (ImGui.Checkbox("Read material names from mesh name", ref meshMatName)) {
-                AppConfig.Settings.Import.ImportMaterialsFromMeshName = meshMatName;
-                AppConfig.Settings.Save();
-            }
-            ImguiHelpers.Tooltip("Enable this to import the material names from the mesh name (separated with double underscore e.g. `Group_1__Head_mat`).\nIf unchecked, the actual material name is used instead."u8);
-
-            if (Handle.FileExtension.SequenceEqual("blend") || Path.GetExtension(lastImportSourcePath) == ".blend") {
-                ShowBlendImportSettings();
-            }
-
-            ImGui.SeparatorText("Export Settings"u8);
-           
-            scale = AppConfig.Settings.Import.ExportScale;
-            if (ImGui.InputFloat("Export Scale"u8, ref scale, "%.2f")) {
-                AppConfig.Settings.Import.ExportScale = Math.Clamp(scale, 0.001f, 100);
-                AppConfig.Settings.Save();
-            }
-            ImguiHelpers.Tooltip("Scale up all vertices and animation positions for exported meshes.\nOnly used for FBX because GLB/GLTF already has functional units"u8);
-
-            var bonesForW2 = AppConfig.Settings.Import.ExportSecondaryWeightAsBones;
-            if (ImGui.Checkbox("Export secondary weight marker as bones"u8, ref bonesForW2)) {
-                AppConfig.Settings.Import.ExportSecondaryWeightAsBones = bonesForW2;
-                AppConfig.Settings.Save();
-            }
-            ImguiHelpers.Tooltip("Whether to export the bone secondary weight flag indicators as child bones.\nIf unchecked, additional empty nodes will instead be placed at the scene root.\nSee wiki for more details."u8);
+            ImGui.SeparatorText(Lang.Settings.Section_MeshImport);
+            SettingsWindowHandler.ShowMeshImportSettings();
 
             ImGui.Spacing();
             ImGui.Spacing();
@@ -2111,7 +2072,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
                 (v, p) => v.mdfSource = p ?? "");
         }
         mdfPickerContext.ShowUI();
-        
+
         var mesh = MeshFile;
         if (mesh != null && meshComponent.MeshHandle?.Material != null) {
             var mdfMats = meshComponent.MeshHandle.Material.Materials;

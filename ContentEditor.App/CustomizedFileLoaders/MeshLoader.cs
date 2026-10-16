@@ -233,6 +233,7 @@ public partial class MeshLoader : IFileLoader,
         try {
             var exec = BlenderInterop.ExecuteBlenderScriptAsync(filepath, importScript, true, outputPath);
             exec.Wait();
+            if (exec.Result == null) return null;
             return outputPath;
         } catch (Exception e) {
             Logger.Error(e);

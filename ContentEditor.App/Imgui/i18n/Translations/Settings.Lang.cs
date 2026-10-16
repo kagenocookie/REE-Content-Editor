@@ -33,6 +33,9 @@ public static partial class Lang
         public static readonly FixedString Section_MeshEditor = "Mesh Editor";
         public static readonly FixedString Section_GroupList = "GroupList";
 
+        public static readonly FixedString Section_MeshImport = "Mesh Import";
+        public static readonly FixedString Section_MeshExport = "Mesh Export";
+
         public static readonly FixedString Group_Preferences = "Preferences";
         public static readonly FixedString Group_Display = "Display";
         public static readonly FixedString Group_Hotkeys = "Hotkeys";
@@ -40,6 +43,7 @@ public static partial class Lang
 
         public static readonly FixedString Group_General = "General";
         public static readonly FixedString Group_Editing = "Editing";
+        public static readonly FixedString Group_Import = "Import";
         public static readonly FixedString Group_Bundles = "Bundles";
         public static readonly FixedString Group_Theme = "Theme";
         public static readonly FixedString Group_Global = "Global";
@@ -103,7 +107,7 @@ public static partial class Lang
         public static readonly TextTooltip UseSymlinkPatching = new TextTooltip("Use symbolic links for patching", "Whether to allow using symbolic links for patched files when possible instead of direct file copy.\nThis can make the patching faster and reduce unnecessary disk writes and storage.\nRequires Content Editor to be launched with admin permissions on Windows.");
         public static readonly TextTooltip RemoteDataSource = new TextTooltip("Resource data source", "The source from which to check for updates and download game-specific resource cache files.\nWill use the default GitHub repository if unspecified.");
         public static readonly TextTooltip EnableGpuTexCompression = new TextTooltip("Enable GPU texture compression", "Whether to enable using the much faster GPU-based compression method.\nCurrently only available on Windows.\nCan be disabled in case of issues, so that CPU-based compression is used instead.");
-        public static readonly TextTooltip UseExperimentalGltFLoader = new TextTooltip("Use experimental GLTF loader", "Whether to enable the experimental new direct GLTF / GLB file loader. Not yet fully functional but should provide better future integration.");
+        public static readonly TextTooltip UseExperimentalGltFLoader = new TextTooltip("Use experimental GLTF loader", "Whether to enable the experimental new direct GLTF / GLB file loader.\nShould work more reliably than the old Assimp loader, consider disabling it if you encounter issues.");
         public static readonly TextTooltip GameConfigBasePath = new TextTooltip("Game Config Base Path", "The folder path that contains the game specific entity configurations. Will use relative path config/ by default if unspecified.");
         public static readonly TextTooltip ResourcesFilepath = new TextTooltip("Resource data storage path", "The folder to use for storing the auto-downloaded game specific resource files.");
         public static readonly TextTooltip CacheFilepath = new TextTooltip("Cache file path", "The folder to use for general file caching. Must not be empty.");
@@ -139,6 +143,13 @@ public static partial class Lang
             For example, "{AUTHOR}/{BUNDLE_NAME}/" for a bundle called Johnmods with a bundle named BigMod would use "Johnmods/BigMod/" as the target path for every new file.
             This makes it easier to set up paths so they're not just all at the root folder in the published mod.
             """);
+
+        public static readonly TextTooltip MeshImportScale = new TextTooltip("Import Scale", "The value to scale imported meshes by. Has no effect with the experimental GLTF loader.");
+        public static readonly TextTooltip MeshExportScale = new TextTooltip("Export Scale", "Scale up all vertices and animation positions for exported meshes.\nOnly used for FBX because GLB/GLTF already has functional units");
+        public static readonly TextTooltip ImportResetRootOrientation = new TextTooltip("Reset Root Orientation", "Forces the root bone into the default (Identity) orientation on import.\nUse if you find that only your the skeleton is fully rotated along an axis in your imported file");
+        public static readonly TextTooltip ConvertRotationYAxis = new TextTooltip("Transform Z-Up -> Y-Up root axis for animations", "For modelling apps that don't know how to export with Y axis as up, this might fix the rotations of imported meshes.");
+        public static readonly TextTooltip ReadMaterialsFromNodeName = new TextTooltip("Read material names from mesh name", "Enable this to import the material names from the mesh name (separated with double underscore e.g. `Group_1__Head_mat`).\nIf unchecked, the actual material name is used instead.");
+        public static readonly TextTooltip ExportWeight2FlagAsBones = new TextTooltip("Export secondary weight marker as bones", "Whether to export the bone secondary weight flag indicators as child bones.\nIf unchecked, additional empty nodes will instead be placed at the scene root.\nSee wiki for more details.");
 
         public static readonly FixedString Bind_Undo = "Undo";
         public static readonly FixedString Bind_Redo = "Redo";

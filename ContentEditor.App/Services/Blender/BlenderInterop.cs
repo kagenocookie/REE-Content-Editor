@@ -48,6 +48,13 @@ public class BlenderInterop
             ? $"\"{blendFile}\" --background --python-expr \"{script.Replace("\"", "\\\"")}\""
             : $"\"{blendFile}\" --python-expr \"{script.Replace("\"", "\\\"")}\"";
         var (exe, args) = FileSystemUtils.FormatProcessParams(blenderPath, baseArgs);
+        if (string.IsNullOrEmpty(exe)) {
+            if (!_hasShownNoBlenderWarning) {
+                Logger.Error("Can't import .blend files, Blender is not configured.");
+                _hasShownNoBlenderWarning = true;
+            }
+            return null;
+        }
 
         var process = new Process() { StartInfo = new ProcessStartInfo() {
             UseShellExecute = false,
