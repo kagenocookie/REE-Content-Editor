@@ -78,7 +78,7 @@ public class ModPublisherWindow : IWindowHandler
                         File.Copy(src, target, true);
                     }
                 }
-                bundle.SaveTo(outputPath);
+                bundle.SaveToDir(outputPath);
                 if (!string.IsNullOrEmpty(bundle.ImagePath) && File.Exists(Path.Combine(bundlePath, bundle.ImagePath))) {
                     File.Copy(Path.Combine(bundlePath, bundle.ImagePath), Path.Combine(outputPath, bundle.ImagePath), true);
                 }

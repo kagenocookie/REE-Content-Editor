@@ -302,6 +302,23 @@ public class Bundle : BaseBundle
             RuntimeBundle.Save();
         }
         Touch();
+        SaveBundleDataToFile(outfilepath);
+    }
+
+    public void SaveToDir(string baseFiledir)
+    {
+        var outfilepath = Path.Combine(baseFiledir, "content/bundles", Name, "bundle.json");
+        // save runtime bundle first to ensure it has update timestamp <= desktop bundle
+        if (RuntimeBundle != null) {
+            RuntimeBundle.CopyFrom(this);
+            RuntimeBundle.SaveTo(Path.Combine(baseFiledir, "reframework/data/usercontent/bundles", RuntimeBundle.Name + ".json"));
+        }
+        SaveBundleDataToFile(outfilepath);
+    }
+
+    private void SaveBundleDataToFile(string outfilepath)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(outfilepath)!);
         if (_incompleteEntities?.Count > 0) {
             var data = (JsonObject)JsonSerializer.SerializeToNode(this, JsonOptions)!;
             // make sure we never save entities that we know aren't fully resolved yet and therefore prevent data loss
@@ -322,19 +339,6 @@ public class Bundle : BaseBundle
             using var fs = File.Create(outfilepath);
             JsonSerializer.Serialize(fs, this, JsonOptions);
         }
-    }
-
-    public void SaveTo(string baseFiledir)
-    {
-        var outfilepath = Path.Combine(baseFiledir, "content/bundles", Name, "bundle.json");
-        // save runtime bundle first to ensure it has update timestamp <= desktop bundle
-        if (RuntimeBundle != null) {
-            RuntimeBundle.CopyFrom(this);
-            RuntimeBundle.SaveTo(Path.Combine(baseFiledir, "reframework/data/usercontent/bundles", RuntimeBundle.Name + ".json"));
-        }
-        Directory.CreateDirectory(Path.GetDirectoryName(outfilepath)!);
-        using var fs = File.Create(outfilepath);
-        JsonSerializer.Serialize(fs, this, JsonOptions);
     }
 
     public void Init(BundleManager bundleManager)
