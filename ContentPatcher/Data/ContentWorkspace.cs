@@ -180,6 +180,8 @@ public sealed class ContentWorkspace : IDisposable
         enums.Clear();
         for (int i = 0; i < bundle.Entities.Count; i++) {
             var entity = bundle.Entities[i];
+            if (bundle.IsEntityIncomplete(entity.Id, entity.Type)) continue;
+
             if (entity is not ResourceEntity resEntity) {
                 // if it wasn't updated to a ResourceEntity, no resources were activated, therefore nothing was changed
                 if (entity.Enums != null) {

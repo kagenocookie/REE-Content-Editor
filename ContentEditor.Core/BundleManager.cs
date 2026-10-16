@@ -131,7 +131,7 @@ public class BundleManager
                 mainBundle = new Bundle() { StoragePath = ConstructBundleFolder(runtimeBundle.Name) };
                 mainBundle.CopyFrom(runtimeBundle);
                 mainBundle.RuntimeBundle = runtimeBundle;
-                MigrateRuntimeToDesktop(mainBundle);
+                MigrateRuntimeToDesktop(mainBundle, false);
                 mainBundle.Touch();
 
                 var idx = settings.BundleOrder.IndexOf(runtimeBundle.Name);
@@ -146,7 +146,9 @@ public class BundleManager
             if (runtimeBundle.UpdatedAtTime > mainBundle.UpdatedAtTime) {
                 Logger.Info($"Updating main bundle data from changes in runtime bundle {mainBundle.Name}...");
                 mainBundle.UpdateFrom(runtimeBundle);
-                MigrateRuntimeToDesktop(mainBundle);
+                MigrateRuntimeToDesktop(mainBundle, false);
+            } else {
+                MigrateRuntimeToDesktop(mainBundle, true);
             }
         }
 
@@ -176,7 +178,7 @@ public class BundleManager
         if (bundleImports.Updated.Count > 0) EntitiesUpdated?.Invoke(bundleImports.Updated);
     }
 
-    private void MigrateRuntimeToDesktop(Bundle bundle)
+    private void MigrateRuntimeToDesktop(Bundle bundle, bool onlyNewEntities)
     {
         if (Mapping == null || bundle.RuntimeBundle?.RuntimeEntities == null) return;
 
@@ -203,7 +205,11 @@ public class BundleManager
             if (desktopEntity == null) {
                 desktopEntity = new Entity() { Id = runtimeEntity.Id, Type = editorType };
                 bundle.RecordEntity(desktopEntity);
+                bundle.MarkEntityIncomplete(desktopEntity.Id, desktopEntity.Type);
+            } else if (onlyNewEntities) {
+                continue;
             }
+
             desktopEntity.Label = runtimeEntity.Label;
 
             if (Mapping.MapToDesktop(runtimeEntity.Type, runtimeEntityRaw, desktopEntity)) {
@@ -233,6 +239,8 @@ public class BundleManager
             .ToDictionary(kv => kv.Key) ?? [];
 
         foreach (var entity in bundle.Entities) {
+            if (bundle.IsEntityIncomplete(entity.Id, entity.Type)) continue;
+
             if (!Mapping.HasDesktopMapping(entity.Type, out var runtimeType)) {
                 continue;
             }

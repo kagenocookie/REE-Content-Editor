@@ -39,6 +39,9 @@ public class Bundle : BaseBundle
     [JsonIgnore]
     private Dictionary<string, string>? _targetToLocalPathCache;
 
+    [JsonIgnore]
+    private HashSet<(long id, string type)>? _incompleteEntities;
+
     private Dictionary<string, string> TargetToLocalPathCache =>
         _targetToLocalPathCache ??= ResourceListing?
             .GroupBy((Func<KeyValuePair<string, ResourceListItem>, ulong>)(k => MurMur3HashUtils.GetPakFilepathHash(k.Value.Target)))
@@ -78,6 +81,21 @@ public class Bundle : BaseBundle
     }
 
     /// <summary>
+    /// Check whether an entity is incompletely stored (partially migrated from runtime bundle data).
+    /// </summary>
+    public bool IsEntityIncomplete(long entityId, string entityType)
+        => _incompleteEntities?.Contains((entityId, entityType)) == true;
+
+    /// <summary>
+    /// Mark an entity as incompletely stored (partially migrated from runtime bundle data). This will get reset upon calling RecordEntity() with a new entity instance for it.
+    /// </summary>
+    public void MarkEntityIncomplete(long id, string type)
+    {
+        _incompleteEntities ??= new();
+        _incompleteEntities.Add((id, type));
+    }
+
+    /// <summary>
     /// Update / replace an existing entity or add it to the list.
     /// </summary>
     /// <param name="updated"></param>
@@ -90,6 +108,7 @@ public class Bundle : BaseBundle
             var entity = Entities[i];
             if (entity.Type == updated.Type && entity.Id == updated.Id) {
                 if (entity == updated) return EntityRecordUpdateType.AlreadyRecorded;
+                _incompleteEntities?.Remove((entity.Id, entity.Type));
                 Entities[i] = updated;
                 return EntityRecordUpdateType.Updated;
             }
@@ -283,8 +302,26 @@ public class Bundle : BaseBundle
             RuntimeBundle.Save();
         }
         Touch();
-        using var fs = File.Create(outfilepath);
-        JsonSerializer.Serialize(fs, this, JsonOptions);
+        if (_incompleteEntities?.Count > 0) {
+            var data = (JsonObject)JsonSerializer.SerializeToNode(this, JsonOptions)!;
+            // make sure we never save entities that we know aren't fully resolved yet and therefore prevent data loss
+            if (data.TryGetPropertyValue("entities", out var entities)) {
+                var array = entities?.AsArray().ToArray() ?? [];
+                for (int i = array.Length - 1; i >= 0; i--) {
+                    JsonNode? ent = array[i];
+                    if (ent == null) continue;
+
+                    if (IsEntityIncomplete(ent["id"]!.GetValue<long>(), ent["type"]!.GetValue<string>())) {
+                        entities!.AsArray().RemoveAt(i);
+                    }
+                }
+            }
+            using var fs = File.Create(outfilepath);
+            JsonSerializer.Serialize(fs, data, JsonOptions);
+        } else {
+            using var fs = File.Create(outfilepath);
+            JsonSerializer.Serialize(fs, this, JsonOptions);
+        }
     }
 
     public void SaveTo(string baseFiledir)
