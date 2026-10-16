@@ -29,7 +29,10 @@ public static class FileFilters
     public static readonly FileFilter[] Motlist = [new FileFilter("MOTLIST", "motlist")];
     public static readonly FileFilter[] GlbFile = [new FileFilter("GLB", "glb")];
     public static readonly FileFilter[] MeshFile = [new FileFilter("Mesh", "mesh")];
-    public static readonly FileFilter[] MeshFilesNoBlend = [new FileFilter("FBX", "fbx"), new FileFilter("GLTF", "gltf"), ..GlbFile];
+    public static readonly FileFilter[] MeshFilesNoBlend = AppConfig.Instance.UseExperimentalGltfLoader
+        ? [..GlbFile, new FileFilter("GLTF", "gltf"), new FileFilter("FBX", "fbx")]
+        : [new FileFilter("FBX", "fbx"), ..GlbFile, new FileFilter("GLTF", "gltf")];
+
     public static readonly FileFilter[] MeshFilesAll = [new FileFilter("Any mesh file", "fbx", "glb", "gltf", "blend"), ..MeshFile];
     public static readonly FileFilter[] MeshFilesAllNoBlend = [new FileFilter("Any mesh file", "fbx", "glb", "gltf"), ..MeshFilesNoBlend];
 
