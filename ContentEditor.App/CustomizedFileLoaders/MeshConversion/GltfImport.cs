@@ -705,15 +705,11 @@ public partial class CommonMeshResource : IResourceFile
         Dictionary<string, int> boneIndexMap,
         bool shapeKeys,
         int indexCount,
-        MeshBuffer buffer,
-        bool noScaling = false)
+        MeshBuffer buffer)
     {
         if (shapeKeys && buffer.ShapeKeyWeights.Length == 0) return default;
 
-        // gltf gives us normalized weights (required per gltf standard)
-        // but "shape keys" are also weights and therefore we end up getting split 0.5 main weights and 0.5 shape keys
-        // we need to counteract that without losing precision, therefore read weights as float and then scale up both
-        var weightScale = !noScaling && buffer.ShapeKeyWeights.Length > 0 ? 2f : 1f;
+        var weightScale = buffer.ShapeKeyWeights.Length > 0 ? 2f : 1f;
 
         var weightBlockCount = aiMesh.WeightBlockCount;
         if (weightBlockCount == 0) return default;
@@ -737,15 +733,28 @@ public partial class CommonMeshResource : IResourceFile
                         if (jointName.StartsWith(SecondaryWeightDummyBonePrefix)) continue;
 
                         var actualBoneIndex = boneIndexMap[jointName.Replace(ShapekeyPrefix, "")];
-                        // gltf standard requires fully normalized weights but RE .mesh has two sets of weights (normal + shapekey)
-                        // usually they should end up normalized as 0-0.5 for each but just in case some exporters might wanna leave them as-is, handle that
-                        if (w * weightScale > 1.5f) {
-                            return MergeGltfWeightData(data, aiMesh, skin, boneIndexMap, shapeKeys, indexCount, buffer, true);
-                        }
-                        // verify we're not over-scaling with a bit of leeway
-                        Debug.Assert((w * weightScale) <= 1.02f);
                         mergedWeights[v].Add((actualBoneIndex, w * weightScale));
                     }
+                }
+            }
+        }
+
+        // a fully standard-compliant gltf requires normalized weights but RE .mesh has two sets of weights (normal + shape key)
+        // shape weights are also weights and therefore we end up getting split 0.5 main weights and 0.5 shape keys
+        // usually they would end up normalized as 0-0.5 for each but our exporter might wanna leave them as-is
+        // make sure both cases are covered here just in case
+        // we could also force normalize weights, but keeping it as is for now because native meshes also aren't always normalized
+        foreach (var list in mergedWeights) {
+            var sum = list.Sum(w => w.weight);
+            if (Math.Abs(sum - 0.5f) < 0.01f) {
+                for (int i = 0; i < list.Count; i++) {
+                    var w = list[i];
+                    list[i] = (w.index, w.weight * 2);
+                }
+            } else if (Math.Abs(sum - 2.0f) < 0.01f) {
+                for (int i = 0; i < list.Count; i++) {
+                    var w = list[i];
+                    list[i] = (w.index, w.weight * 0.5f);
                 }
             }
         }

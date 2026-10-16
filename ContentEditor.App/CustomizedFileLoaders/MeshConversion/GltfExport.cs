@@ -46,7 +46,7 @@ public partial class CommonMeshResource : IResourceFile
         {
             this.model = model;
             // intentionally not adding the node to the model nodes list yet
-            // we want bone nodes to stay at the beginning so they're 1:1 with the .mesh deform bones
+            // we'll do it at the end when setting up the gltf scene and skeleton
             RootNode = new Node() { Name = name };
             model.Asset = new Asset() {
                 Generator = "REE Content Editor v" + AppConfig.Version,
@@ -80,22 +80,21 @@ public partial class CommonMeshResource : IResourceFile
             model.Nodes = nodes.ToArray();
             model.BufferViews = buffers.ToArray();
             model.Accessors = accessors.ToArray();
-            // TODO we probably need to manually handle gltf/glb switch?
             var ext = Path.GetExtension(targetFilepath);
             binaryBuffer.Seek(0);
+
             if (ext == ".gltf") {
-                var binFilename = Path.ChangeExtension(Path.GetFileName(targetFilepath), ".bin");
+                var binFilepath = Path.ChangeExtension(targetFilepath, ".bin");
+                var binFilename = Path.GetFileName(binFilepath);
                 model.Buffers = [
                     new glTFLoader.Schema.Buffer() {
                         Uri = binFilename,
                         ByteLength = (int)binaryBuffer.Stream.Length
                     }
                 ];
-                var binFilepath = Path.Combine(Path.GetDirectoryName(targetFilepath)!, binFilename);
                 model.SaveModel(targetFilepath);
                 using var binfs = File.Create(binFilepath);
                 binaryBuffer.Stream.CopyTo(binfs);
-                // model.SaveBinaryModel(binBytes, targetFilepath);
             } else { // glb
                 model.Buffers = [
                     new glTFLoader.Schema.Buffer() {
@@ -103,13 +102,9 @@ public partial class CommonMeshResource : IResourceFile
                         ByteLength = (int)binaryBuffer.Stream.Length
                     }
                 ];
-                // model.SaveModel(targetFilepath);
-                // model.SaveBinaryModel(binBytes, targetFilepath);
-                var binBytes = binaryBuffer.ReadArray<byte>((int)binaryBuffer.Stream.Length);
+                var binBytes = binaryBuffer.ReadBytes((int)binaryBuffer.Stream.Length);
                 model.SaveBinaryModelPacked(targetFilepath, targetFilepath, binBytes);
             }
-            // model.SaveBinaryModel()
-            // model.SaveBinaryModelPacked("binFile", targetFilepath);
         }
 
         public override Node AddChild(string name, Node parent)
@@ -134,16 +129,6 @@ public partial class CommonMeshResource : IResourceFile
 
             var joints = skin.Joints?.ToList() ?? [];
 
-            // var deformNodeIndices = (mesh.BoneData?.DeformBones ?? [])
-            //     .Select(db => bonesLookup.GetValueOrDefault(db.name).node)
-            //     .Where(node => node != null)
-            //     .Select(node => nodes.IndexOf(node));
-
-            // foreach (var defIdx in deformNodeIndices) {
-            //     if (defIdx != -1 && !joints.Contains(defIdx)) {
-            //         joints.Add(defIdx);
-            //     }
-            // }
             void TryAddJoint(Node node)
             {
                 var idx = nodes.IndexOf(node);
@@ -153,7 +138,6 @@ public partial class CommonMeshResource : IResourceFile
             }
             foreach (var bb in mesh.BoneData!.Bones) {
                 TryAddJoint(bonesLookup[bb.name].node);
-                // TryAddJoint(ShapekeyPrefix + bb.name);
                 if (writeWeight2FlagAsBones && secondaryWeightBones.TryGetValue(bb.name, out var secb)) {
                     TryAddJoint(secb);
                 }
@@ -345,9 +329,11 @@ public partial class CommonMeshResource : IResourceFile
         var doShapekeys = context.includeShapeKeys && file.MeshBuffer?.ShapeKeyWeights.Length > 0;
         // gltf standard requires weights to be normalized, but for "shapekey" second weights we have two separately normalized weights per vertex
         // so a fully compliant gltf file would have both sets of weights at [0-0.5] scale each
-        // note that while we could just keep them as is, the re-export from blender will reduce it down again so I'd rather it just be as 1:1 as possible
+        // blender loads these non-normalized fine (as-is), which should make it easier to use with blender so I'm keeping it non-fully-compliant
+        // re-export back from blender will set it down to 0.5 again so import will still need to handle both cases
         // but I'm not fully opposed to changing that or adding an option for it, or if we can find another way of storing them
-        var weightScale = doShapekeys ? 0.5f : 1f;
+        var weightScale = 1f;
+        // var weightScale = doShapekeys ? 0.5f : 1f;
 
         foreach (var mesh in lod.MeshGroups) {
             int subId = 0;
