@@ -169,14 +169,19 @@ public partial class CommonMeshResource : IResourceFile
             return AddBuffer(type, componentType, converted);
         }
 
-        public int AddBuffer<T>(Accessor.TypeEnum type, Accessor.ComponentTypeEnum componentType, ReadOnlySpan<T> array, BufferView.TargetEnum target = BufferView.TargetEnum.ARRAY_BUFFER)
+        public int AddBuffer<T>(Accessor.TypeEnum type, Accessor.ComponentTypeEnum componentType, ReadOnlySpan<T> array)
+            where T : unmanaged
+        {
+            return AddBuffer(type, componentType, array, array.Length);
+        }
+        public int AddBuffer<T>(Accessor.TypeEnum type, Accessor.ComponentTypeEnum componentType, ReadOnlySpan<T> array, int elementCount, BufferView.TargetEnum target = BufferView.TargetEnum.ARRAY_BUFFER)
             where T : unmanaged
         {
             var bufIdx = buffers.Count;
             var accIdx = accessors.Count;
             var accessor = new Accessor() {
                 BufferView = bufIdx,
-                Count = array.Length,
+                Count = elementCount,
                 ComponentType = componentType,
                 Type = type,
             };
@@ -446,22 +451,22 @@ public partial class CommonMeshResource : IResourceFile
                                 ));
                             } else {
                                 // split between first and second weight buffer
-                                var weights = new float[4 * sub.vertCount];
+                                var weights = new Vector4[sub.vertCount];
                                 var joints = new short[4 * sub.vertCount];
-                                for (int i = 0; i < sub.vertCount * 4; i += 4) {
+                                for (int i = 0; i < sub.vertCount; i++) {
                                     var w1 = sub.Weights[i];
                                     var w2 = sub.ExtraWeights[i];
-                                    weights[i + 0] = w1.GetWeight(4) * weightScale;
-                                    weights[i + 1] = w1.GetWeight(5) * weightScale;
-                                    weights[i + 2] = w2.GetWeight(0) * weightScale;
-                                    weights[i + 3] = w2.GetWeight(1) * weightScale;
-                                    joints[i + 0] = (short)meshToGltfJointIndexMap[(0, w1.GetIndex(4))];
-                                    joints[i + 1] = (short)meshToGltfJointIndexMap[(0, w1.GetIndex(5))];
-                                    joints[i + 2] = (short)meshToGltfJointIndexMap[(0, w2.GetIndex(0))];
-                                    joints[i + 3] = (short)meshToGltfJointIndexMap[(0, w2.GetIndex(1))];
+                                    weights[i].X = w1.GetWeight(4) * weightScale;
+                                    weights[i].Y = w1.GetWeight(5) * weightScale;
+                                    weights[i].Z = w2.GetWeight(0) * weightScale;
+                                    weights[i].W = w2.GetWeight(1) * weightScale;
+                                    joints[i * 4 + 0] = (short)meshToGltfJointIndexMap[(0, w1.GetIndex(4))];
+                                    joints[i * 4 + 1] = (short)meshToGltfJointIndexMap[(0, w1.GetIndex(5))];
+                                    joints[i * 4 + 2] = (short)meshToGltfJointIndexMap[(0, w2.GetIndex(0))];
+                                    joints[i * 4 + 3] = (short)meshToGltfJointIndexMap[(0, w2.GetIndex(1))];
                                 }
                                 prim.Attributes["WEIGHTS_1"] = context.AddBuffer(Accessor.TypeEnum.VEC4, Accessor.ComponentTypeEnum.FLOAT, weights);
-                                prim.Attributes["JOINTS_1"] = context.AddBuffer(Accessor.TypeEnum.VEC4, Accessor.ComponentTypeEnum.UNSIGNED_SHORT, joints);
+                                prim.Attributes["JOINTS_1"] = context.AddBuffer(Accessor.TypeEnum.VEC4, Accessor.ComponentTypeEnum.UNSIGNED_SHORT, joints, sub.vertCount);
 
                                 if (sub.GetPerVertexMaxWeightCount(1) > 2) {
                                     prim.Attributes["WEIGHTS_2"] = context.AddBuffer(Accessor.TypeEnum.VEC4, Accessor.ComponentTypeEnum.FLOAT, sub.ExtraWeights, (w) => new Vector4(

@@ -156,14 +156,7 @@ public partial class CommonMeshResource(string name, Workspace workspace) : IRes
         IEnumerable<CommonMeshResource>? additionalMeshes = null
     )
     {
-        var useGltfExporter = AppConfig.Instance.UseExperimentalGltfLoader.Get();
-        var context = new AssimpContext();
-
-        var ext = PathUtils.GetExtensionWithoutPeriod(filepath);
-
-        using MeshExportInterface exportCtx = useGltfExporter && (ext == "gltf" || ext == "glb")
-            ? new GltfExportContext(new glTFLoader.Schema.Gltf(), Name)
-            : new AssimpExportContext(context, Name, ext);
+        using var exportCtx = MeshExportInterface.CreateExporter(filepath, Name);
 
         exportCtx.includeAllLods = includeLodsShadows;
         exportCtx.includeShadows = includeLodsShadows;

@@ -59,6 +59,15 @@ public partial class CommonMeshResource
 
         public abstract void PrepareSkeleton(MeshFile mesh);
         public abstract void Dispose();
+
+        public static MeshExportInterface CreateExporter(string outputFilepath, string baseName)
+        {
+            var ext = PathUtils.GetExtensionWithoutPeriod(outputFilepath);
+
+            return (ext == "gltf" || ext == "glb") && AppConfig.Instance.UseExperimentalGltfLoader
+                ? new GltfExportContext(new glTFLoader.Schema.Gltf(), baseName)
+                : new AssimpExportContext(new Assimp.AssimpContext(), baseName, ext);
+        }
     }
 
     public interface IMeshNodeInterface
@@ -183,5 +192,4 @@ public partial class CommonMeshResource
             }
         }
     }
-
 }
