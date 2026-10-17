@@ -347,7 +347,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<bool> EnableGpuTexCompression = new SettingWrapper<bool>(Keys.EnableGpuTexCompression, _lock, true);
     public readonly SettingWrapper<bool> UsePakFilePreviewWindow = new SettingWrapper<bool>(Keys.UsePakFilePreviewWindow, _lock, true);
     public readonly SettingWrapper<bool> UsePakCompactFilePaths = new SettingWrapper<bool>(Keys.UsePakCompactFilePaths, _lock, true);
-    public readonly SettingWrapper<bool> UseExperimentalGltfLoader = new SettingWrapper<bool>(Keys.UseExperimentalGltfLoader, _lock, false);
+    public readonly SettingWrapper<bool> UseExperimentalGltfLoader = new SettingWrapper<bool>(Keys.UseExperimentalGltfLoader, _lock, true);
     public readonly SettingWrapper<bool> ShowFps = new SettingWrapper<bool>(Keys.ShowFps, _lock, false);
     public readonly SettingWrapper<bool> LogToFile = new SettingWrapper<bool>(Keys.LogToFile, _lock, true);
     public readonly SettingWrapper<bool> IsFirstTime = new SettingWrapper<bool>(Keys.IsFirstTime, _lock, true);
