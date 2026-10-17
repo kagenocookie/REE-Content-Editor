@@ -144,8 +144,11 @@ public partial class CommonMeshResource : IResourceFile
                     var childName = model.Nodes[gltfChildBoneIndex].Name;
                     if (childName.StartsWith(ShapekeyPrefix) || childName.StartsWith(SecondaryWeightDummyBonePrefix)) continue;
                     var childBone = mesh.BoneData.GetByName(childName);
-                    childBone!.Parent = bone;
-                    childBone!.parentIndex = bone.index;
+                    if (childBone == null) {
+                        throw new Exception($"Child bone {childName} not found or not marked as joint");
+                    }
+                    childBone.Parent = bone;
+                    childBone.parentIndex = bone.index;
                     if (bone.Children.Count == 0) {
                         bone.childIndex = childBone.index;
                     } else {
@@ -155,11 +158,16 @@ public partial class CommonMeshResource : IResourceFile
                 }
             }
 
-            // ensure all transforms are defined
-            foreach (var bone in mesh.BoneData.Bones) {
-                // TODO should we worry about bone order here?
+            // ensure all transforms are set; do it with a list in case they were declared in a weird order
+            var unresolvedBones = mesh.BoneData.Bones.Reverse<MeshBone>().ToList();
+            while (unresolvedBones.Count > 0) {
+                var bone = unresolvedBones.Last();
+                unresolvedBones.RemoveAt(unresolvedBones.Count - 1);
                 if (bone.Parent == null) {
                     bone.globalTransform = bone.localTransform;
+                } else if (bone.Parent.globalTransform.ToSystem() == default) {
+                    unresolvedBones.Insert(0, bone);
+                    continue;
                 } else {
                     bone.globalTransform = Matrix4x4.Multiply(bone.localTransform.ToSystem(), bone.Parent.globalTransform.ToSystem());
                 }
