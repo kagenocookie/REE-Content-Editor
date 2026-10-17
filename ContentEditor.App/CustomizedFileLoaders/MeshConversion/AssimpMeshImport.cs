@@ -68,8 +68,6 @@ public partial class CommonMeshResource : IResourceFile
         if (shadowMeshes.Count > 0 || mainMeshes.Count > 0) {
             mesh.MeshData = new MeshData(mainBuffer);
             mesh.MeshData.boundingBox = AABB.Combine(scene.Meshes.Select(m => new AABB(m.BoundingBox.Min, m.BoundingBox.Max)));
-            // TODO: sphere bounds not fully accurate
-            mesh.MeshData.boundingSphere = new Sphere(mesh.MeshData.boundingBox.Center, Math.Max(mesh.MeshData.boundingBox.Size.X, Math.Max(mesh.MeshData.boundingBox.Size.Y, mesh.MeshData.boundingBox.Size.Z)) / 2);
             PreAllocateMeshBuffer(versionConfig, mesh, mainMeshes, mainBuffer);
         }
         bool reuseBufferForShadows = false;
@@ -484,6 +482,7 @@ public partial class CommonMeshResource : IResourceFile
             }
         }
 
+        mesh.MeshData?.RecalculateBoundingSphere();
         mesh.ChangeVersion(versionConfig);
 
         return mesh;
