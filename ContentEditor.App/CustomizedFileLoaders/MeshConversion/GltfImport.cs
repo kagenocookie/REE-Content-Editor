@@ -5,6 +5,7 @@ using ContentEditor.Core;
 using ContentPatcher;
 using glTFLoader;
 using glTFLoader.Schema;
+using MikkTSpaceSharp;
 using ReeLib;
 using ReeLib.Common;
 using ReeLib.Mesh;
@@ -370,32 +371,45 @@ public partial class CommonMeshResource : IResourceFile
             group.submeshCount++;
             group.Submeshes.Add(newSub);
 
-            aiMesh.GetPositions().CopyTo(buffer.Positions.AsSpan(vertOffset));
-
-            if (buffer.NormalsTangents.Length > 0) {
-                var nor = aiMesh.GetNormals();
-                var tan = aiMesh.GetTangents();
-                if (tan.IsEmpty) {
-                    // TODO When tangents are not specified, client implementations SHOULD calculate tangents using
-                    // default MikkTSpace (https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#mikktspace) algorithms with
-                    // the specified vertex positions, normals, and texture coordinates associated with the normal texture.
-                    var tanarr = new SByte4[nor.Length];
-                    tan = tanarr;
-                    for (int i = 0; i < vertCount; ++i) {
-                        // this is nowhere close to correct, putting something in so it's not just some fixed wrong value
-                        tanarr[i] = SByte4.QuantizeNormal(Vector3.Cross(Vector3.UnitY, nor[i].DequantizeNormal()), sbyte.MaxValue);
-                    }
-                    Logger.Error("GLTF Importer: Manual tangent calculation not yet supported. The mesh might look wrong ingame, make sure you export your mesh with tangents enabled.");
-                }
-                for (int i = 0; i < vertCount; ++i) {
-                    buffer.NormalsTangents[vertOffset + i] = new QuantizedNorTan(nor[i], tan[i]);
-                }
+            if (mainBuffer.Faces != null) {
+                aiMesh.CopyIndicesTo(mainBuffer.Faces.AsSpan(indicesOffset));
+            } else {
+                aiMesh.CopyIndicesTo(mainBuffer.IntegerFaces.AsSpan(indicesOffset));
             }
+
+            aiMesh.GetPositions().CopyTo(buffer.Positions.AsSpan(vertOffset));
 
             if (buffer.UV0.Length > 0) {
                 var uv = aiMesh.GetTexcoord0();
                 // note: gltf upper left = 0,0 bottom right = 1,1; I think this is identical to REE so we can take it as is
                 uv.CopyTo(buffer.UV0.AsSpan(vertOffset));
+            }
+
+            if (buffer.NormalsTangents.Length > 0) {
+                var nor = aiMesh.GetNormals();
+                var tan = aiMesh.GetTangents();
+                if (tan.IsEmpty) {
+                    try {
+                        var nn = nor.ToArray();
+                        var uu = newSub.UV0.ToArray();
+                        var pp = newSub.Positions.ToArray();
+                        var ii = mainBuffer.IntegerFaces != null
+                            ? mainBuffer.IntegerFaces.AsSpan(indicesOffset, indicesCount).ToArray()
+                            : mainBuffer.Faces.AsSpan(indicesOffset, indicesCount).ToArray().Select(n => (int)n).ToArray();
+                        tan = CalculateTangents(pp, nn, uu, ii);
+                    } catch (Exception e) {
+                        var tanarr = new SByte4[nor.Length];
+                        tan = tanarr;
+                        // this is nowhere close to correct, putting something in so it's not just some fixed wrong value
+                        for (int i = 0; i < vertCount; ++i) {
+                            tanarr[i] = SByte4.QuantizeNormal(Vector3.Cross(Vector3.UnitY, nor[i].DequantizeNormal()), sbyte.MaxValue);
+                        }
+                        Logger.Error(e.Message);
+                    }
+                }
+                for (int i = 0; i < vertCount; ++i) {
+                    buffer.NormalsTangents[vertOffset + i] = new QuantizedNorTan(nor[i], tan[i]);
+                }
             }
 
             if (buffer.UV1.Length > 0) {
@@ -418,12 +432,6 @@ public partial class CommonMeshResource : IResourceFile
 
             if (buffer.Colors.Length > 0) {
                 aiMesh.GetColors().CopyTo(buffer.Colors.AsSpan(vertOffset));
-            }
-
-            if (mainBuffer.Faces != null) {
-                aiMesh.CopyIndicesTo(mainBuffer.Faces.AsSpan(indicesOffset));
-            } else {
-                aiMesh.CopyIndicesTo(mainBuffer.IntegerFaces.AsSpan(indicesOffset));
             }
 
             if (buffer.Weights.Length > 0) {
@@ -540,6 +548,35 @@ public partial class CommonMeshResource : IResourceFile
         mesh.ChangeVersion(versionConfig);
         ImportAnimationsFromGltf(targetMesh, data, workspace);
         return mesh;
+    }
+
+    public static SByte4[] CalculateTangents(Vector3[] positions, SByte4[] normals, HFloat2[] uvs, int[] indices)
+    {
+		static SVec2 ToSVec2(Vector2 v) => new SVec2(v.X, v.Y);
+		static SVec3 ToSVec3(Vector3 v) => new SVec3(v.X, v.Y, v.Z);
+        int GetIndex(int face, int vertex) => indices[face * 3 + vertex];
+
+        var tangents = new SByte4[positions.Length];
+        var ctx = new MikkTSpace.SMikkTSpaceContext
+        {
+            m_getNumFaces = () => indices.Length / 3,
+            m_getNumVerticesOfFace = face => 3,
+            m_getPosition = (face, vertex) => ToSVec3(positions[GetIndex(face, vertex)]),
+            m_getNormal = (face, vertex) => ToSVec3(normals[GetIndex(face, vertex)].DequantizeNormal()),
+            m_getTexCoord = (face, vertex) => ToSVec2(uvs[GetIndex(face, vertex)].AsVector2),
+            m_setTSpaceBasic = (SVec3 tangent, float orient, int face, int vertex) =>
+            {
+                var idx = GetIndex(face, vertex);
+                tangents[idx] = SByte4.QuantizeNormal(new Vector3(tangent.x, tangent.y, tangent.z), orient > 0 ? sbyte.MaxValue : sbyte.MinValue);
+            }
+        };
+
+        if (!MikkTSpace.genTangSpaceDefault(ctx))
+        {
+            throw new Exception("Tangents generation failed");
+        }
+
+        return tangents;
     }
 
     private static void ImportAnimationsFromGltf(CommonMeshResource targetMesh, GltfData data, Workspace workspace)

@@ -29,6 +29,7 @@
     <PackageReference Include="glTF2Loader" Version="2.0.0" />
     <PackageReference Include="Hexa.NET.ImNodes" Version="2.2.9" />
     <PackageReference Include="LuaCSharp" Version="0.5.3" />
+    <PackageReference Include="MikkTSpaceSharp" Version="0.5.3" />
     <PackageReference Include="Sep" Version="0.12.1" />
     <PackageReference Include="SharpCompress" Version="0.49.1" />
     <PackageReference Include="Silk.NET" Version="2.22.0" />
