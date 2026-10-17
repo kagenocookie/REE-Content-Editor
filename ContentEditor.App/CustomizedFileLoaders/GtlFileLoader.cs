@@ -32,15 +32,20 @@ public class GtlFileLoader : IFileLoader, IFileHandleContentProvider<Mesh>
         var file = new GtlFile(fileHandler);
         if (!file.Read()) return null;
 
+        string? grndPath = null;
         if (workspace.Env.Config.Game == GameIdentifier.dd2) {
-            file.ReadData(workspace.ResourceManager.GetFileContents<GrndFile>("editdata/ground/world00/world00.grnd.858720015"), 0, 1);
+            grndPath = "EditData/Ground/World00/World00.grnd";
         } else {
             var grndMatch = workspace.Env.GetFilesWithExtension("grnd").FirstOrDefault();
             if (grndMatch.Item1 == null || grndMatch.Item2 == null) {
                 Logger.Warn("Could not find ground file. Content cannot be fully read.");
             } else {
-                file.ReadData(workspace.ResourceManager.GetFileContents<GrndFile>(grndMatch.Item1), 0, 1);
+                grndPath = grndMatch.Item1;
             }
+        }
+
+        if (grndPath != null && workspace.ResourceManager.TryResolveResourceFile<GrndFile>(grndPath, out var grnd)) {
+            file.ReadData(grnd, 0, 1);
         }
 
         return new GroundTerrainResourceFile(handle, file);
