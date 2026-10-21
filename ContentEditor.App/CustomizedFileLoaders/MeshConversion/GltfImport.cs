@@ -836,7 +836,8 @@ public partial class CommonMeshResource : IResourceFile
         if (accessor.ByteOffset != 0) {
             bufData = bufData.Slice(accessor.ByteOffset);
         }
-        var expectedPrimitiveCount = accessor.Type == Accessor.TypeEnum.VEC3 && (typeof(TPrimitive) == typeof(sbyte) || typeof(TElement) == typeof(TElement))
+        var expectedPrimitiveCount = accessor.Type == Accessor.TypeEnum.VEC3 &&
+            (typeof(TElement) == typeof(SByte4) || typeof(TElement) == typeof(Color))
             // special case 1: gltf stores normals as vec3, we need to pack them into sbyte4
             // special case 2: gltf colors can be stored as RGB or RGBA
             ? 3
