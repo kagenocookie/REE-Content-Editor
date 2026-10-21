@@ -820,9 +820,41 @@ public partial class CommonMeshResource : IResourceFile
             throw new Exception($"GLTF Importer: Accessor {accessorId} has no bufferView index");
         }
 
+        var componentType = accessor.ComponentType switch {
+            Accessor.ComponentTypeEnum.FLOAT => typeof(float),
+            Accessor.ComponentTypeEnum.BYTE => typeof(sbyte),
+            Accessor.ComponentTypeEnum.SHORT => typeof(short),
+            Accessor.ComponentTypeEnum.UNSIGNED_BYTE => typeof(byte),
+            Accessor.ComponentTypeEnum.UNSIGNED_INT => typeof(uint),
+            Accessor.ComponentTypeEnum.UNSIGNED_SHORT => typeof(ushort),
+            _ => throw new NotImplementedException("Unknown GLTF component type " + accessor.ComponentType),
+        };
+
         var bufView = model.BufferViews[accessor.BufferView.Value];
         var buffer = buffers[bufView.Buffer];
         var bufData = buffer.AsSpan(bufView.ByteOffset, bufView.ByteLength);
+        if (accessor.ByteOffset != 0) {
+            bufData = bufData.Slice(accessor.ByteOffset);
+        }
+        var expectedPrimitiveCount = accessor.Type == Accessor.TypeEnum.VEC3 && (typeof(TPrimitive) == typeof(sbyte) || typeof(TElement) == typeof(TElement))
+            // special case 1: gltf stores normals as vec3, we need to pack them into sbyte4
+            // special case 2: gltf colors can be stored as RGB or RGBA
+            ? 3
+            : Marshal.SizeOf<TElement>() / Marshal.SizeOf<TPrimitive>();
+        var expectedStride = Marshal.SizeOf(componentType) * expectedPrimitiveCount;
+        var expectedSize = expectedStride * accessor.Count;
+        if (bufData.Length != expectedSize) {
+            if (bufView.ByteStride > 0 && bufView.ByteStride != expectedStride) {
+                // read the interleaved data and make it tightly packed so the rest of the data handling is consistent
+                Span<byte> tmpBuf = new byte[expectedSize];
+                for (int i = 0; i < accessor.Count; i++) {
+                    bufData.Slice(i * bufView.ByteStride.Value, expectedStride).CopyTo(tmpBuf.Slice(i * expectedStride));
+                }
+                bufData = tmpBuf;
+            } else {
+                bufData = bufData.Slice(0, expectedSize);
+            }
+        }
         if (typeof(TElement) == typeof(Matrix4x4)) {
             Debug.Assert(accessor.Type == Accessor.TypeEnum.MAT4);
             // note: Accessors of matrix type have data stored in column-major order
@@ -932,16 +964,6 @@ public partial class CommonMeshResource : IResourceFile
                     return CastArray<Short4, Vector4, TElement>(bufData, static item => (item.ToVector4() + new Vector4(32768)) / 65535f);
             }
         }
-
-        var componentType = accessor.ComponentType switch {
-            Accessor.ComponentTypeEnum.FLOAT => typeof(float),
-            Accessor.ComponentTypeEnum.BYTE => typeof(sbyte),
-            Accessor.ComponentTypeEnum.SHORT => typeof(short),
-            Accessor.ComponentTypeEnum.UNSIGNED_BYTE => typeof(byte),
-            Accessor.ComponentTypeEnum.UNSIGNED_INT => typeof(uint),
-            Accessor.ComponentTypeEnum.UNSIGNED_SHORT => typeof(ushort),
-            _ => throw new NotImplementedException("Unknown GLTF component type " + accessor.ComponentType),
-        };
 
         if (componentType == typeof(TPrimitive)) {
             return MemoryMarshal.Cast<byte, TElement>(bufData);
