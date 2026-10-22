@@ -58,7 +58,7 @@ public class ModPublisherWindow : IWindowHandler
         if (ImGui.Button("Publish as PAK ...")) {
             var srcFolder = Workspace.BundleManager.GetBundleFolder(Workspace.CurrentBundle);
             PlatformUtils.ShowSaveFileDialog((outputPath) => {
-                WriteModinfo(outputPath, bundle, bundlePath);
+                WriteModinfo(Path.GetDirectoryName(outputPath)!, bundle, bundlePath);
                 if (!window.ApplyContentPatches(PatchOutputType.Publish, true, outputPath, bundle.Name)) {
                     Logger.Error("Publishing failed");
                 }
