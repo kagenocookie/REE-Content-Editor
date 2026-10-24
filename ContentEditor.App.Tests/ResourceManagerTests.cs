@@ -147,14 +147,14 @@ public class ResourceManagerTests
         var raw = _workspaceFixture.CreateFile<UserFile>("test.user.2");
         var transformCls = _workspace.Env.Classes.Transform;
         var trans1 = _workspace.Env.CreateRszInstance(transformCls);
-        RszFieldCache.Transform.LocalPosition.Set(trans1, new Vector3(1, 1, 1));
+        RszFieldCache.Transform.Position.Set(trans1, new Vector3(1, 1, 1));
         raw.RSZ.AddToObjectTable(trans1);
         raw.RebuildInfoTable();
         raw.Save();
 
         var (modified, res) = _workspaceFixture.CreateBundleFile<UserFile>("test.user.2");
         var trans2 = _workspace.Env.CreateRszInstance(transformCls);
-        RszFieldCache.Transform.LocalPosition.Set(trans2, new Vector3(1, 2, 1));
+        RszFieldCache.Transform.Position.Set(trans2, new Vector3(1, 2, 1));
         modified.RSZ.AddToObjectTable(trans2);
         modified.RebuildInfoTable();
         modified.Save();
@@ -169,7 +169,7 @@ public class ResourceManagerTests
         Assert.That(res.Diff?.ToJsonString(), !Contains.Substring("1"));
 
         // but we still expect the original values to be kept for the 1s
-        Assert.That(RszFieldCache.Transform.LocalPosition.Get(userFile.Instance!), Is.EqualTo(new Vector3(1, 2, 1)));
+        Assert.That(RszFieldCache.Transform.Position.Get(userFile.Instance!), Is.EqualTo(new Vector3(1, 2, 1)));
     }
 
 
