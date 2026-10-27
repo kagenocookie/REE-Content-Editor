@@ -65,7 +65,7 @@ public class NameInputDialog : IWindowHandler
         ImGui.InputText(UiText.Label("Name"), ref input, 300);
         var valid = validationRegex == null || validationRegex.IsMatch(input);
         if (!valid) {
-            ImGui.TextColored(Colors.Error, UiText.T("Chosen name contains invalid characters"));
+            ImGuiT.TextColored(Colors.Error, "Chosen name contains invalid characters");
         }
 
 

@@ -28,7 +28,7 @@ public class ModPublisherWindow : IWindowHandler
     public void OnIMGUI()
     {
         if (Workspace.CurrentBundle == null) {
-            ImGui.TextColored(Colors.Error, UiText.T("There is no active bundle!"));
+            ImGuiT.TextColored(Colors.Error, "There is no active bundle!");
             return;
         }
         var bundle = Workspace.CurrentBundle;
@@ -83,7 +83,7 @@ public class ModPublisherWindow : IWindowHandler
             }, null, FileFilters.PakFile);
         }
 
-        ImGui.SeparatorText(UiText.T("Content"));
+        ImGuiT.SeparatorText("Content");
         if (bundle.Entities.Count > 0 && ImGui.TreeNode(UiText.Label("Entities"))) {
             foreach (var e in bundle.Entities) {
                 ImGui.Text($"{e.Type} {e.Id} : {e.Label}");
@@ -120,7 +120,7 @@ public class ModPublisherWindow : IWindowHandler
             ImGui.TreePop();
         }
         if (bundle.Entities.Count == 0 && !bundle.HasResources) {
-            ImGui.TextColored(Colors.Info, UiText.T("There is currently no content inside the bundle."));
+            ImGuiT.TextColored(Colors.Info, "There is currently no content inside the bundle.");
         }
     }
 

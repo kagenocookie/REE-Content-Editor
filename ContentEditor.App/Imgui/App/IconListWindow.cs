@@ -57,7 +57,7 @@ public class IconListWindow : IWindowHandler
             ImguiHelpers.Tooltip(name);
         }
 
-        ImGui.SeparatorText(UiText.T("Multi-color"));
+        ImGuiT.SeparatorText("Multi-color");
         count = 0;
         for (int i = 0; i < IconsMulti.Length; i++) {
             var name = IconNamesMulti[i];

@@ -95,15 +95,15 @@ public partial class FileTesterWindow : IWindowHandler
             }
 
             if (ImGui.TreeNode(UiText.Label("Hash bruteforce"))) {
-                if (ImGui.IsItemHovered()) ImGui.SetItemTooltip(UiText.T("Will attempt to match the given UTF16 hash with a word list (lowercase, uppercase, capital case variants are attempted) or executable file"));
+                if (ImGui.IsItemHovered()) ImGuiT.SetItemTooltip("Will attempt to match the given UTF16 hash with a word list (lowercase, uppercase, capital case variants are attempted) or executable file");
                 wordlistFilepath ??= AppConfig.Instance.GetGameExecutablePath(context.GetWorkspace()?.Game ?? default) ?? "";
                 if (AppImguiHelpers.InputFilepath(UiText.LabelUtf8("Words Source"), ref wordlistFilepath)) {
                     wordlistCache = null;
                 }
-                ImguiHelpers.Tooltip(UiText.T("The word source can be either an executable or a word list text file"));
+                ImguiHelpers.Tooltip("The word source can be either an executable or a word list text file");
                 if (wordlistFilepath.EndsWith(".exe")) {
                     ImGui.Checkbox(UiText.Label("Include All PAK file contents"), ref includePakFilesForHashBruteforce);
-                    ImguiHelpers.Tooltip(UiText.T("Also include anything remotely word-looking from all PAK file contents.\nReading all files might take a bit."));
+                    ImguiHelpers.Tooltip("Also include anything remotely word-looking from all PAK file contents.\nReading all files might take a bit.");
                 }
                 if (ImguiHelpers.InlineRadioGroup(["UTF-16", "Ascii", "UTF-8"], [0, 1, 2], ref wordlistHashType)) {
                     wordlistCache = null;
@@ -152,12 +152,12 @@ public partial class FileTesterWindow : IWindowHandler
             }
 
             if (ImGui.TreeNode(UiText.Label("Enum string hash reversing"))) {
-                ImguiHelpers.Tooltip(UiText.T("Attempt to find a hash based on a fixed string (intended for unnamed enum strings)"));
+                ImguiHelpers.Tooltip("Attempt to find a hash based on a fixed string (intended for unnamed enum strings)");
                 ImguiHelpers.InputScalar<uint>(UiText.Label("Hash"), ImGuiDataType.U32, ref testedHash);
                 ImGui.InputText(UiText.Label("String Format"), ref hashGuessFormat, 100);
-                ImguiHelpers.Tooltip(UiText.T("Use the {ID} placeholder where a 0-padded integer should be (e.g. a fixed length number like 00531)"));
+                ImguiHelpers.Tooltip("Use the {ID} placeholder where a 0-padded integer should be (e.g. a fixed length number like 00531)");
                 ImGui.DragInt(UiText.Label("Max integer ID"), ref hashGuessMaxValue);
-                ImguiHelpers.Tooltip(UiText.T("The highest ID number the string can have. All numbers from 0 to max will be attempted."));
+                ImguiHelpers.Tooltip("The highest ID number the string can have. All numbers from 0 to max will be attempted.");
 
                 if (ImGui.Button(UiText.Label("Execute"))) {
                     var maxDigits = (int)Math.Ceiling(Math.Log10(hashGuessMaxValue));
@@ -269,7 +269,7 @@ public partial class FileTesterWindow : IWindowHandler
                     if (!hiddenGames.Add(game)) hiddenGames.Remove(game);
                 }
                 if (!hiddenGames.Contains(game) && !results.fails.IsEmpty) {
-                    ImGui.TextColored(Colors.Warning, UiText.T("List of files that failed to read:"));
+                    ImGuiT.TextColored(Colors.Warning, "List of files that failed to read:");
                     foreach (var file in results.fails) {
                         ImGui.Text(file);
                         if (ImGui.IsItemClicked()) {
@@ -286,7 +286,7 @@ public partial class FileTesterWindow : IWindowHandler
         results.Clear();
         var workspace = (data.ParentWindow as IWorkspaceContainer)?.Workspace;
         if (workspace == null) {
-            ImGui.TextColored(Colors.Error, UiText.T("Workspace not configured"));
+            ImGuiT.TextColored(Colors.Error, "Workspace not configured");
             return Task.CompletedTask;
         }
         var isLoadable = workspace.Env.GetFileExtensionsForFormat(format).Any(ext => workspace.ResourceManager.CanLoadFile("." + ext));
@@ -351,7 +351,7 @@ public partial class FileTesterWindow : IWindowHandler
         results.Clear();
         var workspace = (data.ParentWindow as IWorkspaceContainer)?.Workspace;
         if (workspace == null) {
-            ImGui.TextColored(Colors.Error, UiText.T("Workspace not configured"));
+            ImGuiT.TextColored(Colors.Error, "Workspace not configured");
             return Task.CompletedTask;
         }
         var isLoadable = workspace.Env.GetFileExtensionsForFormat(format).Any(ext => workspace.ResourceManager.CanLoadFile("." + ext));

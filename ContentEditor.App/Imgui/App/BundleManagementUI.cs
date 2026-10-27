@@ -542,7 +542,7 @@ public class BundleManagementUI : IWindowHandler
                     openFileCallback!(path);
                 }
             }
-            ImguiHelpers.Tooltip(UiText.T("Open file in Editor"));
+            ImguiHelpers.Tooltip("Open file in Editor");
         }
     }
     private void ShowEditTargetPathButton(ResourceListItem? entry, Bundle bundle)

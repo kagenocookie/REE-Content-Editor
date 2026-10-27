@@ -154,7 +154,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
             changed |= ImGui.DragFloat2(UiText.Label("Margin Bottom/Right"), ref botRightMargin, 0.001f, 0, 1);
             changed |= ImGui.DragFloat2(UiText.Label("Item Padding"), ref padding, 0.001f, 0, 0.4999f);
             changed |= ImguiHelpers.InlineRadioGroup(RowColMajor, FalseTrue, ref columnMajor);
-            ImguiHelpers.Tooltip(UiText.T("Order: RowMajor fills left-to-right then top-to-bottom. ColumnMajor fills top-to-bottom then left-to-right."));
+            ImguiHelpers.Tooltip("Order: RowMajor fills left-to-right then top-to-bottom. ColumnMajor fills top-to-bottom then left-to-right.");
             ImGui.Checkbox(UiText.Label("Automatically re-arrange"), ref autoRearrange);
 
             if (autoRearrange ? changed : ImguiHelpers.SameLine() && ImGui.Button(UiText.Label("Re-arrange"))) {
@@ -207,7 +207,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         ImGui.BeginTabBar($"Sequence##{selectedSequenceIndex}");
         if (ImGui.BeginTabItem(UiText.Label("Overview"))) {
             ShowOverview(sequence);
-            ImGui.SeparatorText(UiText.T("Grid Arrangement"));
+            ImGuiT.SeparatorText("Grid Arrangement");
             ShowArrangement(sequence, seqCtx);
             ImGui.EndTabItem();
         }
@@ -219,7 +219,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
                 sequence.patternCount = sequence.patterns.Count;
             }
             ImGui.PopStyleColor();
-            ImguiHelpers.Tooltip(UiText.T("Add pattern"));
+            ImguiHelpers.Tooltip("Add pattern");
             ImGui.Separator();
 
             int patId = 0;
@@ -345,7 +345,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
 
     private unsafe void ShowTimeline(SequenceBlock sequence)
     {
-        ImGui.SeparatorText(UiText.T("Timeline"));
+        ImGuiT.SeparatorText("Timeline");
         int frameCount = sequence.patternCount;
         if (frameCount > 0) {
             animationFrame = Math.Clamp(animationFrame, 0, frameCount - 1);
@@ -440,7 +440,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
                 }
                 ImGui.SetDragDropPayload("PATTERN"u8, null, 0);
                 ImGui.BeginTooltip();
-                ImGui.Text(UiText.F($"Pattern {dragPatternIDX}"));
+                ImGuiT.TextFormatted($"Pattern {dragPatternIDX}");
                 ImGui.EndTooltip();
                 ImGui.EndDragDropSource();
             }
@@ -482,7 +482,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         ImGui.Spacing();
         ImGui.SetNextWindowSizeConstraints(new Vector2(ImGui.GetContentRegionAvail().X / 2, ImGui.GetContentRegionAvail().Y), new Vector2(ImGui.GetContentRegionAvail().X / 2, ImGui.GetContentRegionAvail().Y));
         ImGui.BeginChild("PatternPreview");
-        ImGui.SeparatorText(UiText.T("Preview"));
+        ImGuiT.SeparatorText("Preview");
         if (sequence.patterns.Count > 0) {
             var texPath = File.Textures[sequence.patterns[0].textureIndex].path;
             var tex = GetOrLoadTexture(texPath);
@@ -498,7 +498,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
     private void ShowSelectedPattern()
     {
         ImGui.BeginChild("PatternSelect");
-        ImGui.SeparatorText(UiText.T("Selected Pattern"));
+        ImGuiT.SeparatorText("Selected Pattern");
         ImGui.Text(selectedPattern?.ToString());
         ShowPatternEdit(selectedPattern!);
         ImGui.EndChild();
@@ -561,7 +561,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
 
         var tex = GetOrLoadTexture(texPath);
         if (tex == null) {
-            ImGui.TextColored(Colors.Danger, UiText.T("Could not find texture"));
+            ImGuiT.TextColored(Colors.Danger, "Could not find texture");
         } else {
             var backup = (pattern.left, pattern.right);
             if (ImGui.DragFloatRange2(UiText.Label("Left Right"), ref pattern.left, ref pattern.right, 0.01f, 0, 1)) {

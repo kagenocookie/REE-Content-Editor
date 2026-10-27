@@ -427,7 +427,7 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
                 Handle.Modified = true;
             }
             ImGui.PopItemWidth();
-            ImGui.SeparatorText(UiText.T("Attributes"));
+            ImGuiT.SeparatorText("Attributes");
             ImGui.BeginChild("Attributes");
             for (int i = 0; i < File.AttributeItems.Count; i++) {
                 var attr = File.AttributeItems[i];

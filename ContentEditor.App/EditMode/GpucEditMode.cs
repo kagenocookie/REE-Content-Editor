@@ -82,7 +82,7 @@ public class GpucEditMode : EditModeHandler
                 OpenEditor(file);
             }
         } else if (!string.IsNullOrEmpty(filePath)) {
-            ImGui.TextColored(Colors.Warning, UiText.T("File not found"));
+            ImGuiT.TextColored(Colors.Warning, "File not found");
         }
     }
 

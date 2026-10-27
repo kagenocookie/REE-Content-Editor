@@ -12,3 +12,5 @@
 - `ui-source.json` identifies templates with source locations; `lang-source.json` lists reflection-registered formats; `remaining-source.json` includes unclassified strings requiring human review.
 - `--check` fails on missing registered or extracted UI translations; `coverage.json` also reports unchanged terms for manual review (format names and internal identifiers may be intentionally unchanged).
 - Syntax matching is a review aid, not proof that every runtime path has been visually tested.
+
+- Catalog ImGuiT and internally translating ImguiHelpers calls without reintroducing UiText wrappers in rewrite mode.

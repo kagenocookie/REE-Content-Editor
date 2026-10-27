@@ -361,7 +361,7 @@ public static class AppImguiHelpers
                 files.AddRecent(game, selectedPath);
             }
         }
-        ImguiHelpers.Tooltip(UiText.T("Clear recent files"));
+        ImguiHelpers.Tooltip("Clear recent files");
         return false;
     }
 

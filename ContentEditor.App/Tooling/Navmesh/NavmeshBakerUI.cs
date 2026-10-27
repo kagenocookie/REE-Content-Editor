@@ -44,8 +44,8 @@ public class NavmeshBakerUI(Scene baseScene, FileHandle mapFileHandle, UIContext
             ImGui.OpenPopup("NavmeshBakeHelp");
         }
         if (ImGui.BeginPopup("NavmeshBakeHelp")) {
-            ImGui.Text(UiText.T("The Collision Filters list can be used to adjust which colliders get autoselected on their collision filter setting."));
-            ImGui.Text(UiText.T("\"Reset selection\" will reset the selected colliders list based on the allowed collision filters"));
+            ImGuiT.Text("The Collision Filters list can be used to adjust which colliders get autoselected on their collision filter setting.");
+            ImGuiT.Text("\"Reset selection\" will reset the selected colliders list based on the allowed collision filters");
             if (ImGui.Button(UiText.Label("Parameters Online Reference"))) {
                 FileSystemUtils.OpenURL("https://deepwiki.com/recastnavigation/recastnavigation/2-recast:-navigation-mesh-generation#configuration-parameters");
             }
@@ -68,7 +68,7 @@ public class NavmeshBakerUI(Scene baseScene, FileHandle mapFileHandle, UIContext
         if (ImguiHelpers.FilterableCombo(UiText.LabelUtf8("Reference Scene"), sceneLabels, sceneSpan, ref referenceScene, ref sceneFilter)) {
             sceneColliders.Clear();
         }
-        ImguiHelpers.Tooltip(UiText.T("The root scene from which to scan for valid colliders"));
+        ImguiHelpers.Tooltip("The root scene from which to scan for valid colliders");
 
         if (referenceScene == null) {
             return;

@@ -76,7 +76,7 @@ public class ListFileGeneratorTaskWindow : BaseWindowHandler
     public override void OnIMGUI()
     {
         if (MainLoop.Instance.BackgroundTasks.HasPendingTask<ListFileGeneratorTask>()) {
-            ImGui.TextColored(Colors.Note, UiText.T("List file generation is in progress. Please wait for it to finish or restart Content Editor to cancel it."));
+            ImGuiT.TextColored(Colors.Note, "List file generation is in progress. Please wait for it to finish or restart Content Editor to cancel it.");
             return;
         }
         if (context.children.Count == 0) {

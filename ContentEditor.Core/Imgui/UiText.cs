@@ -11,7 +11,7 @@ public static class UiText
 
     public static void SetTranslations(IReadOnlyDictionary<string, string> values)
     {
-        translations = values.ToDictionary(pair => NormalizeLineEndings(pair.Key), pair => pair.Value, StringComparer.Ordinal);
+        translations = values.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
         utf8 = new();
         Revision++;
     }
@@ -24,12 +24,9 @@ public static class UiText
 
     public static string T(string source)
     {
-        if (translations.TryGetValue(NormalizeLineEndings(source), out var translated)) return translated;
+        if (translations.TryGetValue(source, out var translated)) return translated;
         return source;
     }
-
-    private static string NormalizeLineEndings(string text)
-        => text.Contains('\r') ? text.Replace("\r\n", "\n", StringComparison.Ordinal) : text;
 
     public static string F(FormattableString source)
         => string.Format(CultureInfo.CurrentCulture, T(source.Format), source.GetArguments());

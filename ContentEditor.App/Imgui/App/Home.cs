@@ -423,7 +423,7 @@ public class HomeWindow : IWindowHandler
         var workspace = EditorWindow.CurrentWindow?.Workspace;
         if (workspace == null || string.IsNullOrEmpty(workspace.Game.name)) {
             ImGui.PushFont(ImFontPtr.Null, UI.FontSize * 2);
-            ImGui.TextColored(Colors.Error, UiText.T("Game is not selected! Select a game from the main toolbar."));
+            ImGuiT.TextColored(Colors.Error, "Game is not selected! Select a game from the main toolbar.");
             ImGui.PopFont();
             return;
         }
@@ -436,7 +436,7 @@ public class HomeWindow : IWindowHandler
         var filelist = AppConfig.Instance.GetGameFilelist(game);
         var isCustomGame = game.GameEnum == GameName.unknown;
 
-        ImGui.SeparatorText(UiText.T("Paths"));
+        ImGuiT.SeparatorText("Paths");
         if (AppImguiHelpers.InputFolder(Lang.Settings.GamePath.Text, ref gamepath)) {
             AppConfig.Instance.SetGamePath(game, gamepath);
         }
@@ -446,9 +446,9 @@ public class HomeWindow : IWindowHandler
         if (Directory.Exists(gamepath) && ImGui.Button(UiText.Label("Auto-Detect Executable path"))) {
             AppConfig.Instance.SetGameExecutablePath(game, AppUtils.FindGameExecutable(gamepath, game.name) ?? gameExe);
         }
-        ImGui.SeparatorText(UiText.T("Resources"));
+        ImGuiT.SeparatorText("Resources");
         if (ResourceRepository.RemoteInfo.FileExtensions == null) {
-            ImGui.TextColored(Colors.Warning, UiText.T("Remote resource data has not been fetched yet."));
+            ImGuiT.TextColored(Colors.Warning, "Remote resource data has not been fetched yet.");
         } else {
             // TODO make FileExtensionsPath accessible
             // ImGui.TextColored(Colors.Faded, "Last file extension cache update: " + Languages.FormatDate(ResourceRepository.RemoteInfo.FileExtensions.LastUpdatedAt));
@@ -466,9 +466,9 @@ public class HomeWindow : IWindowHandler
 
         var remote = ResourceRepository.RemoteInfo.Resources.GetValueOrDefault(game.name);
         if (isCustomGame) {
-            ImGui.TextColored(Colors.Info, UiText.T("This is a custom game. All resource files need to be manually defined."));
+            ImGuiT.TextColored(Colors.Info, "This is a custom game. All resource files need to be manually defined.");
         } else if (remote == null) {
-            ImGui.TextColored(Colors.Info, UiText.T("No known resource lists currently available for this game. All resource files need to be manually defined."));
+            ImGuiT.TextColored(Colors.Info, "No known resource lists currently available for this game. All resource files need to be manually defined.");
         }
 
         ImGui.TextColored(Colors.Info, UiText.T("This game's resource data was last updated at: ") + Lang.FormatDate(remote?.LastUpdatedAtUtc));
@@ -484,7 +484,7 @@ public class HomeWindow : IWindowHandler
         // TODO show actual currently used file path
         ImguiHelpers.Tooltip(rszLabel.Tooltip);
         if (remote?.RszPatchFiles.Length > 0) {
-            ImGui.TextColored(Colors.Info, UiText.F($"Remote URL: {remote.RszPatchFiles[0]}"));
+            ImGuiT.TextColoredFormatted(Colors.Info, $"Remote URL: {remote.RszPatchFiles[0]}");
             if (ImGui.IsItemClicked()) {
                 window.CopyToClipboard(remote.RszPatchFiles[0], UiText.T("URL copied!"));
             }
@@ -500,7 +500,7 @@ public class HomeWindow : IWindowHandler
         }
         // TODO show actual currently used file path
         if (!string.IsNullOrEmpty(remote?.FileList)) {
-            ImGui.TextColored(Colors.Info, UiText.F($"Remote URL: {remote.FileList}"));
+            ImGuiT.TextColoredFormatted(Colors.Info, $"Remote URL: {remote.FileList}");
             if (ImGui.IsItemClicked()) {
                 window.CopyToClipboard(remote.FileList, UiText.T("URL copied!"));
             }
@@ -699,7 +699,7 @@ public class HomeWindow : IWindowHandler
         }
         var releases = AppConfig.Settings.Changelogs.FindCurrentAndNewReleaseList();
         if (releases.Count == 0) {
-            ImGui.Text(UiText.F($"No release data is currently available. You can manually check the repository for changes: {GithubApi.MainRepositoryUrl}"));
+            ImGuiT.TextFormatted($"No release data is currently available. You can manually check the repository for changes: {GithubApi.MainRepositoryUrl}");
             if (ImGui.Button(UiText.Label("Open in browser"))) {
                 FileSystemUtils.OpenURL(GithubApi.MainRepositoryUrl);
             }
@@ -710,11 +710,11 @@ public class HomeWindow : IWindowHandler
                 ImGui.PushFont(ImFontPtr.Null, UI.FontSize * 2);
                 ImGui.Text(UiText.T("Version ") + release.TagName);
                 ImGui.PopFont();
-                ImGui.TextColored(Colors.Faded, UiText.F($"Release date: {Lang.FormatDate(release.ReleaseDate.ToLocalTime())}"));
+                ImGuiT.TextColoredFormatted(Colors.Faded, $"Release date: {Lang.FormatDate(release.ReleaseDate.ToLocalTime())}");
 
                 if (release.TagName == AppConfig.Version) {
                     ImGui.SameLine();
-                    ImGui.TextColored(Colors.Success, UiText.T("(Current version)"));
+                    ImGuiT.TextColored(Colors.Success, "(Current version)");
                 } else {
                     ImGui.SameLine();
                     if (ImGui.Button($"{AppIcons.Download}")) {
@@ -737,7 +737,7 @@ public class HomeWindow : IWindowHandler
                     ChangelogRenderData[release.TagName] = renderData = release.Body?.Split("\n", StringSplitOptions.TrimEntries).ToArray() ?? [];
                 }
                 if (renderData.Length == 0) {
-                    ImGui.Text(UiText.T("No changelog data available for this release"));
+                    ImGuiT.Text("No changelog data available for this release");
                 } else {
                     foreach (var line in renderData) {
                         if (line == "") {
@@ -786,7 +786,7 @@ public class HomeWindow : IWindowHandler
             ImGui.Text(commit.Commit.Message ?? "<no message>");
             if (AppConfig.RevisionHash != null && commit.Sha?.StartsWith(AppConfig.RevisionHash) == true) {
                 ImGui.SameLine();
-                ImGui.TextColored(Colors.Success, UiText.T("(current)"));
+                ImGuiT.TextColored(Colors.Success, "(current)");
             }
             ImGui.Spacing();
         }

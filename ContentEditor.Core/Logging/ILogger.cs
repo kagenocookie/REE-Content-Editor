@@ -2,6 +2,10 @@ namespace ContentEditor;
 
 public interface ILogger
 {
+    // Translate plain messages only; translated objects and dynamic arguments remain verbatim.
+    internal static string MessageText(object msg)
+        => msg is string text ? Core.UiText.T(text) : msg.ToString() ?? "";
+
     LogSeverity LoggingLevel { get; set; }
     void Debug(params object[] msg);
 

@@ -501,7 +501,7 @@ public class EfxExpressionAttributeEditor : IObjectUIHandler
         var ws = context.GetWorkspace();
         var efx = context.FindHandlerInParents<EfxEditor>()?.RootEditor.File;
         if (efx == null || ws == null) {
-            ImGui.TextColored(Colors.Error, UiText.T("EFX file or workspace not found"));
+            ImGuiT.TextColored(Colors.Error, "EFX file or workspace not found");
             return;
         }
 
@@ -575,7 +575,7 @@ public class EfxExpressionAttributeEditor : IObjectUIHandler
                         confirmedStrings[expStoreIndex] = orgStr = parsed.root.ToString()!;
                     }
                     var str = pendingStrings.GetValueOrDefault(expStoreIndex) ?? orgStr;
-                    ImGui.Text(UiText.T("Expression"));
+                    ImGuiT.Text("Expression");
                     if (ImguiHelpers.TextMultilineAutoResize("##expression", ref str, w - 230, 300, UI.FontSize)) {
                         pendingStrings[expStoreIndex] = str;
                     }

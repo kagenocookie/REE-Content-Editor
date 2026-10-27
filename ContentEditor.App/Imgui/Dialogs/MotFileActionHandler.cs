@@ -170,9 +170,9 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                 ImGui.Spacing();
                 ImGui.Spacing();
 
-                ImGui.SeparatorText(UiText.T("Additional options"));
+                ImGuiT.SeparatorText("Additional options");
                 ImGui.Checkbox(UiText.Label("Only paste already existing channels"), ref maintainExistingChannelsOnly);
-                ImguiHelpers.Tooltip(UiText.T("Only channels that already exist in the target motion will be kept, while the rest are ignored.\nCan be used to make pure edits and avoid modifying bones that should not be modified by the animation."));
+                ImguiHelpers.Tooltip("Only channels that already exist in the target motion will be kept, while the rest are ignored.\nCan be used to make pure edits and avoid modifying bones that should not be modified by the animation.");
                 ImGui.Checkbox(UiText.Label("Add all source mot file behavior clips"), ref copyBehaviorClips);
                 if (copyBehaviorClips) {
                     ImGui.Checkbox(UiText.Label("Remove all behavior clips from the target mot file (fully replace with copied)"), ref removeExistingBehaviorClips);
@@ -181,15 +181,15 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                 if (newFile != replacedFile) {
                     if (newFile is MotFile m1 && replacedFile is MotFile m2 && !m1.Bones.Select(b => b.boneHash).Order().SequenceEqual(m2.Bones.Select(x => x.boneHash).Order())) {
                         ImGui.Checkbox(UiText.Label("Overwrite bone list"), ref overwriteBoneList);
-                        ImGui.TextColored(Colors.Note, UiText.T("The bone list between the two animations is different. This option will overwrite the target bone list with the source one."));
+                        ImGuiT.TextColored(Colors.Note, "The bone list between the two animations is different. This option will overwrite the target bone list with the source one.");
                         if (MotlistFile.HasSharedBoneList(m2.Header.version)) {
-                            ImGui.TextColored(Colors.Danger, UiText.T("The target mot's file format version only contains one set of bones for all animations in the motlist."));
-                            ImGui.TextColored(Colors.Danger, UiText.T("Replacing it may affect other animations. When using this, make sure all the required bones are present in the source mesh."));
+                            ImGuiT.TextColored(Colors.Danger, "The target mot's file format version only contains one set of bones for all animations in the motlist.");
+                            ImGuiT.TextColored(Colors.Danger, "Replacing it may affect other animations. When using this, make sure all the required bones are present in the source mesh.");
                         }
                     }
                 }
 
-                ImGui.SeparatorText(UiText.T("Skeleton adjustments"));
+                ImGuiT.SeparatorText("Skeleton adjustments");
                 if (ImguiHelpers.ValueCombo(UiText.Label("Armature Type"), MapTypes, MapTypes, ref selectedArmatureType)) {
                     lastSelectedType = selectedArmatureType;
                 }
@@ -197,13 +197,13 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                 if (!string.IsNullOrEmpty(selectedArmatureType) && configs.TryGetValue(selectedArmatureType, out var config)) {
                     var renameSourceGames = config.Renames.SelectMany(r => r.Version1).Concat(config.Renames.SelectMany(r => r.Version2)).Distinct().ToArray();
                     if (renameSourceGames.Length == 0) {
-                        ImGui.TextColored(Colors.Info, UiText.T("No rename configs available for selected armature type"));
+                        ImGuiT.TextColored(Colors.Info, "No rename configs available for selected armature type");
                     } else {
-                        ImGui.SeparatorText(UiText.T("Bone name remapping"));
+                        ImGuiT.SeparatorText("Bone name remapping");
                         if (ImguiHelpers.ValueCombo(UiText.Label("Source"), renameSourceGames, renameSourceGames, ref sourceType)) {
                             lastSelectedSource = sourceType;
                         }
-                        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip(UiText.T("Select the game from which the clip was copied from"));
+                        if (ImGui.IsItemHovered()) ImGuiT.SetItemTooltip("Select the game from which the clip was copied from");
                         if (!string.IsNullOrEmpty(sourceType)) {
                             var targets = new List<string>();
                             foreach (var c in config.Renames) {
@@ -218,7 +218,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                             var remapConfig = config.Renames.FirstOrDefault(r => r.Name == targetRenameConfig);
                             if (remapConfig?.Version1.Contains(sourceType) == true && remapConfig?.Version2.Contains(sourceType) == true) {
                                 ImGui.Checkbox(UiText.Label("Map from bone set 2 to set 1"), ref mapToBone1);
-                                if (ImGui.IsItemHovered()) ImGui.SetItemTooltip(UiText.T("The selected configuration can work within the same game, you need to choose which name transfer to use"));
+                                if (ImGui.IsItemHovered()) ImGuiT.SetItemTooltip("The selected configuration can work within the same game, you need to choose which name transfer to use");
                             } else {
                                 mapToBone1 = false;
                             }

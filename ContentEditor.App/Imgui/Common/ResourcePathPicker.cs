@@ -271,7 +271,7 @@ public class ResourcePathPicker : IObjectUIHandler
         // validate resource file paths
         if (flags.HasFlag(PathPickerFlags.IsPathForIngame) && !flags.HasFlag(PathPickerFlags.UseTargetPath)) {
             if ((Path.IsPathFullyQualified(pendingPath) || PathUtils.ParseFileFormat(pendingPath).version != -1 || pendingPath.Contains("natives/"))) {
-                ImGui.TextColored(Colors.Warning, UiText.T("The given file path may not resolve properly ingame.\nEnsure it's an internal path (without the natives/stm/ part and no file extension version)"));
+                ImGuiT.TextColored(Colors.Warning, "The given file path may not resolve properly ingame.\nEnsure it's an internal path (without the natives/stm/ part and no file extension version)");
             }
         }
 

@@ -6,6 +6,8 @@
 | README.md | Upstream usage and development guide |
 | content-patcher.sln | .NET solution |
 | Directory.Build.props | Shared configuration resource path |
+| .gitattributes | Enforce LF for C# sources and multiline translation keys |
+| .editorconfig | Editor formatting and C# LF policy |
 | .gitmodules | Pinned external library sources |
 
 ## Subdirectories
@@ -37,3 +39,5 @@
 - Synchronize relevant AGENTS.md on structural changes; preserve sections between `<!-- MANUAL -->` markers.
 - Build the Windows target and run LocalizationTests after localization logic changes.
 - Audit language coverage with tools/LocalizationAudit; review remaining-source.json manually because it includes technical identifiers and application data.
+
+- ImGuiT translates presentation text internally; Formatted methods preserve dynamic arguments. Logging sinks translate plain strings while leaving translatable objects verbatim.

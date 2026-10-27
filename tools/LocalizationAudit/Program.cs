@@ -84,6 +84,12 @@ sealed class TextVisitor(SortedDictionary<string, HashSet<string>> entries, stri
             _ => ""
         };
         if (name.Length == 0) return result;
+        // These helpers translate internally. Record their templates without adding wrappers.
+        if (owner == "ImGuiT" || (owner == "ImguiHelpers" && name is "Tooltip" or "TooltipColored" or "TextCentered" or "TextColoredWrapped")) {
+            var textIndex = name.StartsWith("TextColored", StringComparison.Ordinal) ? 1 : 0;
+            if (node.ArgumentList.Arguments.Count > textIndex) Record(node.ArgumentList.Arguments[textIndex].Expression, false);
+            return result;
+        }
         if (name is "AddChild" or "AddChildList" or "CreateRootContext" or "GetChild") {
             if (result.ArgumentList.Arguments.Count > 0) Record(result.ArgumentList.Arguments[0].Expression, false);
         }

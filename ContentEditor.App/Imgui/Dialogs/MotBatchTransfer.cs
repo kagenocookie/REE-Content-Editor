@@ -125,7 +125,7 @@ internal partial class MotBatchTransfer(ContentWorkspace workspace, MotlistFileB
         ImguiHelpers.Tooltip(UiText.Utf8("The bone list between the two animations is different. This option will overwrite the target bone list with the source one."));
 
         ImGui.Checkbox(UiText.Label("Only paste already existing channels"), ref maintainExistingChannelsOnly);
-        ImguiHelpers.Tooltip(UiText.T("Only channels that already exist in the target motion will be kept, while the rest are ignored.\nCan be used to make pure edits and avoid modifying bones that should not be modified by the animation."));
+        ImguiHelpers.Tooltip("Only channels that already exist in the target motion will be kept, while the rest are ignored.\nCan be used to make pure edits and avoid modifying bones that should not be modified by the animation.");
 
         if (messages.Count > 0 && ImGui.TreeNode(UiText.FormatLabel($"Messages ({messages.Count})"))) {
             foreach (var msg in messages) {

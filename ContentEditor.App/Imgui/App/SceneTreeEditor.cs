@@ -26,7 +26,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
             if (!string.IsNullOrEmpty(fo.ScenePath)) {
                 if (expandContents && fo.ChildScene == null) {
                     fo.RequestLoad();
-                    ImGui.TextColored(Colors.Info, UiText.T("Loading scene ..."));
+                    ImGuiT.TextColored(Colors.Info, "Loading scene ...");
                 }
 
                 return [];
@@ -162,7 +162,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
                     _bookmarks ??= new BookmarkHolder(ws);
                     var items = _bookmarks.GetByTag("Prefab");
                     if (!items.Any()) {
-                        ImGui.TextColored(Colors.Note, UiText.T("No prefab bookmarks found!"));
+                        ImGuiT.TextColored(Colors.Note, "No prefab bookmarks found!");
                     } else {
                         ResourcePathPicker.Show(UiText.LabelUtf8("Specific prefab"), ref prefabFilepath, ref prefabFilepath, ref prefabFilter, ws, [KnownFileFormats.Prefab], FileFilters.PfbFile, ResourcePathPicker.PathPickerFlags.NoConfirmation|ResourcePathPicker.PathPickerFlags.UseTargetPath);
                         FileHandle? file = null;

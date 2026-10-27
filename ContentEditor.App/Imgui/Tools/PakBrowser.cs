@@ -151,7 +151,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
     {
         activeListFile ??= LocalizeListFile(contentWorkspace);
         if (activeListFile == null || activeListFile.Files.Length == 0) {
-            ImGui.TextColored(Colors.Warning, UiText.F($"List file not found for game {Workspace.Config.Game}"));
+            ImGuiT.TextColoredFormatted(Colors.Warning, $"List file not found for game {Workspace.Config.Game}");
             // TODO add a "scan file list" option
             return;
         }
@@ -160,7 +160,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
             if (PakFilePaths == null) {
                 // all files - use default pak reader data, but make a clone just so we don't mess with the original stuff
                 if (Workspace.PakReader.PakFilePriority.Count == 0) {
-                    ImGui.TextColored(Colors.Warning, UiText.F($"No PAK files found for game {Workspace.Config.Game}"));
+                    ImGuiT.TextColoredFormatted(Colors.Warning, $"No PAK files found for game {Workspace.Config.Game}");
                     return;
                 }
                 Workspace.PakReader.IncludeUnknownFilePaths = true;
@@ -178,7 +178,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
                 reader = new CachedMemoryPakReader() { IncludeUnknownFilePaths = true };
                 foreach (var path in PakFilePaths.Reverse()) {
                     if (!File.Exists(path)) {
-                        ImGui.TextColored(Colors.Warning, UiText.F($"File {path} not found."));
+                        ImGuiT.TextColoredFormatted(Colors.Warning, $"File {path} not found.");
                         continue;
                     }
 
@@ -208,7 +208,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
         if (ImGui.BeginPopup("PAKInfoPopup"u8)) {
             ImGui.Text(UiText.T("Total File Count: ") + reader.MatchedEntryCount);
             ImGui.SameLine();
-            ImGui.Text(UiText.F($"| PAK Count: {reader.PakFilePriority.Count}"));
+            ImGuiT.TextFormatted($"| PAK Count: {reader.PakFilePriority.Count}");
             ImGui.Separator();
             foreach (var pak in reader.PakFilePriority) {
                 ImGui.BulletText(pak);
@@ -221,7 +221,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
             ImGui.PushStyleColor(ImGuiCol.Text, Colors.Warning);
             ImGui.Button($"{AppIcons.SI_GenericWarning}");
             ImGui.PopStyleColor();
-            ImguiHelpers.TooltipColored(UiText.T("Invalidated PAK entries have been detected (most likely from Fluffy Mod Manager).\nYou may be unable to open some files."), Colors.Warning);
+            ImguiHelpers.TooltipColored("Invalidated PAK entries have been detected (most likely from Fluffy Mod Manager).\nYou may be unable to open some files.", Colors.Warning);
         }
         ImGui.SameLine();
         ImguiHelpers.VerticalSeparator();
@@ -284,13 +284,13 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
             CurrentDir = Path.GetDirectoryName(CurrentDir)?.Replace('\\', '/') ?? string.Empty;
             pagination.page = 0;
         }
-        ImguiHelpers.Tooltip(UiText.T("Back"));
+        ImguiHelpers.Tooltip("Back");
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(CurrentDir.Count(c => c == '/') < 3)) {
             if (ImGui.ArrowButton("##up"u8, ImGuiDir.Up)) {
                 CurrentDir = Workspace.BasePath[0..^1];
             }
-            ImguiHelpers.Tooltip(UiText.T("Return to Top"));
+            ImguiHelpers.Tooltip("Return to Top");
         }
         ImGui.SameLine();
 
@@ -310,13 +310,13 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
             }
             if (ImGui.BeginItemTooltip()) {
                 if (hasFileTypeFilter) {
-                    ImGui.Text(UiText.T("Regex search is disabled while a file filter is active"));
+                    ImGuiT.Text("Regex search is disabled while a file filter is active");
                 } else {
-                    ImGui.Text(UiText.T("You can use patterns for more complex matching rules"));
+                    ImGuiT.Text("You can use patterns for more complex matching rules");
                     ImGui.BulletText(UiText.T("Regex patterns: natives/stm/character/**.mdf2.*"));
                     ImGui.BulletText(UiText.T("Include rules (path MUST contain the text): +.tex    +cha01"));
                     ImGui.BulletText(UiText.T("Exclude rules (path MUST NOT contain the text): !.tex    !/sm00"));
-                    ImGui.Text(UiText.T("Include and exclude rules must be separated with spaces"));
+                    ImGuiT.Text("Include and exclude rules must be separated with spaces");
                 }
                 ImGui.EndTooltip();
             }
@@ -476,17 +476,17 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
             }
         }
         ImGui.SameLine();
-        ImGui.Text(UiText.F($"Total matches: {fileCount}"));
+        ImGuiT.TextFormatted($"Total matches: {fileCount}");
         ImGui.SameLine();
         ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
-        ImGui.Text(UiText.F($"Displaying: {pagination.page * itemsPerPage + Math.Sign(fileCount)}-{pagination.page * itemsPerPage + pagination.displayedCount}"));
+        ImGuiT.TextFormatted($"Displaying: {pagination.page * itemsPerPage + Math.Sign(fileCount)}-{pagination.page * itemsPerPage + pagination.displayedCount}");
         ImGui.SameLine();
         ImguiHelpers.AlignElementRight((ImGui.GetFrameHeight()));
         if (ImGui.ArrowButton("##JumpToPageTop", ImGuiDir.Up) || ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_PakBrowser_JumpToPageTop.Get().IsPressed()) {
             jumpToPageTop = true;
         }
-        ImguiHelpers.Tooltip(UiText.T("Jump to page top"));
+        ImguiHelpers.Tooltip("Jump to page top");
         ImGui.EndChild();
     }
 

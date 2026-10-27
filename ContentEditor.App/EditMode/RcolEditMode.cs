@@ -87,7 +87,7 @@ public class RcolEditMode : EditModeHandler
                 OpenEditor(file);
             }
         } else if (!string.IsNullOrEmpty(rcolPath)) {
-            ImGui.TextColored(Colors.Warning, UiText.T("File not found"));
+            ImGuiT.TextColored(Colors.Warning, "File not found");
         }
     }
 

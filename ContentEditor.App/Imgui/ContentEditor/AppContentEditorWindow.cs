@@ -56,7 +56,7 @@ public class AppContentEditorWindow : IWindowHandler, IWorkspaceContainer
             SetupEditors();
 
         if (Workspace.CurrentBundle == null) {
-            ImGui.TextColored(Colors.Warning, UiText.T("No bundle selected. Changes will not be saveable. Select or create a new bundle first."));
+            ImGuiT.TextColored(Colors.Warning, "No bundle selected. Changes will not be saveable. Select or create a new bundle first.");
         }
         var data = context.Get<WindowData>();
         var selectedTabIndexes = data.GetOrAddPersistentClass<List<int>>("tabIndex");

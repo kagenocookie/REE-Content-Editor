@@ -177,7 +177,7 @@ public class LuaScriptEditor : FileEditor
             }
         }
 
-        ImguiHelpers.Tooltip(UiText.T("Create New Script"));
+        ImguiHelpers.Tooltip("Create New Script");
         ImGui.SameLine();
         ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
@@ -225,7 +225,7 @@ public class LuaScriptEditor : FileEditor
             if (ImGui.Button($"{AppIcons.SI_FolderOpen}")) {
                 FileSystemUtils.ShowFileInExplorer(CurrentGroupFolder);
             }
-            ImguiHelpers.Tooltip(UiText.T("Open Script Folder"));
+            ImguiHelpers.Tooltip("Open Script Folder");
             ImGui.SameLine();
         }
         AppImguiHelpers.WikiLinkButton("https://github.com/kagenocookie/REE-Content-Editor/wiki/Lua-API", true);
@@ -233,7 +233,7 @@ public class LuaScriptEditor : FileEditor
         if (ImGui.Button(UiText.FormatLabel($"{AppIcons.SI_Reset}##rescan_scripts"))) {
             ScanScriptFolder();
         }
-        ImguiHelpers.Tooltip(UiText.T("Re-scan scripts folder"));
+        ImguiHelpers.Tooltip("Re-scan scripts folder");
         ImGui.SameLine();
 
         if (ImGui.Button(UiText.LabelUtf8("Execute Script"))) {
@@ -241,7 +241,7 @@ public class LuaScriptEditor : FileEditor
             lua.Run(Script.Script);
         }
 
-        ImGui.Text(UiText.T("Script"));
+        ImGuiT.Text("Script");
         var avail = ImGui.GetContentRegionAvail();
         var currentScript = Script.Script;
         if (ImGui.InputTextMultiline("##Script", ref currentScript, 10000, avail)) {

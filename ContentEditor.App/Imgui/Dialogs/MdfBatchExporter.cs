@@ -35,7 +35,7 @@ public class MdfBatchExporter
                 }
             }
         }
-        ImGui.SeparatorText(UiText.T("Material texture export"));
+        ImGuiT.SeparatorText("Material texture export");
         var matNames = allMats.Select(m => m.Key).ToArray();
         if (ImGui.Button(UiText.Label("Select All"))) {
             foreach (var mat in allMats) {

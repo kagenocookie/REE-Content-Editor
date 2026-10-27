@@ -689,7 +689,7 @@ public class FlagsEnumFieldHandler : IObjectUIHandler
         var endX = ImGui.GetWindowSize().X;
         var totalPadding = startX * 2;
         var w_total = endX - totalPadding;
-        ImGui.Text(UiText.T("Flags: "));
+        ImGuiT.Text("Flags: ");
         ImGui.SameLine();
         var tabMargin = ImGui.GetStyle().FramePadding.X * 2 + 32; // how do we determine checkbox size properly?
 
@@ -937,7 +937,7 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                 context.ShowChildrenUI();
                 ImguiHelpers.EndRect();
             } else {
-                ImGui.TextColored(Colors.Warning, UiText.T("Invalid UserData instance"));
+                ImGuiT.TextColored(Colors.Warning, "Invalid UserData instance");
                 if (ws != null && ImGui.Button(UiText.Label("Create New"))) {
                     var parentRsz = context.FindHandlerInParents<IRSZFileEditor>()?.GetRSZFile();
                     if (parentRsz == null) {
@@ -1035,7 +1035,7 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
 
                 if (string.IsNullOrEmpty(info.Path)) {
                     context.ShowChildrenUI();
-                    ImGui.TextColored(Colors.Error, UiText.T("No path for user data"));
+                    ImGuiT.TextColored(Colors.Error, "No path for user data");
                     return;
                 }
 
@@ -1052,7 +1052,7 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                 // TODO re7?
                 var rsz = context.FindHandlerInParents<IRSZFileEditor>()?.GetRSZFile();
                 if (file == null || rsz == null) {
-                    ImGui.TextColored(Colors.Error, UiText.T("Invalid or missing embedded UserData instance"));
+                    ImGuiT.TextColored(Colors.Error, "Invalid or missing embedded UserData instance");
                     if (ImGui.Button(UiText.Label("Create"))) {
                         infoEmbedded.ChangeClass(ws.Env.RszParser, ws.Env.RszFileOption, instance.RszClass, $"assets:/UserData/{instance.RszClass.ShortName}_{System.Random.Shared.Next()}.user.json", rsz);
                         context.parent?.ClearChildren();
@@ -1075,7 +1075,7 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
 
         if (context.children.Count == 0 || context.GetChild<UserDataFileEditor>() == null) {
             context.ShowChildrenUI();
-            ImGui.TextColored(Colors.Error, UiText.T("Failed to load or find UserData reference"));
+            ImGuiT.TextColored(Colors.Error, "Failed to load or find UserData reference");
             ImGui.SameLine();
             if (ImGui.Button(UiText.Label("Try again"))) {
                 context.StateBool = false;
@@ -1101,7 +1101,7 @@ public class GuidFieldHandler : Singleton<GuidFieldHandler>, IObjectUIHandler
             if (Guid.TryParse(str, out var newguid)) {
                 UndoRedo.RecordSet(context, newguid);
             } else {
-                ImGui.TextColored(Colors.Error, UiText.T("Invalid GUID"));
+                ImGuiT.TextColored(Colors.Error, "Invalid GUID");
             }
         }
 
@@ -1312,7 +1312,7 @@ public class Mat4StructHandler : IObjectUIHandler
             ImGui.SetNextItemWidth(w * 0.25f - ImGui.GetStyle().FramePadding.X * 2);
             ImGui.LabelText("Scale", "##labelS");
             if (MathF.Abs(scale.X - scale.Y) > 0.001f || MathF.Abs(scale.Y - scale.Z) > 0.001f) {
-                ImGui.TextColored(Colors.Warning, UiText.T("A non-uniform scale can sometimes cause issues with collisions."));
+                ImGuiT.TextColored(Colors.Warning, "A non-uniform scale can sometimes cause issues with collisions.");
             }
 
             ImGui.TreePop();
@@ -1355,7 +1355,7 @@ public class OBBStructHandler : IObjectUIHandler
                 UndoRedo.RecordSet(context, box, undoId: $"{context.GetHashCode()} scale");
             }
             if (MathF.Abs(scale.X - 1) > 0.001f || MathF.Abs(scale.Y - 1) > 0.001f || MathF.Abs(scale.Z - 1) > 0.001f) {
-                ImGui.TextColored(Colors.Warning, UiText.T("A scale different from (1, 1, 1) may cause issues with collisions. It's usually more reliable to modify Extent instead."));
+                ImGuiT.TextColored(Colors.Warning, "A scale different from (1, 1, 1) may cause issues with collisions. It's usually more reliable to modify Extent instead.");
             }
 
             var ext = box.Extent;

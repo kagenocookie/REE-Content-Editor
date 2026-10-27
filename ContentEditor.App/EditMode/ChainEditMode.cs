@@ -120,7 +120,7 @@ public class ChainEditMode : EditModeHandler
                 OpenEditor(file);
             }
         } else if (!string.IsNullOrEmpty(filePath)) {
-            ImGui.TextColored(Colors.Warning, UiText.T("Chain file not found"));
+            ImGuiT.TextColored(Colors.Warning, "Chain file not found");
         }
 
         if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(clspPath, out var file2)) {
@@ -129,7 +129,7 @@ public class ChainEditMode : EditModeHandler
                 OpenEditor(file2);
             }
         } else if (!string.IsNullOrEmpty(clspPath)) {
-            ImGui.TextColored(Colors.Warning, UiText.T("Chain file not found"));
+            ImGuiT.TextColored(Colors.Warning, "Chain file not found");
         }
     }
 
@@ -166,7 +166,7 @@ public class ChainEditMode : EditModeHandler
                     }
                     clspComp?.SetOverrideFile(file.GetFile<ClspFile>());
                 } else {
-                    ImGui.TextColored(Colors.Warning, UiText.T("CLSP file not found"));
+                    ImGuiT.TextColored(Colors.Warning, "CLSP file not found");
                 }
             } else {
                 clspComp?.ClearOverrideFile();

@@ -306,7 +306,7 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
         changed |= ImguiHelpers.ToggleButton($"{AppIcons.SI_FileType_CFIL}", ref classnameComponentOnly, Colors.IconActive);
         ImguiHelpers.Tooltip(UiText.Utf8("Match GameObject components only.\r\nOtherwise, will consider it a match if any nested object has a matching classname."));
         ImGui.SameLine();
-        ImGui.Text(UiText.T("Classname"));
+        ImGuiT.Text("Classname");
 
         changed |= ImGui.InputText(UiText.LabelUtf8("Field Name"), ref fieldMatch, 200, ImGuiInputTextFlags.CharsNoBlank);
         changed |= ImGui.InputText(UiText.LabelUtf8("Value"), ref valueMatch, 200, ImGuiInputTextFlags.CharsNoBlank);

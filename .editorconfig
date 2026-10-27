@@ -108,3 +108,7 @@ dotnet_diagnostic.RS2008.severity = suggestion
 dotnet_diagnostic.IDE0130.severity = none
 
 dotnet_diagnostic.IDE0305.severity = none
+
+# Keep multiline translation keys identical on every checkout.
+[*.cs]
+end_of_line = lf

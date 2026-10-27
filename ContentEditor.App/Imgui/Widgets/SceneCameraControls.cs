@@ -27,7 +27,7 @@ public class SceneCameraControls : ISceneWidget
         if (ImGui.Button($"{AppIcons.SI_GenericCamera}")) {
             ImGui.OpenPopup(WidgetName);
         }
-        ImguiHelpers.Tooltip(UiText.T("Camera Controls"));
+        ImguiHelpers.Tooltip("Camera Controls");
 
         if (ImGui.BeginPopup(WidgetName)) {
             scene.Controller.ShowCameraControls();

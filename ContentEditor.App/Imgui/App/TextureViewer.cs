@@ -188,7 +188,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
     {
         if (texture == null) {
             if (texturePath == null || !File.Exists(texturePath)) {
-                ImGui.Text(UiText.T("No texture selected"));
+                ImGuiT.Text("No texture selected");
                 return;
             }
             this.SetImageSource(texturePath);
@@ -256,7 +256,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
         var isDds = !isTex && Path.GetExtension(texturePath) == ".dds";
         var filepath = texturePath;
 
-        ImGui.SeparatorText(UiText.T("Convert TEX"));
+        ImGuiT.SeparatorText("Convert TEX");
         ImguiHelpers.ValueCombo(UiText.Label("Tex Version"), TexFile.AllVersionConfigsWithExtension, TexFile.AllVersionConfigs, ref exportTemplate);
 
         ImGui.Spacing();
@@ -266,7 +266,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
         ImGui.Spacing();
 
         ImguiHelpers.ValueCombo(UiText.Label("DXGI Format"), DxgiFormatStrings, DxgiFormats, ref exportFormat);
-        ImguiHelpers.Tooltip(UiText.T("The format to convert non-DDS images to."));
+        ImguiHelpers.Tooltip("The format to convert non-DDS images to.");
         ImGui.Spacing();
         var mmo = (int)mipMapOption;
         ImGui.BeginGroup();
@@ -274,7 +274,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
             mipMapOption = (MipGenOptions)mmo;
         }
         ImGui.EndGroup();
-        ImguiHelpers.Tooltip(UiText.T("Choose what to do with mip maps (lower resolution images for better performance). If the mips are already in the target state, they will be reused unchanged."));
+        ImguiHelpers.Tooltip("Choose what to do with mip maps (lower resolution images for better performance). If the mips are already in the target state, they will be reused unchanged.");
 
         if (exportFormat != selectedFormatPreset.format || mipMapOption != selectedFormatPreset.mips) {
             selectedFormatPreset = default;
@@ -509,7 +509,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
                     }
                     fileHandle.Modified = false;
                 }
-                ImguiHelpers.Tooltip(UiText.T("Save"));
+                ImguiHelpers.Tooltip("Save");
             }
             ImGui.SameLine();
 
@@ -525,7 +525,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
                     MainLoop.Instance.InvokeFromUIThread(() => SaveTextureToFile(file));
                 }, baseName.ToString(), filters: fileFilter);
             }
-            ImguiHelpers.Tooltip(UiText.T("Save As..."));
+            ImguiHelpers.Tooltip("Save As...");
 
             if (fileHandle?.Format.format == KnownFileFormats.Texture && workspace.CurrentBundle != null) {
                 if (!fileHandle.IsInBundle(workspace, workspace.CurrentBundle)) {
@@ -533,14 +533,14 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
                     if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleSaveTo, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary])) {
                         SaveToBundle(workspace, false);
                     }
-                    ImguiHelpers.Tooltip(UiText.T("Save to Bundle"));
+                    ImguiHelpers.Tooltip("Save to Bundle");
                 }
 
                 ImGui.SameLine();
                 if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleSaveAsNew, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary])) {
                     SaveToBundle(workspace, true);
                 }
-                ImguiHelpers.Tooltip(UiText.T("Save to Bundle as New File"));
+                ImguiHelpers.Tooltip("Save to Bundle as New File");
             }
 
             ImGui.SameLine();
@@ -556,7 +556,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
                     fileHandle.Revert(workspace);
                     SetImageSource(fileHandle);
                 }
-                ImguiHelpers.Tooltip(UiText.T("Revert"));
+                ImguiHelpers.Tooltip("Revert");
             }
 
             ImGui.SameLine();
@@ -569,11 +569,11 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
             ImGui.SameLine();
             ImguiHelpers.VerticalSeparator();
             ImGui.SameLine();
-            ImGui.Text(UiText.F($"Size: {texture.Width} x {texture.Height}"));
+            ImGuiT.TextFormatted($"Size: {texture.Width} x {texture.Height}");
             ImGui.SameLine();
             ImguiHelpers.VerticalSeparator();
             ImGui.SameLine();
-            ImGui.Text(UiText.F($"Format: {texture.Format}"));
+            ImGuiT.TextFormatted($"Format: {texture.Format}");
 
             if (!colorSpaceIsKnown) {
                 ImGui.SameLine();
@@ -587,7 +587,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
                     SetFormatPreset(Presets.First(p => p.format.IsSRGB() == texture.Format.IsSRGB()));
                     showColorSpaceHint = false;
                 }
-                ImguiHelpers.Tooltip(UiText.T("Swap color space\nThis is used to determine whether your source image should be treated as a color or a non-color texture for most conversion operations.\nGenerally albedo and UI textures should be sRGB while everything else should NOT be sRGB."));
+                ImguiHelpers.Tooltip("Swap color space\nThis is used to determine whether your source image should be treated as a color or a non-color texture for most conversion operations.\nGenerally albedo and UI textures should be sRGB while everything else should NOT be sRGB.");
                 if (showColorSpaceHint) {
                     ImGui.SameLine();
                     ImGui.TextColored(Colors.Info, UiText.Utf8("Color space was automatically guessed based on the file name."));
@@ -615,7 +615,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
                             Logger.Error($"Could not find non-streaming version of texture {fileHandle.TargetPath}");
                         }
                     }
-                    ImguiHelpers.Tooltip(UiText.T("Switch to lower quality non-streaming texture"));
+                    ImguiHelpers.Tooltip("Switch to lower quality non-streaming texture");
                 } else if (tex.Header.flags.HasFlag(ReeLib.Tex.TexFlags.IsStreaming)) {
                     ImGui.SameLine();
                     if (ImGui.Button($"{AppIcons.SI_UpdateTexture}") || isFirstLoad) {
@@ -626,7 +626,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
                             Logger.Error($"Could not find full quality streaming version of texture {fileHandle.TargetPath}");
                         }
                     }
-                    ImguiHelpers.Tooltip(UiText.T("Switch to full quality streaming texture"));
+                    ImguiHelpers.Tooltip("Switch to full quality streaming texture");
                 }
                 isFirstLoad = false;
             }
@@ -636,7 +636,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
 
             UpdateChannelsViaHotkeys();
 
-            ImGui.Text(UiText.T("Channels:"));
+            ImGuiT.Text("Channels:");
             ImGui.SameLine();
             if (ImGui.RadioButton(UiText.Label("RGBA"), currentChannel == TextureChannel.RGBA)) {
                 currentChannel = TextureChannel.RGBA;

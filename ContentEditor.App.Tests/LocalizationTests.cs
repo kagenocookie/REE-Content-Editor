@@ -154,11 +154,25 @@ public class LocalizationTests
     }
 
     [Test]
-    public void MultilineTranslationsWorkWithEitherSourceLineEnding()
+    public void MultilineTranslationsUseLfSourceKeys()
     {
-        UiText.SetTranslations(new Dictionary<string, string> { ["First\r\nSecond"] = "第一行\n第二行" });
+        UiText.SetTranslations(new Dictionary<string, string> { ["First\nSecond"] = "第一行\n第二行" });
         Assert.That(UiText.T("First\nSecond"), Is.EqualTo("第一行\n第二行"));
-        Assert.That(UiText.T("First\r\nSecond"), Is.EqualTo("第一行\n第二行"));
+        Assert.That(UiText.T("First\r\nSecond"), Is.EqualTo("First\r\nSecond"));
+    }
+
+    [Test]
+    public void LoggerTranslatesPlainStringsAndPreservesTranslatedObjects()
+    {
+        UiText.SetTranslations(new Dictionary<string, string> { ["Source"] = "Translated", ["Translated"] = "Wrong" });
+        var logger = new EventLogger();
+        var messages = new List<string>();
+        logger.MessageReceived += (text, _) => messages.Add(text);
+        logger.Info("Source");
+        logger.Warn(new FixedString("Source"));
+        logger.Error("Source");
+        logger.Debug("Source", 42);
+        Assert.That(messages, Is.EqualTo(new[] { "Translated", "Translated", "Translated", "Translated 42" }));
     }
 
     [Test]

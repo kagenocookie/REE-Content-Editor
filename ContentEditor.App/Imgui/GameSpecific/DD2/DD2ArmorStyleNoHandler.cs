@@ -15,7 +15,7 @@ public sealed class DD2ArmorStyleNoHandler : IObjectUIHandler
         var data = entity?.Get("data") as RSZObjectResource;
         var workspace = context.GetWorkspace();
         if (entity == null || data == null || workspace == null) {
-            ImGui.TextColored(Colors.Error, UiText.F($"StyleNo field requires a valid item entity and workspace"));
+            ImGuiT.TextColoredFormatted(Colors.Error, $"StyleNo field requires a valid item entity and workspace");
             return;
         }
 

@@ -18,7 +18,7 @@ public class EmbeddedResourceFileHandler(ResourceCustomField field) : IObjectUIH
         var entity = context.GetOwnerEntity();
         var workspace = context.GetWorkspace();
         if (entity == null || workspace == null) {
-            ImGui.TextColored(Colors.Error, UiText.F($"{field.label} field requires a valid item entity and workspace"));
+            ImGuiT.TextColoredFormatted(Colors.Error, $"{field.label} field requires a valid item entity and workspace");
             return;
         }
 
@@ -33,7 +33,7 @@ public class EmbeddedResourceFileHandler(ResourceCustomField field) : IObjectUIH
         }
 
         if (entity == null || workspace == null) {
-            ImGui.TextColored(Colors.Error, UiText.F($"{field.label} field requires a valid item entity and workspace"));
+            ImGuiT.TextColoredFormatted(Colors.Error, $"{field.label} field requires a valid item entity and workspace");
             return;
         }
         if (file == null || file.ResourcePath == null || !file.ResourcePath.Equals(path, StringComparison.InvariantCultureIgnoreCase)) {

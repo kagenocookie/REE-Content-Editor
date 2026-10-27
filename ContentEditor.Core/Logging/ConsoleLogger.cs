@@ -7,28 +7,28 @@ public class ConsoleLogger : ILogger
     public void Debug(params object[] msg)
     {
         if (LoggingLevel <= LogSeverity.Debug) {
-            Console.WriteLine("DEBUG: " + string.Join(" ", msg));
+            Console.WriteLine("DEBUG: " + string.Join(" ", msg.Select(ILogger.MessageText)));
         }
     }
 
     public void Info(object msg)
     {
         if (LoggingLevel <= LogSeverity.Info) {
-            Console.WriteLine(msg);
+            Console.WriteLine(ILogger.MessageText(msg));
         }
     }
 
     public void Warn(object msg)
     {
         if (LoggingLevel <= LogSeverity.Warning) {
-            Console.WriteLine("WARN: " + msg);
+            Console.WriteLine("WARN: " + ILogger.MessageText(msg));
         }
     }
 
     public void Error(object msg)
     {
         if (LoggingLevel <= LogSeverity.Error) {
-            Console.Error.WriteLine(msg);
+            Console.Error.WriteLine(ILogger.MessageText(msg));
         }
     }
 }

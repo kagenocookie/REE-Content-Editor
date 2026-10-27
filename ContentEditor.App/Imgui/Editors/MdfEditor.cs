@@ -203,22 +203,22 @@ public class MdfFileImguiHandler : IObjectUIHandler
         var list = file.Materials;
         SyncMaterialSelection(list);
 
-        ImGui.TextColored(Colors.Faded, UiText.T("Material List"));
+        ImGuiT.TextColored(Colors.Faded, "Material List");
         ImGui.Separator();
         ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_MaterialAdd, ref isNewMaterialMenu, [Colors.IconPrimary, Colors.IconSecondary], Colors.IconActive);
-        ImguiHelpers.Tooltip(UiText.T("Add new Material"));
+        ImguiHelpers.Tooltip("Add new Material");
         ImGui.SameLine();
         using (var __ = ImguiHelpers.Disabled(!HasMaterialsInClipboard())) {
             if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_MaterialPaste, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary])) {
                 PasteMaterials(context, list, pasted => SelectMaterials(context, list, pasted));
             }
-            ImguiHelpers.Tooltip(UiText.T("Paste Material from clipboard"));
+            ImguiHelpers.Tooltip("Paste Material from clipboard");
         }
         ImGui.SameLine();
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_TexExport, [Colors.IconPrimary, Colors.IconSecondary])) {
             ImGui.OpenPopup("MdfTexExport");
         }
-        ImguiHelpers.Tooltip(UiText.T("Export Textures"));
+        ImguiHelpers.Tooltip("Export Textures");
         ImGui.SameLine();
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_MaterialImport, [Colors.IconPrimary, Colors.IconSecondary])) {
             PlatformUtils.ShowFileDialog(paths => { var path = paths[0];
@@ -229,8 +229,8 @@ public class MdfFileImguiHandler : IObjectUIHandler
             FileSystemUtils.OpenURL("https://github.com/SilverEzredes/EMV-Engine-SILVER");
         }
         if (ImGui.BeginItemTooltip()) {
-            ImGui.Text(UiText.T("Import Material parameters from EMV JSON"));
-            ImGui.TextColored(Colors.Info, UiText.T("REECE compatible JSON files can only be saved using\nEMV Engine Silver (right-click to open link)"));
+            ImGuiT.Text("Import Material parameters from EMV JSON");
+            ImGuiT.TextColored(Colors.Info, "REECE compatible JSON files can only be saved using\nEMV Engine Silver (right-click to open link)");
             ImGui.EndTooltip();
         }
         ImGui.SameLine();
@@ -250,10 +250,10 @@ public class MdfFileImguiHandler : IObjectUIHandler
                         newMaterialName = "";
                     }
                     ImGui.PopStyleColor();
-                    ImguiHelpers.Tooltip(UiText.T("Add"));
+                    ImguiHelpers.Tooltip("Add");
                 } else {
                     ImGui.Button($"{AppIcons.SI_GenericClose}");
-                    ImguiHelpers.Tooltip(UiText.T("A Material with the same name already exists"));
+                    ImguiHelpers.Tooltip("A Material with the same name already exists");
                     ImGui.PopStyleColor();
                 }
             }
@@ -330,7 +330,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
     private void ShowSelectedMaterialData(UIContext context, MdfFile file)
     {
         if (selectedIDX < 0 || selectedIDX >= file.Materials.Count) {
-            ImGui.TextColored(Colors.Note, UiText.T("No material selected"));
+            ImGuiT.TextColored(Colors.Note, "No material selected");
             return;
         }
 
@@ -574,13 +574,13 @@ public class MdfFileImguiHandler : IObjectUIHandler
         var workspace = context.GetWorkspace()!;
         var mdfBookmarks = context.FindHandlerInParents<MdfEditor>()?.MDFBookmarks;
         ImguiHelpers.ToggleButton($"{AppIcons.SI_Bookmark}", ref isShowOnlyBookmarkedParams, Colors.IconActive);
-        ImguiHelpers.Tooltip(UiText.T("Show only bookmarked parameters"));
+        ImguiHelpers.Tooltip("Show only bookmarked parameters");
         using (var _ = ImguiHelpers.Disabled(mdfBookmarks?.GetBookmarks(workspace.Game.name).Count == 0)) {
             ImGui.SameLine();
             if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BookmarkClear, [Colors.IconPrimary, Colors.IconTertiary])) {
                 ImGui.OpenPopup("Confirm Action"u8);
             }
-            ImguiHelpers.Tooltip(UiText.T("Clear material parameter bookmarks"));
+            ImguiHelpers.Tooltip("Clear material parameter bookmarks");
             AppImguiHelpers.ShowActionModal(Lang.General.ConfirmTitle, $"{AppIcons.SI_GenericDelete2}", Colors.IconTertiary,
                 Lang.Material.ConfirmDeleteBookmarks.FormatRef(Lang.TranslateGame(workspace.Game.name)),
                 () => {
@@ -609,7 +609,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
         ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
         ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isMatParamMatchCase, Colors.IconActive);
-        ImguiHelpers.Tooltip(UiText.T("Match Case"));
+        ImguiHelpers.Tooltip("Match Case");
         ImGui.SameLine();
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - ImGui.GetStyle().FramePadding.X);
         AppImguiHelpers.ClearableInputText("##MatParamSearch"u8, UiText.F($"{AppIcons.SI_GenericMagnifyingGlass} Filter parameters"), ref matParamSearchQuery, 64);

@@ -50,7 +50,7 @@ public class ThemeEditor : IWindowHandler
     public void OnIMGUI()
     {
         ImGui.Button($"{AppIcons.SI_GenericInfo}");
-        ImguiHelpers.Tooltip(UiText.T("Change any settings you wish in the below style editor section. You can use the IMGUI Test Window to preview most components.\nOnce you're satisfied with your changes, press \"Save\" and store it in the styles folder."));
+        ImguiHelpers.Tooltip("Change any settings you wish in the below style editor section. You can use the IMGUI Test Window to preview most components.\nOnce you're satisfied with your changes, press \"Save\" and store it in the styles folder.");
         ImGui.SameLine();
         if (ImGui.Button($"{AppIcons.SI_Save}")) {
             var themeData = DefaultThemes.GetCurrentStyleData() + "\n\n" + UI.GetImNodesThemeStyleData();
@@ -61,7 +61,7 @@ public class ThemeEditor : IWindowHandler
                 File.WriteAllText(path, themeData);
             }, initialFile: Path.GetFullPath(Path.Combine(themePath, "custom_theme.theme.txt")), filters: FileFilters.ThemeFile);
         }
-        ImguiHelpers.Tooltip(UiText.T("Save"));
+        ImguiHelpers.Tooltip("Save");
         ImGui.SameLine();
         if (ImGui.Button(UiText.Label("Open IMGUI Test Window"))) {
             EditorWindow.CurrentWindow?.AddUniqueSubwindow(new ImguiTestWindow());
@@ -80,7 +80,7 @@ public class ThemeEditor : IWindowHandler
         } else {
             ImNodes.SetCurrentContext(nodeCtx.Value);
         }
-        ImGui.SeparatorText(UiText.T("Style Editor"));
+        ImGuiT.SeparatorText("Style Editor");
         ImguiHelpers.Tabs(["Built-in", "Nodes", "Contextual"], ref tab, true);
         ImGui.BeginChild("Styles");
         if (tab == 0) {
@@ -142,11 +142,11 @@ public class ThemeEditor : IWindowHandler
         ImNodes.BeginNodeEditor();
 
         ImNodes.BeginNode(0);
-            ImNodes.BeginNodeTitleBar(); ImGui.Text(UiText.T("Node Title 1")); ImNodes.EndNodeTitleBar();
-            ImGui.Text(UiText.T("Sample text inside node"));
+            ImNodes.BeginNodeTitleBar(); ImGuiT.Text("Node Title 1"); ImNodes.EndNodeTitleBar();
+            ImGuiT.Text("Sample text inside node");
             AppImguiHelpers.NodeSeparator(0);
             ImNodes.BeginInputAttribute(0);
-            ImGui.Text(UiText.T("Input 1"));
+            ImGuiT.Text("Input 1");
             ImNodes.EndInputAttribute();
 
             ImNodes.BeginOutputAttribute(0);
@@ -167,13 +167,13 @@ public class ThemeEditor : IWindowHandler
         ImNodes.EndNode();
 
         ImNodes.BeginNode(1);
-            ImNodes.BeginNodeTitleBar(); ImGui.Text(UiText.T("Node Title 2")); ImNodes.EndNodeTitleBar();
-            ImGui.Text(UiText.T("More text"));
-            ImGui.Text(UiText.T("Line 2"));
+            ImNodes.BeginNodeTitleBar(); ImGuiT.Text("Node Title 2"); ImNodes.EndNodeTitleBar();
+            ImGuiT.Text("More text");
+            ImGuiT.Text("Line 2");
             AppImguiHelpers.NodeSeparator(1);
 
             ImNodes.BeginInputAttribute(1);
-            ImGui.Text(UiText.T("Input 2"));
+            ImGuiT.Text("Input 2");
             ImNodes.EndInputAttribute();
 
             ImNodes.BeginOutputAttribute(50);
@@ -211,7 +211,7 @@ public class ThemeEditor : IWindowHandler
                             ShowColorFields(tab.Fields);
                             break;
                         default:
-                            ImGui.Text(UiText.T("Lorem Ipsum"));
+                            ImGuiT.Text("Lorem Ipsum");
                             break;
                     }
                     ImGui.EndTabItem();
@@ -264,7 +264,7 @@ public class ThemeEditor : IWindowHandler
             }
 
             ImGui.Spacing();
-            ImGui.TextColored(col, UiText.F($"Lorem ipsum dolor sit amet | {AppIcons.SI_GenericMagnifyingGlass} | {AppIcons.SI_GenericQmark}"));
+            ImGuiT.TextColoredFormatted(col, $"Lorem ipsum dolor sit amet | {AppIcons.SI_GenericMagnifyingGlass} | {AppIcons.SI_GenericQmark}");
         }
 
         ImGui.EndChild();

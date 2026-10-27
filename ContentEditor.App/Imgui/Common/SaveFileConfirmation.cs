@@ -63,7 +63,7 @@ public class SaveFileConfirmation : IWindowHandler
 
         ImGui.Text($"{AppIcons.SI_Save}");
         ImGui.SameLine();
-        ImGui.Text(UiText.T("Unsaved Changes"));
+        ImGuiT.Text("Unsaved Changes");
         ImGui.Dummy(new Vector2(0, style.ItemSpacing.Y * 2));
         ImGui.Text(text);
         ImGui.Dummy(new Vector2(0, style.ItemSpacing.Y * 2));

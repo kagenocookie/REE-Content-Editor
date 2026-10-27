@@ -109,7 +109,7 @@ public class RetargetDesigner : BaseWindowHandler
 
         if (motFileOptions == null) {
             if (string.IsNullOrEmpty(sampleMotlist)) {
-                ImGui.TextColored(Colors.Note, UiText.T("Please select a valid mot or motlist file"));
+                ImGuiT.TextColored(Colors.Note, "Please select a valid mot or motlist file");
             } else if (meshViewer1 != null && loadedMotlist != sampleMotlist) {
                 loadedMotlist = sampleMotlist;
                 if (meshViewer1.PrimaryAnimator == null) {

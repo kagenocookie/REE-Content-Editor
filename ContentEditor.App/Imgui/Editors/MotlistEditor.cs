@@ -409,7 +409,7 @@ public class MotFileBaseHandler : IObjectUIHandler
             ImguiHelpers.BeginRect();
             context.ShowChildrenUI();
             if (instance == null) {
-                ImGui.TextColored(Colors.Info, UiText.T("Motion not defined"));
+                ImGuiT.TextColored(Colors.Info, "Motion not defined");
             }
             ImguiHelpers.EndRect(4);
             ImGui.Spacing();

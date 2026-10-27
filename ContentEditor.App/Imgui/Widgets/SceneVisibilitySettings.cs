@@ -24,7 +24,7 @@ public class SceneVisibilitySettings : ISceneWidget
         if (ImGui.Button($"{AppIcons.Eye}")) {
             ImGui.OpenPopup(WidgetName);
         }
-        ImguiHelpers.Tooltip(UiText.T("Object Visibility"));
+        ImguiHelpers.Tooltip("Object Visibility");
         if (ImGui.BeginPopup(WidgetName)) {
             ImGui.PushItemFlag(ImGuiItemFlags.AutoClosePopups, false);
             var scene = context.Get<Scene>();

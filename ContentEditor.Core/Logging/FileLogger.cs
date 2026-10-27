@@ -18,7 +18,7 @@ public class FileLogger : ILogger, IDisposable
     public void Debug(params object[] msg)
     {
         if (LoggingLevel <= LogSeverity.Debug) {
-            writer.WriteLine($"[{Timestamp}] DEBUG: {string.Join(" ", msg)}");
+            writer.WriteLine($"[{Timestamp}] DEBUG: {string.Join(" ", msg.Select(ILogger.MessageText))}");
             writer.Flush();
         }
     }
@@ -26,7 +26,7 @@ public class FileLogger : ILogger, IDisposable
     public void Info(object msg)
     {
         if (LoggingLevel <= LogSeverity.Info) {
-            writer.WriteLine($"[{Timestamp}] INFO: {msg}");
+            writer.WriteLine($"[{Timestamp}] INFO: {ILogger.MessageText(msg)}");
             writer.Flush();
         }
     }
@@ -34,7 +34,7 @@ public class FileLogger : ILogger, IDisposable
     public void Warn(object msg)
     {
         if (LoggingLevel <= LogSeverity.Warning) {
-            writer.WriteLine($"[{Timestamp}] WARN: {msg}");
+            writer.WriteLine($"[{Timestamp}] WARN: {ILogger.MessageText(msg)}");
             writer.Flush();
         }
     }
@@ -42,7 +42,7 @@ public class FileLogger : ILogger, IDisposable
     public void Error(object msg)
     {
         if (LoggingLevel <= LogSeverity.Error) {
-            writer.WriteLine($"[{Timestamp}] ERROR: {msg}");
+            writer.WriteLine($"[{Timestamp}] ERROR: {ILogger.MessageText(msg)}");
             writer.Flush();
         }
     }

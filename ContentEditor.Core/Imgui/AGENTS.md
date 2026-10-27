@@ -4,6 +4,7 @@
 | File | Purpose |
 | --- | --- |
 | LangHelpers.cs | Translatable strings, icons, tooltips and formatting helpers |
+| ImGuiT.cs | Localized ImGui text calls; Formatted variants preserve interpolation arguments |
 | UiText.cs | Presentation dictionary, interpolated text, UTF-8 caching and stable ImGui labels |
 | ImguiHelpers.cs | Common controls; translate option labels while preserving original values |
 
@@ -14,3 +15,6 @@
 - UiText.F translates the format only; never translate a user-supplied interpolation argument. Label/FormatLabel preserve a source-derived ImGui identity across languages.
 - Keep UIContext lookup keys, serialized field names, resource paths and enum values unchanged.
 - Localization regression tests live in ContentEditor.App.Tests/LocalizationTests.cs.
+
+- Use ImGuiT for translatable ImGui text; use Formatted variants for interpolated templates. String tooltips, centered text and colored wrapped text translate internally; byte spans remain verbatim.
+- C# sources use LF via .gitattributes and .editorconfig; UiText performs exact dictionary lookup without runtime newline normalization.

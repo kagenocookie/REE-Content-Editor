@@ -41,12 +41,12 @@ public class EntityEditor : IWindowHandler
     public void OnIMGUI()
     {
         if (workspace == null) {
-            ImGui.TextColored(Colors.Warning, UiText.T("Couldn't get game configuration"));
+            ImGuiT.TextColored(Colors.Warning, "Couldn't get game configuration");
             return;
         }
 
         if (data.Context == null) {
-            ImGui.TextColored(Colors.Error, UiText.T("Missing UI container"));
+            ImGuiT.TextColored(Colors.Error, "Missing UI container");
             return;
         }
 
@@ -66,7 +66,7 @@ public class EntityEditor : IWindowHandler
 
         var selected = workspace.ResourceManager.GetActiveEntityInstance(entityType, selectedId);
         if (selected == null) {
-            ImGui.TextColored(Colors.Warning, UiText.T("Selected object could not be found"));
+            ImGuiT.TextColored(Colors.Warning, "Selected object could not be found");
             return;
         }
 
@@ -118,7 +118,7 @@ public class EntityEditor : IWindowHandler
         }
 
         if (child.Changed && workspace.CurrentBundle == null) {
-            ImGui.TextColored(Colors.Warning, UiText.T("No active bundle. Changes can't be saved. Create a bundle please."));
+            ImGuiT.TextColored(Colors.Warning, "No active bundle. Changes can't be saved. Create a bundle please.");
         }
         child.ShowUI();
         if (child.Changed && workspace.CurrentBundle != null) {

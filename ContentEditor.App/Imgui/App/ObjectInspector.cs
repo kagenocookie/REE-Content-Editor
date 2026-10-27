@@ -43,7 +43,7 @@ public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUI
             context.AddChild("Target", Target).AddDefaultHandler();
         }
         if (_target == null) {
-            ImGui.TextColored(Colors.Faded, UiText.T("No object selected"));
+            ImGuiT.TextColored(Colors.Faded, "No object selected");
             return;
         }
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FileDuplicate, [Colors.IconSecondary, ImguiHelpers.GetColor(ImGuiCol.Text), ImguiHelpers.GetColor(ImGuiCol.Text)])) {
@@ -58,9 +58,9 @@ public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUI
         ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
         if (Target is IPathedObject pathed) {
-            ImGui.TextColored(Colors.Faded, UiText.F($"Target: [{Target?.GetType().Name}] {Target}: {pathed.Path}"));
+            ImGuiT.TextColoredFormatted(Colors.Faded, $"Target: [{Target?.GetType().Name}] {Target}: {pathed.Path}");
         } else {
-            ImGui.TextColored(Colors.Faded, UiText.F($"Target: [{Target?.GetType().Name}] {Target}"));
+            ImGuiT.TextColoredFormatted(Colors.Faded, $"Target: [{Target?.GetType().Name}] {Target}");
         }
         ImGui.Spacing();
         context.ShowChildrenUI();

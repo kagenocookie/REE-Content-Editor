@@ -87,15 +87,15 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
             if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_LogCopyAll, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary])) {
                 EditorWindow.CurrentWindow?.CopyToClipboard(string.Join("\n", list.Select(l => l.message)), "Copied!");
             }
-            ImguiHelpers.Tooltip(UiText.T("Copy All"));
+            ImguiHelpers.Tooltip("Copy All");
             ImGui.SameLine();
             ImguiHelpers.ToggleButton($"{AppIcons.SI_LogCompact}", ref compactMultiline, Colors.IconActive);
-            ImguiHelpers.Tooltip(UiText.T("Compact multiline messages"));
+            ImguiHelpers.Tooltip("Compact multiline messages");
             ImGui.SameLine();
             if (ImGui.Button($"{AppIcons.SI_GenericClear}")) {
                 Clear();
             }
-            ImguiHelpers.Tooltip(UiText.T("Clear"));
+            ImguiHelpers.Tooltip("Clear");
             ImGui.SameLine();
             ImguiHelpers.VerticalSeparator();
             ImGui.SameLine();

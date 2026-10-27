@@ -30,7 +30,7 @@ public class SceneController(Scene scene)
 
     public void ShowCameraControls()
     {
-        ImGui.TextUnformatted(UiText.T("Camera Mode"));
+        ImGuiT.TextUnformatted("Camera Mode");
         if (ImGui.RadioButton(UiText.Label("FPS Camera"), CameraMode == SceneCameraMode.FPSCamera)) SetCameraMode(SceneCameraMode.FPSCamera);
         ImGui.SameLine();
         if (ImGui.RadioButton(UiText.Label("Pivot Camera"), CameraMode == SceneCameraMode.PivotCamera)) SetCameraMode(SceneCameraMode.PivotCamera);
@@ -40,7 +40,7 @@ public class SceneController(Scene scene)
         if (ImGui.Button($"{AppIcons.SI_ResetCamera}")) {
             ResetCameraToScene();
         }
-        ImguiHelpers.Tooltip(UiText.T("Reset View Camera"));
+        ImguiHelpers.Tooltip("Reset View Camera");
         if (Scene.ActiveCamera.ProjectionMode == CameraProjection.Perspective) {
             float fov = Scene.ActiveCamera.FieldOfView;
             if (ImGui.SliderAngle(UiText.Label("Field of View"), ref fov, 10.0f, 120.0f)) {
@@ -59,7 +59,7 @@ public class SceneController(Scene scene)
         if (ImGui.SliderFloat(UiText.Label("Move Speed"), ref moveSpeed, 1.0f, 50.0f)) {
             MoveSpeed = moveSpeed;
         }
-        ImguiHelpers.Tooltip(UiText.T("[Hold] Left Shift to move 10x faster."));
+        ImguiHelpers.Tooltip("[Hold] Left Shift to move 10x faster.");
         if (ImGui.SliderFloat(UiText.Label("Rotate Speed"), ref rotateSpeed, 0.1f, 10.0f)) {
             RotateSpeed = rotateSpeed;
         }

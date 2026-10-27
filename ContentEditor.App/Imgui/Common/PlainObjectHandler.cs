@@ -66,7 +66,7 @@ public class LazyPlainObjectHandler(Type type) : IObjectUIHandler
     {
         var instance = context.GetRaw();
         if (instance == null) {
-            ImGui.Text(UiText.F($"{context.label}: NULL"));
+            ImGuiT.TextFormatted($"{context.label}: NULL");
             ImGui.PushID(context.label);
             if (ImguiHelpers.SameLine() && ImGui.Button(UiText.Label("Create"))) {
                 UndoRedo.RecordSet(context, WindowHandlerFactory.Instantiate(context, Type));

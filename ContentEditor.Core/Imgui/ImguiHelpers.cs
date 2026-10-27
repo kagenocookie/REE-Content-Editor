@@ -282,6 +282,7 @@ public static class ImguiHelpers
 
     public static void TextCentered(string text, float fullSize = -1)
     {
+        text = UiText.T(text);
         if (fullSize <= 0) {
             fullSize = ImGui.GetContentRegionAvail().X;
         }
@@ -310,7 +311,7 @@ public static class ImguiHelpers
     public static void TextColoredWrapped(Vector4 color, string text)
     {
         ImGui.PushStyleColor(ImGuiCol.Text, color);
-        ImGui.TextWrapped(text);
+        ImGui.TextWrapped(UiText.T(text));
         ImGui.PopStyleColor();
     }
 
@@ -671,8 +672,9 @@ public static class ImguiHelpers
     /// </summary>
     public static void Tooltip(string text)
     {
-        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip(text);
+        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip(UiText.T(text));
     }
+    public static void Tooltip(TranslatableBase text) => Tooltip(text.UTF8);
     /// <summary>
     /// Draws a tooltip when item is hovered.
     /// </summary>
@@ -687,9 +689,10 @@ public static class ImguiHelpers
     {
         color ??= GetColor(ImGuiCol.Text);
         ImGui.PushStyleColor(ImGuiCol.Text, color.Value);
-        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip(text);
+        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip(UiText.T(text));
         ImGui.PopStyleColor();
     }
+    public static void TooltipColored(TranslatableBase text, Vector4? color = null) => TooltipColored(text.UTF8, color);
     public static void TooltipColored(ReadOnlySpan<byte> text, Vector4? color = null)
     {
         color ??= GetColor(ImGuiCol.Text);

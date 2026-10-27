@@ -7,3 +7,4 @@ global using System.Threading;
 global using System.Threading.Tasks;
 global using Hexa.NET.ImGui;
 global using UiText = ContentEditor.Core.UiText;
+global using ImGuiT = ContentEditor.Core.ImGuiT;

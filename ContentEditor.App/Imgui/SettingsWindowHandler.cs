@@ -208,7 +208,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             case SubGroupID.Games_MonsterHunter: ShowGamesMonsterHunterTab(); break;
             case SubGroupID.Games_Other: ShowGamesOtherTab(); break;
             case SubGroupID.Games_Custom: ShowGamesCustomTab(); break;
-            default: ImGui.Text(UiText.T("Lorem Ipsum")); break;
+            default: ImGuiT.Text("Lorem Ipsum"); break;
         }
     }
 

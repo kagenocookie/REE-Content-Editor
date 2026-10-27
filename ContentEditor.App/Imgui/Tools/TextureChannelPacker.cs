@@ -249,11 +249,11 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
             var outputSize = ImGui.GetWindowSize() - new Vector2(outputPos.X, outputPos.Y) - ImGui.GetStyle().WindowPadding * 2 - outputBottomMargin - new Vector2(64, 0);
             ImGui.Image(outputTexture.AsTextureRef(), outputSize);
 
-            ImGui.SeparatorText(UiText.T("Saving"));
+            ImGuiT.SeparatorText("Saving");
 
             var leftEdge = ImGui.GetCursorPosX();
             var save1 = ImGui.Button(UiText.Label("Save As ..."));
-            ImguiHelpers.Tooltip(UiText.T("Save the current texture to a standard file format"));
+            ImguiHelpers.Tooltip("Save the current texture to a standard file format");
             if (save1) {
                 PlatformUtils.ShowSaveFileDialog((outpath) => MainLoop.Instance.InvokeFromUIThread(() => {
                     if (Path.GetExtension(outpath) == ".dds") {
@@ -269,7 +269,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
             }
             ImGui.SameLine();
             var save2 = ImGui.Button(UiText.Label("Convert ..."));
-            ImguiHelpers.Tooltip(UiText.T("Save the current texture to the selected .tex file format"));
+            ImguiHelpers.Tooltip("Save the current texture to the selected .tex file format");
             if (save2) {
                 var ver = TexFile.GetFileExtension(convertTemplateConfig);
                 var ext = $".tex.{ver}";
@@ -442,7 +442,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
         if (slot.texture != null) {
             click = ImGui.ImageButton(UiText.Label(slot.input.Name), slot.texture.AsTextureRef(), size - ImGui.GetStyle().FramePadding * 2);
             if (ImGui.IsItemHovered() && ImGui.BeginTooltip()) {
-                ImGui.Text(UiText.T("Right click for more options."));
+                ImGuiT.Text("Right click for more options.");
                 ImGui.Image(slot.texture.AsTextureRef(), new Vector2(512, 512));
                 ImGui.EndTooltip();
             }
@@ -463,7 +463,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
             }
         } else {
             click = ImGui.Button(UiText.Label(slot.input.Name), size);
-            ImguiHelpers.Tooltip(UiText.T("Click to browse for a texture or drag & drop it into the box. Right click for more options."));
+            ImguiHelpers.Tooltip("Click to browse for a texture or drag & drop it into the box. Right click for more options.");
             if (ImGui.BeginPopupContextItem()) {
                 if (ImGui.Selectable(UiText.Label("Make White"))) {
                     ReplaceSlotTexture(slot, new SixLabors.ImageSharp.Color(new Rgba32(0xffffffff)));

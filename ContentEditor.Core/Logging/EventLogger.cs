@@ -8,28 +8,28 @@ public class EventLogger : ILogger
     public void Debug(params object[] msg)
     {
         if (LoggingLevel <= 0) {
-            MessageReceived?.Invoke(string.Join(" ", msg), LogSeverity.Debug);
+            MessageReceived?.Invoke(string.Join(" ", msg.Select(ILogger.MessageText)), LogSeverity.Debug);
         }
     }
 
     public void Info(object msg)
     {
         if (LoggingLevel <= LogSeverity.Info) {
-            MessageReceived?.Invoke(msg.ToString()!, LogSeverity.Info);
+            MessageReceived?.Invoke(ILogger.MessageText(msg), LogSeverity.Info);
         }
     }
 
     public void Warn(object msg)
     {
         if (LoggingLevel <= LogSeverity.Warning) {
-            MessageReceived?.Invoke(msg.ToString()!, LogSeverity.Warning);
+            MessageReceived?.Invoke(ILogger.MessageText(msg), LogSeverity.Warning);
         }
     }
 
     public void Error(object msg)
     {
         if (LoggingLevel <= LogSeverity.Error) {
-            MessageReceived?.Invoke(msg.ToString()!, LogSeverity.Error);
+            MessageReceived?.Invoke(ILogger.MessageText(msg), LogSeverity.Error);
         }
     }
 }

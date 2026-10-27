@@ -18,7 +18,7 @@ public sealed class DD2ItemIconHandler(EntityField field) : IObjectUIHandler, IO
         var data = entity?.Get("data") as RSZObjectResource;
         var workspace = context.GetWorkspace();
         if (entity == null || data == null || workspace == null) {
-            ImGui.TextColored(Colors.Error, UiText.F($"{field.label} field requires a valid item entity and workspace"));
+            ImGuiT.TextColoredFormatted(Colors.Error, $"{field.label} field requires a valid item entity and workspace");
             return;
         }
 
@@ -29,7 +29,7 @@ public sealed class DD2ItemIconHandler(EntityField field) : IObjectUIHandler, IO
             var sequenceId = iconNo / 1000;
             var patternId = iconNo % 1000;
             if (sequenceId >= 10 || patternId >= 100) {
-                ImGui.TextColored(Colors.Error, UiText.F($"Invalid IconNo {iconNo} for presumed vanilla item"));
+                ImGuiT.TextColoredFormatted(Colors.Error, $"Invalid IconNo {iconNo} for presumed vanilla item");
                 return;
             }
             var texture = context.GetChildValue<Texture>();
@@ -84,7 +84,7 @@ public sealed class DD2ItemIconHandler(EntityField field) : IObjectUIHandler, IO
             if (texPath != null && (texture == null || texture.Path?.Contains(texPath) != true)) {
                 var texfile = workspace.Env.FindSingleFile(workspace.Env.AppendFileVersion(texPath));
                 if (texfile == null) {
-                    ImGui.TextColored(Colors.Danger, UiText.T("Texture not found"));
+                    ImGuiT.TextColored(Colors.Danger, "Texture not found");
                     return;
                 }
                 context.ClearChildren();

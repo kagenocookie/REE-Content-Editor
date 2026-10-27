@@ -190,7 +190,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                                 }
                                 workspace.CurrentBundle.Save();
                             }
-                            ImguiHelpers.Tooltip(UiText.T("Store in bundle\nFile is located in the bundle folder but is not marked as part of the bundle. This will store the path into the bundle json."));
+                            ImguiHelpers.Tooltip("Store in bundle\nFile is located in the bundle folder but is not marked as part of the bundle. This will store the path into the bundle json.");
                         }
                     } else if (Handle.DiffHandler != null) {
                         ImGui.SameLine();
@@ -199,7 +199,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                             resourceListing.Replace = replace;
                             Handle.Modified = true;
                         }
-                        ImguiHelpers.Tooltip(UiText.T("When true, the file is treated as a full replacement and not partially patched.\nThis is required if you need to remove anything from the base file.\n\nWhen false, the file will be partially patched.\nThis is useful to allow multiple mods to affect a small part of a shared file, but may cause issues in specific cases like removed or reordered items."));
+                        ImguiHelpers.Tooltip("When true, the file is treated as a full replacement and not partially patched.\nThis is required if you need to remove anything from the base file.\n\nWhen false, the file will be partially patched.\nThis is useful to allow multiple mods to affect a small part of a shared file, but may cause issues in specific cases like removed or reordered items.");
                     }
                 }
             }
@@ -332,7 +332,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
     protected bool TryRead(BaseFile file, bool ignorePreviousFailure = false)
     {
         if (failedToReadfile && !ignorePreviousFailure) {
-            ImGui.TextColored(Colors.Error, UiText.T("Failed to read file"));
+            ImGuiT.TextColored(Colors.Error, "Failed to read file");
             return false;
         }
 
