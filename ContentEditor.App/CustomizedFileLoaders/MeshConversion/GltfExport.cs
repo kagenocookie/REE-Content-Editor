@@ -28,7 +28,7 @@ public partial class CommonMeshResource : IResourceFile
         }
         public string Name { get => node.Name; set => node.Name = value; }
 
-        public bool HasChild(string name) => node.Children.Any(c => model.nodes[c].Name == name);
+        public bool HasChild(string name) => node.Children != null && node.Children.Any(c => model.nodes[c].Name == name);
     }
 
     internal sealed class GltfExportContext : MeshInterface<Node, GltfNodeImpl>
