@@ -2307,11 +2307,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
         ImGui.BeginDisabled(!(animator?.AnimationCount > 0));
         if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
             if (animator!.File!.Format.format == KnownFileFormats.Motion) {
-                var fakeMotlist = new MotlistFile(new FileHandler());
-                var ff = animator.File.GetFile<MotFile>();
-                fakeMotlist.MotFiles.Add(ff);
-                var fakeHandle = FileHandle.CreateEmbedded(new MotListFileLoader(), new BaseFileResource<MotlistFile>(fakeMotlist));
-                EditorWindow.CurrentWindow?.AddSubwindow(new MotlistEditor(Workspace, fakeHandle));
+                EditorWindow.CurrentWindow?.AddFileEditor(animator.File);
             } else {
                 EditorWindow.CurrentWindow?.AddSubwindow(new MotlistEditor(Workspace, animator.File!));
             }
@@ -2369,7 +2365,9 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
                 if (!string.IsNullOrEmpty(motFilter) && !name.Contains(motFilter, isMotFilterMatchCase ? StringComparison.InvariantCulture : StringComparison.InvariantCultureIgnoreCase)) continue;
 
                 ImGui.PushID(mot.GetHashCode());
-                if (ImGui.RadioButton(name, animator.ActiveMotion == mot)) {
+                var index = animator.GetMotionFileIndex(mot);
+                var nameStr = index == -1 ? name : $"{animator.GetMotionFileIndex(mot)}. {name}";
+                if (ImGui.RadioButton(nameStr, animator.ActiveMotion == mot)) {
                     ChangeAnim(meshContexts, (MotFile)mot);
                     if (animator == viewer.Animators.FirstOrDefault()) {
                         foreach (var other in viewer.MeshContexts) {
@@ -2384,7 +2382,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
                         }
                     }
                 }
-                if (ImGui.BeginPopupContextItem(name)) {
+                if (ImGui.BeginPopupContextItem(nameStr)) {
                     if (ImGui.Selectable("Copy name")) {
                         EditorWindow.CurrentWindow?.CopyToClipboard(name, $"Copied name: {name}");
                         ImGui.CloseCurrentPopup();

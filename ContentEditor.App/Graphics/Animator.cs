@@ -37,6 +37,7 @@ public partial class Animator(ContentWorkspace Workspace)
     public int AnimationCount => motions.Count;
     public IEnumerable<string> AnimationNames => motions.Select(m => m.Name);
     public IReadOnlyList<MotFileBase> Animations => motions.AsReadOnly();
+    private Dictionary<MotFileBase, int>? motionIndices;
 
     public float CurrentTime => currentTime;
     public float TotalTime => clipDuration;
@@ -140,6 +141,8 @@ public partial class Animator(ContentWorkspace Workspace)
         Update(0);
     }
 
+    public int GetMotionFileIndex(MotFileBase b) => motionIndices?.GetValueOrDefault(b) ?? -1;
+
     public void Unload()
     {
         Stop();
@@ -147,6 +150,7 @@ public partial class Animator(ContentWorkspace Workspace)
             // do we wanna unload here?
             animationFile = null;
         }
+        motionIndices = null;
         motions.Clear();
         ActiveMotion = null;
         // animator doesn't own the mesh, we can just forget about it here
@@ -162,6 +166,8 @@ public partial class Animator(ContentWorkspace Workspace)
                 foreach (var submot in motlist.File.MotFiles) {
                     if (submot is MotFile mmo) {
                         motions.Add(mmo);
+                        motionIndices ??= new();
+                        motionIndices[submot] = motlist.File.MotFiles.IndexOf(submot);
                     }
                 }
                 if (!string.IsNullOrEmpty(motlist.File.Header.motpackFilepath)) {
@@ -174,12 +180,16 @@ public partial class Animator(ContentWorkspace Workspace)
                 foreach (var submot in motpack.File.Motions) {
                     if (submot is MotFile mmo) {
                         motions.Add(mmo);
+                        motionIndices ??= new();
+                        motionIndices[submot] = motpack.File.Motions.IndexOf(submot);
                     }
                 }
             } else if (file.GetFile<MotlistFile>() is MotlistFile customMotlist) {
                 foreach (var submot in customMotlist.MotFiles) {
                     if (submot is MotFile mmo) {
                         motions.Add(mmo);
+                        motionIndices ??= new();
+                        motionIndices[submot] = customMotlist.MotFiles.IndexOf(submot);
                     }
                 }
                 if (!string.IsNullOrEmpty(customMotlist.Header.motpackFilepath)) {
