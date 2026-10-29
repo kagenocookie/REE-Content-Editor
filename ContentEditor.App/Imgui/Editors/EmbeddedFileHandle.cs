@@ -62,11 +62,15 @@ public class EmbeddedFileHandle : IObjectUIHandler
             context.ShowChildrenUI();
             return;
         }
+        var childId = context._label;
+        if (string.IsNullOrEmpty(childId)) {
+            childId = "##embedded";
+        }
         ImguiHelpers.BeginRect();
         ImGui.Spacing();
         ImGui.Indent(4);
         ImGui.SetNextWindowSizeConstraints(new System.Numerics.Vector2(-1, 300), new System.Numerics.Vector2(float.MaxValue));
-        ImGui.BeginChild(context.label);
+        ImGui.BeginChild(childId);
         context.ShowChildrenUI();
         ImGui.EndChild();
         ImGui.Unindent(4);
