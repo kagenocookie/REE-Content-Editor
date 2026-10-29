@@ -49,7 +49,7 @@ public class EmbeddedFileHandle : IObjectUIHandler
         if (context.children.Count == 0) {
             var editor = WindowHandlerFactory.CreateFileResourceHandler(workspace, file);
             if (editor == null) {
-                context.AddChild(context.label, null, ReadOnlyLabelHandler.Instance);
+                context.AddChild(context.label, null, new FixedLabelHandler(Lang.Errors.FileLoad_UnsupportedFormat.FormatRef((int)file.Format.format, path), Colors.Warning));
             } else {
                 WindowData.CreateEmbeddedWindow(context, context.GetWindow()!, editor, context._label);
             }
