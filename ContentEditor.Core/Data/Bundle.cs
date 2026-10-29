@@ -231,9 +231,6 @@ public class Bundle : BaseBundle
     public string ToModConfigIni()
     {
         var desc = Description;
-        if (!string.IsNullOrEmpty(Homepage)) {
-            desc = "Homepage: " + Homepage + "\n\n" + desc;
-        }
 
         desc = (desc ?? "").Trim();
         return $"""
@@ -241,6 +238,7 @@ public class Bundle : BaseBundle
             version={Version}
             description={desc.Replace("\n", "\\n")}
             author={Author}
+            {(string.IsNullOrEmpty(Homepage) ? "" : $"homepage={Homepage}")}
             {(string.IsNullOrEmpty(ImagePath) ? "" : $"screenshot={ImagePath}")}
             """;
     }

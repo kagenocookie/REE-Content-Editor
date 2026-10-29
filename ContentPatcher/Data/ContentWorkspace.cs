@@ -359,6 +359,8 @@ public sealed class ContentWorkspace : IDisposable
                     bundle.Description = bundle.Description == null ? value : bundle.Description + "\n\n" + value;
                 } else if (key == "name") {
                     bundle.Description = "Mod name: " + (bundle.Description == null ? value : value + "\n\n" + bundle.Description);
+                } else if (key == "homepage") {
+                    bundle.Homepage = bundle.Homepage == null ? value : bundle.Homepage + value;
                 } else if (key == "screenshot") {
                     bundle.ImagePath = value;
                 }
