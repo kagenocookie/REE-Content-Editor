@@ -993,7 +993,7 @@ public class FileSearchWindow : IWindowHandler
             var index = searchStartIndex;
             var found = false;
             while (true) {
-                index = (index + 1) % file.InstanceInfoList.Count;
+                index = (index + 1) % file.InstanceList.Count;
                 if (index == searchStartIndex) break;
                 var nextInstance = file.InstanceList[index];
                 if (nextInstance == searchedObject || nextInstance.RSZUserData != null) {
