@@ -32,6 +32,8 @@ public class UndoRedo
         public bool CanRedo => CurrentIndex < Items.Count - 1;
 
         private readonly List<UndoRedoCommand> Items = new();
+        private readonly List<(CallbackType type, Action)> _queuedHooks = new();
+
         private int CurrentIndex = -1;
         private readonly Dictionary<UndoRedoCommand, DisposableCommand> Disposables = new();
 
@@ -75,6 +77,14 @@ public class UndoRedo
                 CurrentIndex++;
             }
             item.Do();
+            // these need to invoke only on the first execution (push) and never on redo/undo
+            if (_queuedHooks.Count > 0) {
+                item.hooks ??= new();
+                foreach (var q in _queuedHooks) {
+                    item.hooks.Add(q);
+                }
+                _queuedHooks.Clear();
+            }
             item.ExecuteHooks(CallbackType.Do);
             // Console.WriteLine($"State {Items.Count}[{CurrentIndex}] ");
         }
@@ -84,6 +94,7 @@ public class UndoRedo
             if (CanUndo) {
                 var item = Items[CurrentIndex--];
                 item.Undo();
+                _queuedHooks.Clear();
                 item.ExecuteHooks(CallbackType.Undo);
             }
             // Console.WriteLine($"State {Items.Count}[{CurrentIndex}] ");
@@ -94,6 +105,7 @@ public class UndoRedo
             if (CanRedo) {
                 var item = Items[++CurrentIndex];
                 item.Do();
+                _queuedHooks.Clear();
                 item.ExecuteHooks(CallbackType.Do);
             }
             // Console.WriteLine($"State {Items.Count}[{CurrentIndex}] ");
@@ -107,6 +119,11 @@ public class UndoRedo
             last.hooks ??= new List<(CallbackType type, Action)>();
             last.hooks.Add((type, action));
             last.ExecuteHooks(CallbackType.Do);
+        }
+
+        public void AddCommandCallbackForCurrentAction(CallbackType type, Action action)
+        {
+            _queuedHooks.Add((type, action));
         }
 
         public void SetCommandDisposable(Action? disposeBefore, Action? disposeAfter)
@@ -294,6 +311,11 @@ public class UndoRedo
     public static void AttachCallbackToLastAction(CallbackType type, Action action, WindowBase? window = null)
     {
         GetState(window).AddCommandCallback(type, action);
+    }
+
+    public static void AttachCallbackToCurrentAction(CallbackType type, Action action, WindowBase? window = null)
+    {
+        GetState(window).AddCommandCallbackForCurrentAction(type, action);
     }
 
     public static void AttachClearChildren(CallbackType type, UIContext context, WindowBase? window = null)

@@ -303,7 +303,7 @@ public class RszListInstanceHandler : ListHandlerTyped<RszInstance>
     }
 }
 
-public class SwappableRszInstanceHandler(string? baseClass = null, bool referenceOnly = false, string instanceLabel = "Instance") : IObjectUIHandler
+public class SwappableRszInstanceHandler(string? baseClass = null, bool referenceOnly = false, string instanceLabel = "Instance", bool allowNull = false, RSZFile[]? rszSourceOverride = null) : IObjectUIHandler
 {
     private static readonly RszInstanceHandler inner = new();
     private string[]? classOptions;
@@ -320,6 +320,15 @@ public class SwappableRszInstanceHandler(string? baseClass = null, bool referenc
             }
             if (instance != null && !referenceOnly) {
                 WindowHandlerFactory.SetupRSZInstanceHandler(context);
+            }
+        }
+
+        if (allowNull && instance != null) {
+            using var pfx = ImguiHelpers.InlinePrefix();
+            if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
+                UndoRedo.RecordSet<RszInstance?>(context, null);
+                UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, () => context.InputClassname = "");
+                instance = null;
             }
         }
 
@@ -351,13 +360,13 @@ public class SwappableRszInstanceHandler(string? baseClass = null, bool referenc
             }
         }
 
-        var rsz = context.FindHandlerInParents<IRSZFileEditor>()?.GetRSZFile();
-        if (rsz != null) {
+        var rszList = rszSourceOverride ?? context.FindHandlerInParents<IRSZFileEditor>()?.GetRSZFiles();
+        if (rszList?.Any() == true) {
             RszInstance[] otherInstanceOptions;
             if (classOptionsSet != null) {
-                otherInstanceOptions = rsz.InstanceList.Where(cls => classOptionsSet.Contains(cls.RszClass.name)).Take(500).ToArray();
+                otherInstanceOptions = rszList.SelectMany(rsz => rsz.InstanceList.Where(cls => classOptionsSet.Contains(cls.RszClass.name))).ToArray();
             } else {
-                otherInstanceOptions = rsz.InstanceList.Take(500).ToArray();
+                otherInstanceOptions = rszList.SelectMany(rsz => rsz.InstanceList).ToArray();
             }
             var labels = otherInstanceOptions.Select((inst, i) => $"{i+1}. {inst.GetString()}").ToArray();
 

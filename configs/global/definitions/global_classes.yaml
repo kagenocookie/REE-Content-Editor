@@ -13,3 +13,8 @@ classes:
   via.Transform:
     fields:
       Scale: { default: { X: 1.0, Y: 1.0, Z: 1.0 } }
+  # TODO yaml class configs inheritance and on_create = randomize
+  # via.behaviortree.Condition:
+  #   fields:
+  #     GUID:
+  #       on_create: randomize_guid

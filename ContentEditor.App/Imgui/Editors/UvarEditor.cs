@@ -1,5 +1,6 @@
 using System.Reflection;
 using ContentEditor.App.Windowing;
+using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.UVar;
@@ -143,5 +144,78 @@ public class UvarExpressionEditor : LazyPlainObjectHandler
             EditorWindow.CurrentWindow?.AddSubwindow(new UvarExpressionGraph(context.FindValueInParentValues<UVarFile>()!, context.Get<UvarExpression>(), context, variable?.Name ?? "Unknown Expression Graph"));
         }
         return show;
+    }
+}
+
+[ObjectImguiHandler(typeof(NodeParameter), Stateless = true)]
+public class NodeParameterEditor : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<NodeParameter?>();
+        if (instance == null) {
+            ImGui.Text($"{context.label}: NULL");
+            ImGui.PushID(context.label);
+            if (ImguiHelpers.SameLine() && ImGui.Button("Create")) {
+                UndoRedo.RecordSet(context, WindowHandlerFactory.Instantiate<NodeParameter>(context));
+                context.AddDefaultHandler();
+            }
+            ImGui.PopID();
+            return;
+        }
+
+        var show = ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString());
+        if (show) {
+            if (context.children.Count == 0) {
+                SetupFields(context, instance);
+            }
+            ImGui.PushID(context.label);
+            for (int i = 0; i < context.children.Count; i++) {
+                UIContext? child = context.children[i];
+                child.ShowUI();
+            }
+            ImGui.PopID();
+            ImGui.TreePop();
+        }
+    }
+
+    private static void SetupFields(UIContext context, NodeParameter instance)
+    {
+        context.AddChild<NodeParameter, uint>(nameof(NodeParameter.nameHash).PrettyPrint(), instance, getter: x => x!.nameHash, setter: (x, v) => x.nameHash = v).AddDefaultHandler();
+        context.AddChildContextSetter<NodeParameter, NodeParameter.NodeValueType>(nameof(NodeParameter.type).PrettyPrint(), instance, getter: x => x!.type, setter: (c, x, v) => {
+            if (x.type != v) {
+                var prevValue = x.value;
+                x.ChangeType(v);
+                if (EditorWindow.CurrentWindow != null) {
+                    UndoRedo.AttachCallbackToCurrentAction(UndoRedo.CallbackType.Undo, () => {
+                        x.value = prevValue;
+                    });
+                }
+                c.parent?.ClearChildren();
+            }
+        }).AddDefaultHandler();
+        context.AddChild<NodeParameter, object?>(nameof(NodeParameter.value).PrettyPrint(), instance, getter: x => x!.value, setter: (x, v) => x.value = v).AddDefaultHandler();
+
+        if (instance.type == NodeParameter.NodeValueType.Guid) {
+            var bhvtCtx = context.FindParentContextByHandler<BhvtFileEditor>();
+            if (bhvtCtx == null) {
+                context.AddChild<NodeParameter, RszInstance?>(nameof(NodeParameter.ReferenceObject).PrettyPrint(), instance, getter: x => x!.ReferenceObject, setter: (x, v) => x.ReferenceObject = v).AddDefaultHandler();
+                return;
+            }
+            var bhvt = bhvtCtx.Get<BhvtFile>();
+
+            RSZFile[] instanceSources = [
+                bhvt.ExpressionTreeConditionsRsz,
+                bhvt.StaticExpressionTreeConditionsRsz
+            ];
+
+            var refObjHandler = new SwappableRszInstanceHandler("via.behaviortree.Condition", rszSourceOverride: instanceSources, allowNull: true);
+            context.AddChild<NodeParameter, RszInstance>(nameof(NodeParameter.ReferenceObject).PrettyPrint(), instance, refObjHandler, x => x?.ReferenceObject, (x, v) => {
+                x.ReferenceObject = v;
+                if (x.type == NodeParameter.NodeValueType.Guid && v?.Values.Length >= 2 && v.Values[1] is Guid guid) {
+                    x.value = guid;
+                }
+            });
+        }
     }
 }
