@@ -57,6 +57,43 @@ public class MessageManager(Workspace env)
         return null;
     }
 
+    /// <summary>
+    /// Attempts to fully resolve any dynamic reference tags inside a translation string and removes all markup tags.
+    /// </summary>
+    public string ResolveMessageText(string text)
+    {
+        if (!loaded) LoadLanguage(language);
+
+        var start = text.IndexOf('<');
+        while (start != -1) {
+            var end = text.IndexOf('>', start);
+            if (end == -1) {
+                return text;
+            }
+
+            var space = text.IndexOf(' ', start);
+            var span = text.AsSpan();
+            if (space == -1 || space > end) {
+                // single <CMD> strings or </COLOR> closing tags
+                text = string.Concat(span[0..start], span[(end + 1)..]);
+            } else {
+                var cmd = span[(start + 1)..space];
+                if (cmd.SequenceEqual("REF")) {
+                    // example: <REF item_name_1234>
+                    var refstr = span[(space + 1)..end].Trim().ToString();
+                    var sub = GetText(refstr);
+                    text = string.Concat(span[0..start], sub, span[(end + 1)..]);
+                } else {
+                    // also get rid of anything else (<COLOR FF0000>, <EQABI MAS_SIN>, ...)
+                    text = string.Concat(span[0..start], span[(end + 1)..]);
+                }
+            }
+            start = text.IndexOf('<', start);
+        }
+
+        return text;
+    }
+
     public void LoadLanguage(Language language)
     {
         if (loaded && this.language == language) {

@@ -85,7 +85,14 @@ public static class FormatterSettings
     private static SmartFormatter ApplyWorkspaceFormatters(SmartFormatter formatter, ContentWorkspace workspace)
     {
         formatter.AddExtensions(new RszFieldStringFormatterSource(workspace));
-        formatter.AddExtensions(new TranslateGuidFormatter(workspace.Messages), new EnumLabelFormatter(workspace.Env), new EnumNameFormatter(workspace.Env), new TranslateFormattedString(workspace.Messages), new EntityLabelFormatter(workspace));
+        formatter.AddExtensions(
+            new TranslateGuidFormatter(workspace.Messages),
+            new EnumLabelFormatter(workspace.Env),
+            new EnumNameFormatter(workspace.Env),
+            new TranslateFormattedString(workspace.Messages),
+            new EntityLabelFormatter(workspace),
+            new FullyResolveTranslationFormatter(workspace.Messages)
+        );
         formatter.AddExtensions(new FindEntityFormatter(workspace));
         return formatter;
     }
@@ -355,6 +362,28 @@ public class TranslateFormattedString(MessageManager msg) : IFormatter
             formattingInfo.Write(text);
         }
 
+        return true;
+    }
+}
+
+public class FullyResolveTranslationFormatter(MessageManager msg) : IFormatter
+{
+    public string Name { get; set; } = "translation_resolve";
+    public bool CanAutoDetect { get; set; } = false;
+
+    public bool TryEvaluateFormat(IFormattingInfo formattingInfo)
+    {
+        string str;
+        if (formattingInfo.CurrentValue is MessageData md) {
+            str = md.ToString();
+        } else if (formattingInfo.CurrentValue is string strr) {
+            str = strr;
+        } else {
+            return true;
+        }
+
+        str = msg.ResolveMessageText(str);
+        formattingInfo.Write(str);
         return true;
     }
 }

@@ -6,7 +6,7 @@ entities:
       primary: true # denotes that the entity label should override this enum's corresponding display labels (entity id == enum value)
     # SmartFormat library is used for all string interpolation functionality
     # can fetch entity fields as well as nested object fields with "."
-    to_string: "Item {id}: {name}"
+    to_string: "Item {id}: {name:translation_resolve()}"
     allow_create_empty: false
     allow_templates: true
     zero_entity:
