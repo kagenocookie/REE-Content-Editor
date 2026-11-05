@@ -58,7 +58,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
             if (paste) {
                 if (MotionDataResource.TryDeserialize(clipData, out var motData, out var error)) {
                     // TODO motpack support
-                    var editor = context.GetEditor<MotlistEditor>() ?? context.GetEditor<MotFileEditor>() ?? context.GetEditor<MotpackEditor>();
+                    var editor = (FileEditor?)context.GetEditor<MotlistEditor>() ?? (FileEditor?)context.GetEditor<MotFileEditor>() ?? context.GetEditor<MotpackEditor>();
                     var file = editor?.Handle;
                     if (Logger.ErrorIf(file == null, "Could not find parent motion file")) return true;
 
@@ -98,7 +98,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
         }
 
         if (ImGui.Selectable("Retargeting ...")) {
-            var editor = context.GetEditor<MotlistEditor>() ?? context.GetEditor<MotFileEditor>() ?? context.GetEditor<MotpackEditor>();
+            var editor = (FileEditor?)context.GetEditor<MotlistEditor>() ?? (FileEditor?)context.GetEditor<MotFileEditor>() ?? context.GetEditor<MotpackEditor>();
             var file = editor?.Handle;
             if (Logger.ErrorIf(file == null, "Could not find parent motion file")) return true;
             var mot = context.Get<MotFileBase>();

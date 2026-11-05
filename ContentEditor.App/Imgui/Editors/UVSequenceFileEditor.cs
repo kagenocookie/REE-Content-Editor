@@ -656,11 +656,23 @@ public class TextureBlockUIHandle : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
+        var t = context.Get<TextureBlock>();
         if (context.children.Count == 0) {
-            var t = context.Get<TextureBlock>();
             context.AddChild("Texture Path", t, new ResourcePathPicker(context.GetWorkspace(), KnownFileFormats.Texture), x => x!.path, (x, v) => x.path = v ?? "");
         }
 
         context.ShowChildrenUI();
+        var editor = context.GetEditor<UVSequenceFileEditor>();
+        if (editor != null) {
+            var uvs = editor.File;
+            var index = uvs.Textures.IndexOf(t);
+            var sequences = uvs.Sequences;
+            var isInUse = sequences.Any(s => s.patterns.Any(p => p.textureIndex == index));
+            if (!isInUse) {
+                ImGui.Indent();
+                ImGui.TextColored(Colors.Warning, "This texture is currently not used by any pattern. It will be deleted when you save the file."u8);
+                ImGui.Unindent();
+            }
+        }
     }
 }

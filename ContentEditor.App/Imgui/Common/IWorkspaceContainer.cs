@@ -18,9 +18,16 @@ public static class UIContextExtensions
 
     public static FileEditor? GetEditor(this UIContext context) => GetEditor<FileEditor>(context);
 
-    public static FileEditor? GetEditor<T>(this UIContext context) where T : FileEditor
+    public static T? GetEditor<T>(this UIContext context) where T : FileEditor
     {
-        return context.FindHandlerInParents<T>();
+        if (context.TryCast<WindowData>(out var wnd) && wnd.Handler is T tt) {
+            return tt;
+        }
+        if (context.uiHandler is T tt2) {
+            return tt2;
+        }
+
+        return context.parent?.GetEditor<T>();
     }
 
     public static IRectWindow? GetWindow(this UIContext context)
