@@ -29,12 +29,13 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
 
     protected override void OnFileSaved()
     {
-        base.OnFileSaved();
         Reset();
+        base.OnFileSaved();
     }
 
     protected override void Reset()
     {
+        base.Reset();
         selectedPattern = null;
     }
 
