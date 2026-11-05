@@ -21,7 +21,8 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
 
     private readonly Dictionary<string, Texture?> referencedTextures = new();
 
-    internal bool _allowAutoTrimTextures = true;
+    private static bool _defaultTrimTextures = true;
+    internal bool _allowAutoTrimTextures = _defaultTrimTextures;
 
     public UVSequenceFileEditor(ContentWorkspace env, FileHandle file) : base(file)
     {
@@ -240,7 +241,9 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         }
 
         if (ImGui.BeginTabItem("Textures"u8)) {
-            ImGui.Checkbox("Trim unused textures on save"u8, ref _allowAutoTrimTextures);
+            if (ImGui.Checkbox("Trim unused textures on save"u8, ref _allowAutoTrimTextures)) {
+                _defaultTrimTextures = _allowAutoTrimTextures;
+            }
             ImGui.SetNextItemOpen(true, ImGuiCond.Always);
             var texCtx = context.GetChildByValue<List<TextureBlock>>();
             if (texCtx == null) {

@@ -238,6 +238,10 @@ public class UIContext
                 if (!handler.HandleEvent(this, eventData)) {
                     return;
                 }
+            } else if (uiHandler == null && TryCast<WindowData>(out var wnd)) {
+                if (wnd.Handler is IUIContextEventHandler whandler && !whandler.HandleEvent(this, eventData)) {
+                    return;
+                }
             }
             parent.SetChangedInParentsImpl(eventData);
         }
