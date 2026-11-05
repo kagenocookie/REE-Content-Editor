@@ -163,6 +163,7 @@ public static class ImguiHelpers
         for (int i = 0; i < count; ++i) {
             var text = string.IsNullOrEmpty(labels[i]) ? "<empty>##" + i : labels[i];
             if (!string.IsNullOrEmpty(filter) && !text.Contains(filter, StringComparison.InvariantCultureIgnoreCase)) continue;
+            ImGui.PushID(i);
 
             var isSelected = selected != null && selected.Equals(values[i]);
             if (ImGui.Selectable(text, isSelected)) {
@@ -173,6 +174,7 @@ public static class ImguiHelpers
             if (isSelected && ImGui.IsWindowAppearing()) {
                 ImGui.SetScrollHereY();
             }
+            ImGui.PopID();
         }
 
         ImGui.EndChild();

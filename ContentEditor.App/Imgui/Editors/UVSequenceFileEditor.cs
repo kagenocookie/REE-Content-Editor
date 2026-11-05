@@ -24,6 +24,8 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
     private static bool _defaultTrimTextures = true;
     internal bool _allowAutoTrimTextures = _defaultTrimTextures;
 
+    private string texFilter = "";
+
     public UVSequenceFileEditor(ContentWorkspace env, FileHandle file) : base(file)
     {
         Workspace = env;
@@ -562,7 +564,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         var texObject = File.Textures.ElementAtOrDefault(pattern.textureIndex);
         var texPath = texObject?.path ?? "";
         var texPaths = File.Textures.Select(t => t.path).ToArray();
-        if (ImguiHelpers.ValueCombo("Texture", texPaths, texPaths, ref texPath)) {
+        if (ImguiHelpers.FilterableCombo("Texture"u8, texPaths, texPaths, ref texPath, ref texFilter)) {
             var newIndex = Math.Max(0, File.Textures.FindIndex(t => t.path == texPath));
             UndoRedo.RecordCallbackSetter(context, pattern, pattern.textureIndex, newIndex, (p, v) => p.textureIndex = v);
             Handle.Modified = true;
