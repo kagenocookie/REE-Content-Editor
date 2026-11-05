@@ -32,7 +32,6 @@ public class UvsFileLoader : IFileLoader, IFileHandleContentProvider<UvsFile>
     public bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath)
     {
         var file = handle.GetFile<UvsFile>();
-        file.TrimOrphanTextures();
         return file.SaveOrWriteTo(handle, outputPath);
     }
 }

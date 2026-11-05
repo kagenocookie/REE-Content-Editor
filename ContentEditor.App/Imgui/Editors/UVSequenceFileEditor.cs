@@ -21,6 +21,8 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
 
     private readonly Dictionary<string, Texture?> referencedTextures = new();
 
+    internal bool _allowAutoTrimTextures = true;
+
     public UVSequenceFileEditor(ContentWorkspace env, FileHandle file) : base(file)
     {
         Workspace = env;
@@ -29,6 +31,9 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
 
     protected override void OnFileSaved()
     {
+        if (_allowAutoTrimTextures) {
+            File.TrimOrphanTextures();
+        }
         Reset();
         base.OnFileSaved();
     }
@@ -195,7 +200,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
             if (selectedPattern != null) {
                 ShowPreview(sequence);
                 ImGui.SameLine();
-                ShowSelectedPattern();
+                ShowSelectedPattern(selectedPattern, sequence);
             }
             ImGui.EndChild();
         }
@@ -227,7 +232,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
             int patId = 0;
             foreach (var pattern in sequence.patterns) {
                 if (ImguiHelpers.TreeNodeSuffix(Lang.UVS.PatternLabel.Format(patId++), $"[{pattern}]")) {
-                    ShowPatternEdit(pattern);
+                    ShowPatternEdit(pattern, sequence);
                     ImGui.TreePop();
                 }
             }
@@ -235,6 +240,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         }
 
         if (ImGui.BeginTabItem("Textures"u8)) {
+            ImGui.Checkbox("Trim unused textures on save"u8, ref _allowAutoTrimTextures);
             ImGui.SetNextItemOpen(true, ImGuiCond.Always);
             var texCtx = context.GetChildByValue<List<TextureBlock>>();
             if (texCtx == null) {
@@ -513,12 +519,12 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         ImGui.EndChild();
     }
 
-    private void ShowSelectedPattern()
+    private void ShowSelectedPattern(UvsPattern pattern, SequenceBlock sequence)
     {
         ImGui.BeginChild("PatternSelect");
         ImGui.SeparatorText("Selected Pattern");
-        ImGui.Text(selectedPattern?.ToString());
-        ShowPatternEdit(selectedPattern!);
+        ImGui.Text(pattern.ToString());
+        ShowPatternEdit(pattern, sequence);
         ImGui.EndChild();
     }
 
@@ -548,7 +554,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         }
     }
 
-    private void ShowPatternEdit(UvsPattern pattern)
+    private void ShowPatternEdit(UvsPattern pattern, SequenceBlock sequence)
     {
         var texObject = File.Textures.ElementAtOrDefault(pattern.textureIndex);
         var texPath = texObject?.path ?? "";
@@ -561,6 +567,22 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         if (texObject == null || texPath == null) {
             ImGui.TextColored(Colors.Error, "Texture is missing");
             return;
+        }
+        var sequenceHasOtherTextures = sequence.patterns.Any(p => p.textureIndex != pattern.textureIndex);
+        if (sequenceHasOtherTextures) {
+            if (ImGui.Button("Copy texture to other patterns in sequence")) {
+                var prev = sequence.patterns.ToDictionary(kv => kv, kv => kv.textureIndex);
+                var newIndex = pattern.textureIndex;
+                UndoRedo.RecordCallback(context, () => {
+                    foreach (var (p, i) in prev) {
+                        p.textureIndex = newIndex;
+                    }
+                }, () => {
+                    foreach (var (p, i) in prev) {
+                        p.textureIndex = i;
+                    }
+                });
+            }
         }
 
         ImGui.Spacing();
@@ -663,7 +685,7 @@ public class TextureBlockUIHandle : IObjectUIHandler
 
         context.ShowChildrenUI();
         var editor = context.GetEditor<UVSequenceFileEditor>();
-        if (editor != null) {
+        if (editor != null && editor._allowAutoTrimTextures) {
             var uvs = editor.File;
             var index = uvs.Textures.IndexOf(t);
             var sequences = uvs.Sequences;
