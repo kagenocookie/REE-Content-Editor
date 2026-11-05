@@ -200,11 +200,12 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         }
         ImGui.PopID();
     }
+
     private void ShowTabs(SequenceBlock sequence)
     {
         var seqCtx = context.GetChildByTarget(sequence) ?? context.AddChild($"Sequence {selectedSequenceIndex}", sequence);
 
-        ImGui.BeginTabBar($"Sequence##{selectedSequenceIndex}");
+        ImGui.BeginTabBar($"Sequence");
         if (ImGui.BeginTabItem("Overview")) {
             ShowOverview(sequence);
             ImGui.SeparatorText("Grid Arrangement");
@@ -231,6 +232,18 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
             }
             ImGui.EndTabItem();
         }
+
+        if (ImGui.BeginTabItem("Textures"u8)) {
+            ImGui.SetNextItemOpen(true, ImGuiCond.Always);
+            var texCtx = context.GetChildByValue<List<TextureBlock>>();
+            if (texCtx == null) {
+                texCtx = context.AddChild("Textures", File.Textures);
+                texCtx.AddDefaultHandler();
+            }
+            texCtx.ShowUI();
+
+            ImGui.EndTabItem();
+        }
         ImGui.EndTabBar();
     }
 
@@ -238,7 +251,8 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
     {
         ImGui.Spacing();
         foreach (var texId in sequence.patterns.Select(p => p.textureIndex).Distinct()) {
-            var texPath = File.Textures[texId].path;
+            ImGui.PushID(texId);
+            var texPath = File.Textures.ElementAtOrDefault(texId)?.path;
             var tex = GetOrLoadTexture(texPath);
             if (tex == null) {
                 ImGui.TextColored(Colors.Warning, "Could not find texture " + texPath);
@@ -253,8 +267,8 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
                 var afterImagePos = ImGui.GetCursorPos();
 
                 var drawlist = ImGui.GetWindowDrawList();
-                var pi = 0;
-                foreach (var pattern in sequence.patterns) {
+                for (int pi = 0; pi < sequence.patterns.Count; pi++) {
+                    var pattern = sequence.patterns[pi];
                     if (pattern.textureIndex != texId) continue;
 
                     var (uv0, uv1) = pattern.GetBoundingPoints();
@@ -267,7 +281,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
                     var patSize = new System.Numerics.Vector2(tex.Width * scale * (uv1.X - uv0.X), tex.Height * scale * (uv1.Y - uv0.Y));
                     using var btncol = ImguiHelpers.OverrideStyleCol(ImGuiCol.Button, 0);
                     using var hovcol = ImguiHelpers.OverrideStyleCol(ImGuiCol.ButtonHovered, ImguiHelpers.GetColor(ImGuiCol.ButtonHovered) with { W = 0.25f });
-                    if (ImGui.Button($"##{pi++}", patSize)) {
+                    if (ImGui.Button($"##{pi}", patSize)) {
                         selectedPattern = pattern;
                     }
                     ImGui.EndGroup();
@@ -276,6 +290,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
                 ImGui.SetCursorPos(afterImagePos);
                 ImGui.Dummy(Vector2.Zero);
             }
+            ImGui.PopID();
         }
     }
 
@@ -293,7 +308,6 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
 
     private void ShowToolbar(SequenceBlock sequence, ContentWorkspace workspace)
     {
-        var texPath = File.Textures[sequence.patterns[0].textureIndex].path;
         ImGui.SameLine();
         ImGui.BeginChild("Sequence Editor", new Vector2(ImGui.GetContentRegionAvail().X, 0), ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.Borders);
         var seqlist = Enumerable.Range(0, File.Sequences.Count).Select(n => $"  {n}  ").ToArray();
@@ -335,7 +349,9 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         ImGui.SameLine();
         ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
-        if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}") && texPath != null) {
+
+        var texPath = sequence.patterns.Count == 0 ? null : File.Textures.ElementAtOrDefault(sequence.patterns[0].textureIndex)?.path;
+        if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}") && !string.IsNullOrEmpty(texPath)) {
             if (workspace.ResourceManager.TryResolveGameFile(texPath, out var texHandle)) {
                 EditorWindow.CurrentWindow?.AddSubwindow(new TextureViewer(workspace, texHandle));
             }
@@ -405,7 +421,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         for (int i = 0; i < sequence.patterns.Count; i++) {
             var pattern = sequence.patterns[i];
             float patternW = 30;
-            var texPath = File.Textures[sequence.patterns[0].textureIndex].path;
+            var texPath = File.Textures.ElementAtOrDefault(pattern.textureIndex)?.path;
             var tex = GetOrLoadTexture(texPath);
 
             ImGui.PushID(i);
@@ -422,6 +438,8 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
             if (tex != null) {
                 var (uv0, uv1) = pattern.GetBoundingPoints();
                 ImGui.Image(tex.AsTextureRef(), size, uv0, uv1);
+            } else {
+                drawList.AddRectFilled(cursor, cursor + size, ImGui.ColorConvertFloat4ToU32(Colors.Error));
             }
 
             ImGui.SetCursorScreenPos(cursor);
@@ -484,13 +502,12 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         ImGui.BeginChild("PatternPreview");
         ImGui.SeparatorText("Preview");
         if (sequence.patterns.Count > 0) {
-            var texPath = File.Textures[sequence.patterns[0].textureIndex].path;
+            var pattern = sequence.patterns[animationFrame];
+            var texPath = File.Textures.ElementAtOrDefault(pattern.textureIndex)?.path;
             var tex = GetOrLoadTexture(texPath);
-            if (tex != null) {
-                var (uv0, uv1) = sequence.patterns[animationFrame].GetBoundingPoints();
-                var size = new Vector2(tex.Width, tex.Height) * (uv1 - uv0);
-                AnimationSequence(sequence, size, ref animationFrame, ref animationTime, ref animationColor, shouldAnimate, playbackFps);
-            }
+            var (uv0, uv1) = pattern.GetBoundingPoints();
+            var size = tex != null ? new Vector2(tex.Width, tex.Height) * (uv1 - uv0) : new Vector2();
+            AnimationSequence(sequence, size, ref animationFrame, ref animationTime, ref animationColor, shouldAnimate, playbackFps);
         }
         ImGui.EndChild();
     }
@@ -520,43 +537,31 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         }
 
         var pattern = sequence.patterns[frame];
-        var texPath = File.Textures[pattern.textureIndex].path;
+        var texPath = File.Textures.ElementAtOrDefault(pattern.textureIndex)?.path;
+        if (string.IsNullOrEmpty(texPath)) return;
+
         var tex = GetOrLoadTexture(texPath);
         if (tex != null) {
             var (uv0, uv1) = pattern.GetBoundingPoints();
-            // var size = new Vector2(tex.Width, tex.Height) * (uv1 - uv0);
             ImGui.Image(tex.AsTextureRef(), size, uv0, uv1);
         }
     }
 
     private void ShowPatternEdit(UvsPattern pattern)
     {
-        var texObject = File.Textures[pattern.textureIndex];
-        var texPath = texObject.path;
-        var curseq = selectedSequence;
-        var resourcePicker = context.GetChild<ResourcePathPicker>();
-        if (resourcePicker == null || resourcePicker.target != texObject) {
-            context.ClearChildren();
-            resourcePicker = context.AddChild<TextureBlock, string>(
-                "Texture",
-                texObject,
-                new ResourcePathPicker(context.GetWorkspace(), KnownFileFormats.Texture),
-                (target) => target?.path,
-                (target, newval) => {
-                    UndoRedo.RecordCallbackSetter(context, target, target.path, newval, (p, newval) => {
-                        if (File.Sequences.Any(s => s != curseq && s.patterns.Any(p => p.textureIndex == pattern.textureIndex))) {
-                            // ensure we make a new texture block in case the same texture is already used by other sequences
-                            pattern.textureIndex = File.Textures.Count;
-                            File.Textures.Add(new TextureBlock() {
-                                path = newval ?? string.Empty,
-                            });
-                        }
-                        p.path = newval ?? string.Empty;
-                    }, $"Pattern {pattern.GetHashCode()} Texture");
-                }
-            );
+        var texObject = File.Textures.ElementAtOrDefault(pattern.textureIndex);
+        var texPath = texObject?.path ?? "";
+        var texPaths = File.Textures.Select(t => t.path).ToArray();
+        if (ImguiHelpers.ValueCombo("Texture", texPaths, texPaths, ref texPath)) {
+            var newIndex = Math.Max(0, File.Textures.FindIndex(t => t.path == texPath));
+            UndoRedo.RecordCallbackSetter(context, pattern, pattern.textureIndex, newIndex, (p, v) => p.textureIndex = v);
+            Handle.Modified = true;
         }
-        resourcePicker.ShowUI();
+        if (texObject == null || texPath == null) {
+            ImGui.TextColored(Colors.Error, "Texture is missing");
+            return;
+        }
+
         ImGui.Spacing();
 
         var tex = GetOrLoadTexture(texPath);
@@ -603,8 +608,10 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         }
     }
 
-    private Texture? GetOrLoadTexture(string path)
+    private Texture? GetOrLoadTexture(string? path)
     {
+        if (string.IsNullOrEmpty(path)) return null;
+
         if (referencedTextures.TryGetValue(path, out var tex)) {
             return tex;
         }
@@ -640,5 +647,19 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         }
         referencedTextures.Clear();
         base.Dispose(disposing);
+    }
+}
+
+[ObjectImguiHandler(typeof(TextureBlock))]
+public class TextureBlockUIHandle : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        if (context.children.Count == 0) {
+            var t = context.Get<TextureBlock>();
+            context.AddChild("Texture Path", t, new ResourcePathPicker(context.GetWorkspace(), KnownFileFormats.Texture), x => x!.path, (x, v) => x.path = v ?? "");
+        }
+
+        context.ShowChildrenUI();
     }
 }
