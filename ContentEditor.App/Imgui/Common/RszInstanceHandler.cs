@@ -895,14 +895,12 @@ public class UserDataReferenceHandler : IObjectUIHandler
         }
 
         if (string.IsNullOrEmpty(context.CachedString)) {
-            if (instance.RSZUserData is RSZUserDataInfo info) {
-                info.ReadClassName(ws.Env.RszParser);
-                context.CachedString = $"{info.ClassName} [{info.Path}]";
-            } else if (instance.RSZUserData is RSZUserDataInfo_TDB_LE_67 infoEmbedded) {
-                infoEmbedded.ReadClassName(ws.Env.RszParser);
-                context.CachedString = $"{infoEmbedded.ClassName} [Hash: {infoEmbedded.jsonPathHash}]";
-            } else {
+            if (instance.RSZUserData == null) {
                 context.CachedString = "NULL";
+            } else {
+                var cls = ws.Env.RszParser.GetRSZClassName(instance.RSZUserData.TypeId);
+                var path = Path.GetFileName(instance.RSZUserData.Path) ?? "Unknown path";
+                context.CachedString = $"{cls} [{path}]";
             }
         }
 
