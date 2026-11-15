@@ -189,6 +189,9 @@ public class Patcher : IDisposable
             Directory.CreateDirectory(Path.GetDirectoryName(fileOutput)!);
             if (!Parameters.ExportAsPak && !file.Modified && Parameters.AllowSymlinks && !_symlinkFailed && File.Exists(file.Filepath)) {
                 try {
+                    if (File.Exists(fileOutput)) {
+                        File.Delete(fileOutput);
+                    }
                     File.CreateSymbolicLink(fileOutput, file.Filepath);
                 } catch (Exception e) {
                     Logger.Warn($"Symblic link creation failed. Failling back to plain copy. Error: " + e.Message);
