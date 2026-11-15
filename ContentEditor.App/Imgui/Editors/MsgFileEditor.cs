@@ -360,13 +360,13 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
                 var entry = item.entry;
                 ImGui.TableNextColumn();
                 var name = entry.Header.entryName;
-                ImGui.Text(name);
+                ImGui.TextUnformatted(name);
                 ImGui.TableNextColumn();
                 var str = entry.Strings[langIndex];
                 {
                     var nl = str.IndexOf('\n');
                     if (nl != -1) str = str.Substring(0, nl).TrimEnd();
-                    ImGui.Text(str);
+                    ImGui.TextUnformatted(str);
                 }
                 if (scrollToSelected && item.index == selectedRow) {
                     ImguiHelpers.ScrollItemIntoView();
