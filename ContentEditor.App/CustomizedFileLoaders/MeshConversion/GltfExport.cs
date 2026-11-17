@@ -233,6 +233,8 @@ public partial class CommonMeshResource : IResourceFile
 
     }
 
+    private static readonly int[] emptyFrameIndexes = [0];
+
     private static void AddMotToScene(GltfExportContext context, MotFile mot)
     {
         var anim = new Animation() {
@@ -240,26 +242,28 @@ public partial class CommonMeshResource : IResourceFile
         };
 
         // do we care to include hash-only mot bones?
+        // they're not actually doing anything ingame so we probably don't need them
 
         var channels = new List<AnimationChannel>();
         var samplers = new List<AnimationSampler>();
-        foreach (var clip in mot.BoneClips) {
-            if (clip.ClipHeader.boneName == null) {
-                continue;
+        foreach (var bone in mot.Bones) {
+            var clip = mot.BoneClips.FirstOrDefault(bc => bc.ClipHeader.boneHash == bone.boneHash);
+            if (clip?.ClipHeader.boneName == null) {
+                clip = null;
             }
 
-            var targetName = clip.ClipHeader.boneName;
+            var targetName = bone.boneName;
             var node = context.FindNodeIndex(targetName);
             if (node == -1) continue;
 
-            void AddSampler<TData>(AnimationChannelTarget.PathEnum trackType, Accessor.TypeEnum valueType, ReeLib.Mot.Track track, TData[] frameValues) where TData : unmanaged
+            void AddSampler<TData>(AnimationChannelTarget.PathEnum trackType, Accessor.TypeEnum valueType, int[]? frameIndexes, TData[] frameValues) where TData : unmanaged
             {
-                var input = track.frameIndexes?.Select(i => i / (float)mot.Header.FrameRate).ToArray() ?? [];
-                if (track.frameIndexes == null) {
+                var input = frameIndexes?.Select(i => i / (float)mot.Header.FrameRate).ToArray() ?? [];
+                if (frameIndexes == null) {
                     if (frameValues?.Length > 0) {
                         input = [0];
                     } else {
-                        var b = mot.GetBoneByHash(clip.ClipHeader.boneHash);
+                        var b = mot.GetBoneByHash(clip!.ClipHeader.boneHash);
                         if (b == null || trackType == AnimationChannelTarget.PathEnum.scale) {
                             return;
                         }
@@ -291,16 +295,20 @@ public partial class CommonMeshResource : IResourceFile
                 samplers.Add(sampler);
             }
 
-            if (clip.HasTranslation && clip.Translation != null) {
-                AddSampler(AnimationChannelTarget.PathEnum.translation, Accessor.TypeEnum.VEC3, clip.Translation, clip.Translation.translations!);
+            if (clip != null && clip.HasTranslation && clip.Translation != null) {
+                AddSampler(AnimationChannelTarget.PathEnum.translation, Accessor.TypeEnum.VEC3, clip.Translation.frameIndexes, clip.Translation.translations!);
+            } else if (bone.translation != Vector3.Zero) {
+                AddSampler(AnimationChannelTarget.PathEnum.translation, Accessor.TypeEnum.VEC3, emptyFrameIndexes, [bone.translation]);
             }
 
-            if (clip.HasScale && clip.Scale != null) {
-                AddSampler(AnimationChannelTarget.PathEnum.scale, Accessor.TypeEnum.VEC3, clip.Scale, clip.Scale.translations!);
+            if (clip != null && clip.HasScale && clip.Scale != null) {
+                AddSampler(AnimationChannelTarget.PathEnum.scale, Accessor.TypeEnum.VEC3, clip.Scale.frameIndexes, clip.Scale.translations!);
             }
 
-            if (clip.HasRotation && clip.Rotation != null) {
-                AddSampler(AnimationChannelTarget.PathEnum.rotation, Accessor.TypeEnum.VEC4, clip.Rotation, clip.Rotation.rotations!);
+            if (clip != null && clip.HasRotation && clip.Rotation != null) {
+                AddSampler(AnimationChannelTarget.PathEnum.rotation, Accessor.TypeEnum.VEC4, clip.Rotation.frameIndexes, clip.Rotation.rotations!);
+            } else if (bone.quaternion != Quaternion.Identity) {
+                AddSampler(AnimationChannelTarget.PathEnum.rotation, Accessor.TypeEnum.VEC4, emptyFrameIndexes, [bone.quaternion]);
             }
         }
         anim.Channels = channels.ToArray();
