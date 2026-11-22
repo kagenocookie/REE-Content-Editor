@@ -199,12 +199,13 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             }
         }
 
-        var file = ReadOrGetFileResource(resourceEntry.Target, null);
-        if (file?.DiffHandler == null) {
+        var baseFile = ReadOrGetFileResource(resourceEntry.Target, null, false);
+        if (baseFile?.DiffHandler == null) {
             // not diffable, give it an empty diff object just to mark it as not null
             resourceEntry.Diff = new JsonObject();
             resourceEntry.DiffTime = DateTime.UtcNow;
             if (File.Exists(fullLocalFilepath)) {
+                // close the base file and reopen from bundle
                 if (openFiles.Remove(resourceEntry.Target, out var previousFile)) {
                     previousFile.Dispose();
                 }
@@ -219,9 +220,9 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
                 Logger.Error("File not found: " + fullLocalFilepath);
                 return false;
             }
-            var tempFile = FileHandle.FromDiskFilePath(fullLocalFilepath, file.Loader, true);
+            var tempFile = FileHandle.FromDiskFilePath(fullLocalFilepath, baseFile.Loader, true);
             if (tempFile == null) return false;
-            var resource = file.Loader.Load(workspace, tempFile);
+            var resource = baseFile.Loader.Load(workspace, tempFile);
             if (resource == null) {
                 Logger.Error("File could not be loaded: " + fullLocalFilepath);
                 return false;
@@ -229,7 +230,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             tempFile.Resource = resource;
 
             // recalculate diff
-            resourceEntry.Diff = file.DiffHandler.FindDiff(tempFile);
+            resourceEntry.Diff = baseFile.DiffHandler.FindDiff(tempFile);
             resourceEntry.DiffTime = DateTime.UtcNow;
             if (resourceEntry.Diff == null) {
                 // no changes
@@ -239,8 +240,8 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
 
         // apply diff
         try {
-            file.DiffHandler.ApplyDiff(resourceEntry.Diff);
-            if (markModifiedOnChange) file.Modified = true;
+            baseFile.DiffHandler.ApplyDiff(resourceEntry.Diff);
+            if (markModifiedOnChange) baseFile.Modified = true;
             return true;
         } catch (Exception e) {
             Logger.Error(e, $"Failed to apply partial patch for file {localFile}. This could indicate issues with the patch generation or unsupported file edits. Attempting simple replacement instead ...");
@@ -976,7 +977,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
     /// <summary>
     /// Attempt to load a file from the given file path and assume the set target path for its base file. File path can be a disk path, a native, target or resource path.
     /// </summary>
-    public FileHandle? ReadOrGetFileResource(string filepath, string? targetPath)
+    public FileHandle? ReadOrGetFileResource(string filepath, string? targetPath, bool includeActiveBundle = true)
     {
         filepath = workspace.Env.RemoveBasePath(filepath).ToString().NormalizeFilepath();
         targetPath ??= PreprocessTargetFilepath(filepath);
@@ -985,7 +986,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             return handle;
         }
 
-        return ReadFileResource(filepath, targetPath, true);
+        return ReadFileResource(filepath, targetPath, includeActiveBundle);
     }
 
     private string? PreprocessTargetFilepath(string filepath)
