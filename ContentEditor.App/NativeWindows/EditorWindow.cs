@@ -1161,7 +1161,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 if (file != null) {
                     var rawScene = file.GetCustomContent<RawScene>();
                     var root = rawScene?.GetSharedInstance(Workspace.Env);
-                    var scene = SceneManager.CreateScene(file, true, null, root);
+                    var scene = SceneManager.CreateScene(file, false, null, root);
                     EditorWindow.CurrentWindow?.AddFileEditor(file);
                     SceneManager.ChangeMasterScene(scene);
                 }
